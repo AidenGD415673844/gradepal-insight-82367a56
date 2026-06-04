@@ -1,0 +1,244 @@
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useRef, useState } from "react";
+import { Sparkles, Upload, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { gradeWork } from "@/lib/ai-grader.functions";
+import { toast } from "sonner";
+import { useGrades } from "@/lib/grade-store";
+
+type Result = {
+  score: number;
+  letter: string;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+};
+
+const AI_QUOTA_KEY = "gradecalc-ai-grader-quota-v1";
+const AI_LIMIT = 15;
+
+/**
+ * Compute the most-recent reset boundary: Sunday 05:00 in Hong Kong time
+ * (HKT = UTC+8). Returns a UTC timestamp (ms). Counts in localStorage that
+ * pre-date this boundary are wiped.
+ */
+function currentWeekKey(): string {
+  const now = new Date();
+  const hkt = new Date(now.getTime() + 8 * 60 * 60 * 1000); // shift to HKT wallclock
+  const day = hkt.getUTCDay(); // 0..6 in HKT
+  const hour = hkt.getUTCHours();
+  const daysSinceSunday = day; // 0 if today is Sun
+  // If today is Sunday and HKT-hour < 5, the active window still belongs to last week.
+  const offsetDays = day === 0 && hour < 5 ? 7 : daysSinceSunday;
+  const boundary = new Date(hkt);
+  boundary.setUTCDate(hkt.getUTCDate() - offsetDays);
+  boundary.setUTCHours(5, 0, 0, 0);
+  return boundary.toISOString().slice(0, 10);
+}
+
+function readQuota(): { week: string; count: number } {
+  try {
+    const raw = localStorage.getItem(AI_QUOTA_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.week === currentWeekKey()) return parsed;
+    }
+  } catch {}
+  return { week: currentWeekKey(), count: 0 };
+}
+
+function bumpQuota(): { week: string; count: number } {
+  const q = readQuota();
+  const next = { week: q.week, count: q.count + 1 };
+  localStorage.setItem(AI_QUOTA_KEY, JSON.stringify(next));
+  return next;
+}
+
+export function AIGraderDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const [text, setText] = useState("");
+  const [rubric, setRubric] = useState("");
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [quota, setQuota] = useState(() => readQuota());
+  const fileRef = useRef<HTMLInputElement>(null);
+  const grade = useServerFn(gradeWork);
+  const { scale } = useGrades();
+
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => setImageDataUrl(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const remaining = Math.max(0, AI_LIMIT - quota.count);
+
+  const run = async () => {
+    if (!text && !imageDataUrl) {
+      toast.error("Provide text or an image");
+      return;
+    }
+    const fresh = readQuota();
+    if (fresh.count >= AI_LIMIT) {
+      setQuota(fresh);
+      toast.error("You have reached the limit for the week. Resets every Sunday 5AM HKT.");
+      return;
+    }
+    setLoading(true);
+    setResult(null);
+    try {
+      const r = await grade({
+        data: {
+          text: text || undefined,
+          imageDataUrl: imageDataUrl || undefined,
+          rubric: rubric || undefined,
+          scale: scale.map((s) => ({
+            min: s.min,
+            letter: s.letter,
+            description: s.description,
+            gpa: s.gpa,
+          })),
+        },
+      });
+      setResult(r);
+      setQuota(bumpQuota());
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI grading failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            AI Grader
+          </DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          Upload student work as text or image and get an AI-generated grade with feedback.
+        </p>
+        <div
+          className={`text-xs px-3 py-2 rounded-lg border ${
+            remaining === 0
+              ? "bg-destructive/10 border-destructive/30 text-destructive"
+              : "bg-muted/40 border-border"
+          }`}
+        >
+          {remaining === 0
+            ? "You have reached the limit for the week. The quota resets every Sunday at 5AM HKT."
+            : `${remaining} of ${AI_LIMIT} AI grading messages remaining this week (resets Sunday 5AM HKT).`}
+        </div>
+        <div className="space-y-3">
+          <div>
+            <Label>Rubric (optional)</Label>
+            <Input
+              value={rubric}
+              onChange={(e) => setRubric(e.target.value)}
+              placeholder="e.g. 5th grade algebra homework"
+            />
+          </div>
+          <div>
+            <Label>Work as Text</Label>
+            <Textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Paste the student's work here…"
+              rows={5}
+            />
+          </div>
+          <div>
+            <Label>Or Upload Image</Label>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => fileRef.current?.click()} className="gap-2">
+                <Upload className="h-4 w-4" /> {imageDataUrl ? "Change image" : "Click to upload"}
+              </Button>
+              {imageDataUrl && (
+                <Button variant="ghost" onClick={() => setImageDataUrl(null)}>
+                  Remove
+                </Button>
+              )}
+            </div>
+            <Input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            />
+            {imageDataUrl && (
+              <img src={imageDataUrl} alt="" className="mt-2 max-h-40 rounded-lg border" />
+            )}
+          </div>
+          <Button onClick={run} disabled={loading || remaining === 0} className="w-full" size="lg">
+            {loading ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Grading…</>
+            ) : (
+              "Grade Work"
+            )}
+          </Button>
+        </div>
+
+        {result && (
+          <div className="border rounded-xl p-4 space-y-3 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="text-3xl font-bold text-primary">
+                {result.score}/100
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold">
+                {result.letter}
+              </div>
+            </div>
+            <p className="text-sm">{result.summary}</p>
+            {result.strengths?.length > 0 && (
+              <div>
+                <div className="text-sm font-semibold text-success mb-1">Strengths</div>
+                <ul className="space-y-1">
+                  {result.strengths.map((s, i) => (
+                    <li key={i} className="text-sm flex gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {result.improvements?.length > 0 && (
+              <div>
+                <div className="text-sm font-semibold text-warning-foreground mb-1">
+                  Areas for Improvement
+                </div>
+                <ul className="space-y-1">
+                  {result.improvements.map((s, i) => (
+                    <li key={i} className="text-sm flex gap-2">
+                      <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
