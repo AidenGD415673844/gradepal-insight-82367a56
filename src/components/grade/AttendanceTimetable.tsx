@@ -473,6 +473,21 @@ function BlockDialog({
               onChange={(e) => setForm({ ...form, end: e.target.value })}
             />
           </div>
+          <div className="col-span-2">
+            <Label>Attendance Status</Label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as Status })}
+              className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+              style={{ borderLeft: `4px solid ${STATUS[form.status].color}` }}
+            >
+              {ORDER.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS[s].label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <DialogFooter className="gap-2">
           {editing?.block && (
