@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+// useRouter is kept above only because ErrorComponent still uses it.
 import { GradeProvider } from "@/lib/grade-store";
 import { Toaster } from "@/components/ui/sonner";
 
