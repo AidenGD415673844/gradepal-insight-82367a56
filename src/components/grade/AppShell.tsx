@@ -1,9 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, GraduationCap, LogIn, LogOut, User as UserIcon } from "lucide-react";
-import { useAuth } from "@/lib/use-auth";
+import { ArrowLeft, GraduationCap, CalendarRange } from "lucide-react";
 import { type ReactNode } from "react";
-import { toast } from "sonner";
 
 export function AppShell({
   title,
@@ -15,7 +13,6 @@ export function AppShell({
   children: ReactNode;
 }) {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,22 +34,11 @@ export function AppShell({
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {actions}
-            {user ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => { await signOut(); toast.success("Signed out"); }}
-                className="gap-2"
-              >
-                <UserIcon className="h-4 w-4" />
-                <span className="hidden sm:inline truncate max-w-[120px]">{user.email}</span>
-                <LogOut className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" asChild className="gap-2">
-                <Link to="/login"><LogIn className="h-4 w-4" /> Log in</Link>
-              </Button>
-            )}
+            <Button variant="outline" size="sm" asChild className="gap-2">
+              <Link to="/timetable">
+                <CalendarRange className="h-4 w-4" /> Calendar
+              </Link>
+            </Button>
           </div>
         </header>
         {children}

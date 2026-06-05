@@ -1,13 +1,15 @@
 import { useGrades } from "@/lib/grade-store";
 import { Card } from "@/components/ui/card";
-import { calcAverage, getLetter } from "@/lib/grade-utils";
+import { calcAverage, getLetter, filterByTerm } from "@/lib/grade-utils";
 import { TrendingUp, Target, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function PredictiveAnalysis() {
-  const { tasks, scale, settings } = useGrades();
-  const filtered = tasks.filter(
+  const { tasks, scale, settings, terms, activeTermId } = useGrades();
+  const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
+  const termScoped = filterByTerm(tasks, activeTerm);
+  const filtered = termScoped.filter(
     (t) => settings.selectedCourse === "all" || t.courseId === settings.selectedCourse,
   );
   const completed = filtered.filter((t) => !t.pending);
@@ -77,8 +79,9 @@ function Mini({
 }
 
 export function GoalTracker() {
-  const { tasks, settings, setSettings, scale } = useGrades();
-  const filtered = tasks.filter(
+  const { tasks, settings, setSettings, scale, terms, activeTermId } = useGrades();
+  const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
+  const filtered = filterByTerm(tasks, activeTerm).filter(
     (t) => settings.selectedCourse === "all" || t.courseId === settings.selectedCourse,
   );
   const completed = filtered.filter((t) => !t.pending);
