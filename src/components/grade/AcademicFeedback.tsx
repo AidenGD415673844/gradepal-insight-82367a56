@@ -31,73 +31,56 @@ const defaultMeta: Meta = {
   manualOn: {},
 };
 
-// 30 tiers in 3.33% increments from 100 -> 0
-const TIERS: { min: number; label: string; strength: string; commend: string }[] = (() => {
-  const arr: { min: number; label: string; strength: string; commend: string }[] = [];
-  for (let i = 0; i < 30; i++) {
-    const min = +(100 - i * 3.33).toFixed(2);
-    const label =
-      min >= 95.7
-        ? "Exemplary"
-        : min >= 90
-          ? "Outstanding"
-          : min >= 80
-            ? "Strong"
-            : min >= 70
-              ? "Proficient"
-              : min >= 60
-                ? "Developing"
-                : min >= 50
-                  ? "Approaching"
-                  : min >= 40
-                    ? "Limited"
-                    : min >= 30
-                      ? "Insufficient"
-                      : "Critical";
-    const strength =
-      min >= 90
-        ? "demonstrates exceptional command of the subject material"
-        : min >= 75
-          ? "shows confident grasp of core concepts and applies them effectively"
-          : min >= 60
-            ? "displays solid foundational understanding with room to refine technique"
-            : min >= 45
-              ? "is building familiarity with key ideas and benefits from guided practice"
-              : "requires structured remediation to secure the foundational skills";
-    const commend =
-      min >= 90
-        ? "Term performance is highly commendable, consistently exceeding expected standards."
-        : min >= 75
-          ? "Term results are strong and reflect dependable preparation across assessments."
-          : min >= 60
-            ? "Term results are acceptable but inconsistent across higher-weight tasks."
-            : min >= 45
-              ? "Term results indicate the student is at risk of falling below standard."
-              : "Term results are well below expectations and require immediate intervention.";
-    arr.push({ min, label, strength, commend });
+/**
+ * 5-bullet report-card feedback engine.
+ *
+ * BRACKETS array spans 4% increments from 100% down to 4%.
+ * Each bracket holds exactly 5 bullet strings (B1 Strengths, B2 Trends,
+ * B3 Commendations, B4 Responsibility, B5 Improvement). Only the
+ * 88%-91% bracket ships with concrete copy as the template model;
+ * every other bracket is intentionally stubbed with empty strings so
+ * the user can paste the remaining tier text manually later.
+ *
+ * IMPORTANT: positive trend logic — when the student's recent half
+ * outperforms the earlier half (delta > 0), the bullet phrasing
+ * must reflect positive growth, never a decline.
+ */
+type Bracket = { min: number; max: number; bullets: [string, string, string, string, string] };
+
+const EMPTY_BULLETS: [string, string, string, string, string] = ["", "", "", "", ""];
+
+// Template model — fully populated bracket for 88%-91%
+const TEMPLATE_88_91: [string, string, string, string, string] = [
+  "The student consistently demonstrates a strong understanding of core concepts and applies them accurately during practical tasks. They show a high level of analytical clarity when breaking down complex topics, making connections across different units with ease. This strong foundational comprehension allows them to approach new subject material with confidence and skill.",
+  "Maintains a highly stable academic trajectory with positive performance metrics moving forward at a reliable speed. Minor tracking variances are quickly mitigated through targeted review sessions and strong self-reflection habits. The overall trend line indicates an entrenched and consistent control over the subject curriculum.",
+  "Submits work that is thoroughly researched and well-structured, maintaining a highly disciplined and organized work ethic. They carefully document their findings, adhering to all strict assignment layout guidelines with great fidelity. Their ongoing academic effort highlights an exemplary commitment to optimizing their overall classroom average.",
+  "Displays outstanding personal accountability and consistently meets assignment deadlines with excellent care, showing true maturity in managing independent study schedules. They track their progress proactively, ensuring all rubric criteria are completely fulfilled prior to final verification.",
+  "To maximize performance gains, focus targeted study sessions toward reviewing structural principles from your lowest assignment metrics. Re-evaluating past errors in execution will cleanly protect your current letter grade parameters and ensure top-tier positioning.",
+];
+
+// Build all 4%-increment brackets from 100 -> 4 (inclusive). Brackets are
+// [min, max] with width 4 (max = min + 3). 100 is its own singleton bucket.
+const BRACKETS: Bracket[] = (() => {
+  const arr: Bracket[] = [];
+  // 100 singleton (only avg === 100 can land here)
+  arr.push({ min: 100, max: 100, bullets: [...EMPTY_BULLETS] as Bracket["bullets"] });
+  for (let min = 96; min >= 4; min -= 4) {
+    const max = min + 3;
+    const bullets: Bracket["bullets"] =
+      min === 88 ? ([...TEMPLATE_88_91] as Bracket["bullets"]) : ([...EMPTY_BULLETS] as Bracket["bullets"]);
+    arr.push({ min, max, bullets });
   }
   return arr;
 })();
 
-function tierFor(pct: number) {
-  return TIERS.find((t) => pct >= t.min) ?? TIERS[TIERS.length - 1];
+function bracketFor(pct: number): Bracket {
+  return (
+    BRACKETS.find((b) => pct >= b.min && pct <= b.max) ??
+    BRACKETS[BRACKETS.length - 1]
+  );
 }
 
-function trendText(tasks: { date: string; score: number; maxScore: number }[]): string {
-  if (tasks.length < 2) return "insufficient data points to establish a trend.";
-  const sorted = [...tasks].sort((a, b) => a.date.localeCompare(b.date));
-  const half = Math.floor(sorted.length / 2);
-  const first = sorted.slice(0, half);
-  const last = sorted.slice(half);
-  const avg = (a: typeof sorted) =>
-    a.reduce((s, t) => s + (t.score / t.maxScore) * 100, 0) / a.length;
-  const delta = avg(last) - avg(first);
-  if (delta >= 8) return "strong upward trajectory across the term.";
-  if (delta >= 3) return "steady upward progress at a stable speed.";
-  if (delta > -3) return "stable performance with minimal variation.";
-  if (delta > -8) return "gradual decline that warrants attention.";
-  return "significant downward trend that requires immediate action.";
-}
+const STUB_PLACEHOLDER = "(Feedback template for this tier is pending — paste your sentence here.)";
 
 function csvEscape(s: string): string {
   if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -171,117 +154,11 @@ export function AcademicFeedback() {
         "No tasks has been ever submitted or added in this term. It is important to complete your work if you haven’t submitted anything.";
       return [msg, msg, msg, msg, msg];
     }
-    const tier = tierFor(r.avg);
-    const pct = r.avg;
-
-    // Strengths bank — pick by tier and add a course-specific colour
-    const strengthsBank: string[] =
-      pct >= 90
-        ? [
-            `${r.course.name}: ${tier.strength}, with assessments consistently showcasing precise reasoning, accurate vocabulary, and confident independent thinking. The student approaches new tasks with curiosity and produces work of a standard that could be shared as an exemplar to peers.`,
-            `${r.course.name}: outstanding command of the course material — concepts are connected fluently, written responses are well-structured, and quantitative work is delivered with very few errors. The student is operating well above year-level expectations.`,
-            `${r.course.name}: the student demonstrates a sophisticated grasp of the discipline, generalising key principles across contexts and supporting answers with evidence. Higher-order tasks such as analysis, synthesis and evaluation are handled with poise.`,
-          ]
-        : pct >= 75
-          ? [
-              `${r.course.name}: ${tier.strength}. Core skills are secure, and on most tasks the student transfers learning effectively without needing prompting. Refinement of presentation and time management would move this work into the highest band.`,
-              `${r.course.name}: the student shows confident understanding of the major topics and applies set methods reliably. Continued exposure to extension problems and exam-style timed practice will sharpen accuracy under pressure.`,
-              `${r.course.name}: a dependable performer who participates actively and submits clean, considered work. Strengths are particularly visible in routine application; the next step is to deepen analysis on open-ended tasks.`,
-            ]
-          : pct >= 60
-            ? [
-                `${r.course.name}: ${tier.strength}. The student grasps surface-level requirements but loses marks where multi-step reasoning or extended writing is required. Strengthening the underpinning vocabulary and procedure will give a more stable foundation.`,
-                `${r.course.name}: foundational understanding is present and improves visibly when worked examples are reviewed in class. Independent practice on past papers — especially the mid-difficulty band — would consolidate skills.`,
-                `${r.course.name}: there is real capacity here that has not yet translated into consistent marks. With closer attention to feedback, regular short revision, and timely question-asking, a measurable lift is realistic this term.`,
-              ]
-            : pct >= 45
-              ? [
-                  `${r.course.name}: ${tier.strength}. Gaps in prerequisite knowledge are limiting progress on higher-weight tasks; structured catch-up sessions and weekly check-ins are recommended.`,
-                  `${r.course.name}: the student responds well to one-to-one explanation but is not yet retaining methods between lessons. Building a personal glossary and a worked-examples notebook would help bridge this gap.`,
-                  `${r.course.name}: motivation appears inconsistent and is shaping the result. Re-establishing short, achievable routines (10–15 minutes daily on flashcards or worked questions) should rebuild confidence.`,
-                ]
-              : [
-                  `${r.course.name}: ${tier.strength}. Several core skills are missing and immediate intervention is required to prevent the gap from widening. A coordinated plan involving teacher, parent and student is strongly advised.`,
-                  `${r.course.name}: current results sit well below the required standard. Diagnostic re-teaching of the fundamental units, followed by graded re-assessments, is the most realistic recovery path this term.`,
-                ];
-
-    // Trends bank — uses computed trend text
-    const trend = trendText(r.done);
-    const trendsBank: string[] = [
-      `Trends: across the term the student shows ${trend} Recent assessments carry the strongest signal and should be weighted accordingly when judging current ability.`,
-      `Trends: looking across the assessment timeline, ${trend} This pattern is reflected in both classwork engagement and submitted homework quality.`,
-      `Trends: the trajectory of marks indicates ${trend} Maintaining (or arresting) this direction will depend on consistent revision habits over the coming weeks.`,
-    ];
-
-    // Commendations bank
-    const commendBank: string[] =
-      pct >= 75
-        ? [
-            `Commendations: ${tier.commend} The student should be proud of the calibre of work submitted (term average ${pct.toFixed(1)}%, grade ${r.letter}) and is encouraged to mentor peers where appropriate.`,
-            `Commendations: term performance (average ${pct.toFixed(1)}%, grade ${r.letter}) demonstrates dependable preparation, careful presentation and a positive approach to feedback — all qualities worth sustaining.`,
-            `Commendations: it is a pleasure to teach this student; results (${pct.toFixed(1)}%, ${r.letter}) sit firmly in the upper band and reflect both ability and effort.`,
-          ]
-        : pct >= 50
-          ? [
-              `Commendations: ${tier.commend} Effort in class is generally positive (${pct.toFixed(1)}%, ${r.letter}); converting that effort into higher accuracy on summative tasks is the next milestone.`,
-              `Commendations: there are clear pockets of strong work this term (${pct.toFixed(1)}%, ${r.letter}); the challenge now is to make that quality the rule rather than the exception.`,
-            ]
-          : [
-              `Commendations: ${tier.commend} While the current average (${pct.toFixed(1)}%, ${r.letter}) is below standard, the student has shown moments of capability that we can build on with the right structure.`,
-              `Commendations: results (${pct.toFixed(1)}%, ${r.letter}) are concerning, but the student remains willing to engage when supported — this attitude is the foundation of any recovery plan.`,
-            ];
-
-    // Responsibility bank — based on completion %
-    const responsibilityBank: string[] =
-      r.completion >= 90
-        ? [
-            `Responsibility: with ${r.completion}% of assessable tasks submitted on time, the student demonstrates exemplary work habits, strong organisation and respect for deadlines.`,
-            `Responsibility: a ${r.completion}% submission rate shows excellent self-management — homework, drafts and final pieces are arriving when expected and ready for marking.`,
-          ]
-        : r.completion >= 70
-          ? [
-              `Responsibility: task completion at ${r.completion}% reflects generally reliable habits, although a small number of missed submissions has cost marks that were otherwise within reach.`,
-              `Responsibility: a ${r.completion}% on-time rate is acceptable; tightening the calendar around upcoming due dates would protect the grade from avoidable zeros.`,
-            ]
-          : [
-              `Responsibility: only ${r.completion}% of tasks have been completed — missed work is the single largest factor pulling the grade down, and addressing this is more impactful than any new study technique.`,
-              `Responsibility: at ${r.completion}% completion the student is leaving easy marks on the table. A weekly deadline review with a parent or mentor is strongly recommended.`,
-            ];
-
-    // Actionable Improvement bank
-    const lowestName = r.lowest?.name ?? "—";
-    const lowPct = r.lowest ? (r.lowest.score / r.lowest.maxScore) * 100 : 100;
-    const improvementBank: string[] =
-      pct < 50
-        ? [
-                  `Actionable Improvement (URGENT): the weakest assessment was '${lowestName}' at ${lowPct.toFixed(0)}%. Before the semester closes, the student should request a re-teach of this unit, attempt a guided re-do, and book additional tutoring or after-school support.`,
-                  `Actionable Improvement (URGENT): targeted recovery on '${lowestName}' (${lowPct.toFixed(0)}%) is the highest-leverage action. Speak to the teacher about extra-credit opportunities or a modified recovery plan before the semester closes.`,
-                ]
-        : pct < 75
-          ? [
-              `Actionable Improvement: focus revision on '${lowestName}' (${lowPct.toFixed(0)}%) and similar tasks; a structured re-attempt with the marking scheme in hand typically lifts results by 5–10 percentage points within two assessments.`,
-              `Actionable Improvement: the lowest performance was on '${lowestName}' (${lowPct.toFixed(0)}%). Twenty minutes a day on this topic, combined with one timed past-paper question per week, is realistic and effective.`,
-            ]
-          : [
-              `Actionable Improvement: the only soft spot this term was '${lowestName}' (${lowPct.toFixed(0)}%). A brief revisit — even a single mentor session — should be enough to close the gap and push the overall average even higher.`,
-              `Actionable Improvement: to move from strong to exemplary, the student should target '${lowestName}' (${lowPct.toFixed(0)}%) for refinement and continue seeking stretch tasks beyond the standard syllabus.`,
-            ];
-
-    // Deterministic pick based on course id so comments stay stable across renders
-    const pick = (arr: string[], salt: number) => {
-      let h = 0;
-      for (const ch of r.course.id) h = (h * 31 + ch.charCodeAt(0)) | 0;
-      const idx = Math.abs(h + salt) % arr.length;
-      return arr[idx];
-    };
-
-    return [
-      `Strengths: ${pick(strengthsBank, 1)}`,
-      pick(trendsBank, 2),
-      pick(commendBank, 3),
-      pick(responsibilityBank, 4),
-      pick(improvementBank, 5),
-    ];
+    // Look up the 4%-increment bracket and emit its 5 bullets verbatim.
+    // Empty (un-populated) tier slots fall back to a clear placeholder so
+    // the user knows that bracket still needs sentence copy.
+    const bracket = bracketFor(r.avg);
+    return bracket.bullets.map((b) => (b.trim() === "" ? STUB_PLACEHOLDER : b));
   };
 
   const handlePrint = () => window.print();
@@ -451,18 +328,30 @@ export function AcademicFeedback() {
                           />
                         ) : (
                           <ul className="space-y-1.5 text-sm">
-                            {bullets.map((b, i) => (
-                              <li
-                                key={i}
-                                className={`leading-relaxed ${
-                                  i === 4 && urgent
-                                    ? "text-destructive font-medium"
-                                    : "text-muted-foreground"
-                                }`}
-                              >
-                                • {b}
-                              </li>
-                            ))}
+                            {bullets.map((b, i) => {
+                              const labels = [
+                                "Strengths",
+                                "Trends",
+                                "Commendations",
+                                "Responsibility",
+                                "Improvement",
+                              ];
+                              return (
+                                <li
+                                  key={i}
+                                  className={`leading-relaxed ${
+                                    i === 4 && urgent
+                                      ? "text-destructive font-medium"
+                                      : "text-muted-foreground"
+                                  }`}
+                                >
+                                  <span className="font-semibold text-foreground">
+                                    B{i + 1} ({labels[i]}):
+                                  </span>{" "}
+                                  {b}
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>

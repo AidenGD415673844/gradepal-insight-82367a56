@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useGrades } from "@/lib/grade-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/use-auth";
 import { useUIPrefs, setUIPrefs } from "@/lib/ui-prefs";
 import {
   GraduationCap,
@@ -10,15 +9,11 @@ import {
   Wrench,
   CalendarRange,
   ClipboardCheck,
-  LogIn,
-  LogOut,
-  User as UserIcon,
   CalendarClock,
   Settings as SettingsIcon,
   X,
   Sparkles,
 } from "lucide-react";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,7 +38,6 @@ const CARDS = [
 
 function Home() {
   const { tasks, courses } = useGrades();
-  const { user, signOut } = useAuth();
   const [prefs] = useUIPrefs();
   const now = new Date();
   const todayISO = now.toISOString().slice(0, 10);
@@ -64,22 +58,11 @@ function Home() {
             </div>
             <h1 className="text-2xl font-bold tracking-tight">GradeCalc</h1>
           </div>
-          {user ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => { await signOut(); toast.success("Signed out"); }}
-              className="gap-2"
-            >
-              <UserIcon className="h-4 w-4" />
-              <span className="hidden sm:inline truncate max-w-[160px]">{user.email}</span>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" asChild className="gap-2">
-              <Link to="/login"><LogIn className="h-4 w-4" /> Log in / Sign up</Link>
-            </Button>
-          )}
+          <Button variant="outline" size="sm" asChild className="gap-2">
+            <Link to="/timetable">
+              <CalendarRange className="h-4 w-4" /> Calendar
+            </Link>
+          </Button>
         </header>
 
         {!prefs.welcomeDismissed && (
