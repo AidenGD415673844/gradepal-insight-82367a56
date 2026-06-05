@@ -31,73 +31,56 @@ const defaultMeta: Meta = {
   manualOn: {},
 };
 
-// 30 tiers in 3.33% increments from 100 -> 0
-const TIERS: { min: number; label: string; strength: string; commend: string }[] = (() => {
-  const arr: { min: number; label: string; strength: string; commend: string }[] = [];
-  for (let i = 0; i < 30; i++) {
-    const min = +(100 - i * 3.33).toFixed(2);
-    const label =
-      min >= 95.7
-        ? "Exemplary"
-        : min >= 90
-          ? "Outstanding"
-          : min >= 80
-            ? "Strong"
-            : min >= 70
-              ? "Proficient"
-              : min >= 60
-                ? "Developing"
-                : min >= 50
-                  ? "Approaching"
-                  : min >= 40
-                    ? "Limited"
-                    : min >= 30
-                      ? "Insufficient"
-                      : "Critical";
-    const strength =
-      min >= 90
-        ? "demonstrates exceptional command of the subject material"
-        : min >= 75
-          ? "shows confident grasp of core concepts and applies them effectively"
-          : min >= 60
-            ? "displays solid foundational understanding with room to refine technique"
-            : min >= 45
-              ? "is building familiarity with key ideas and benefits from guided practice"
-              : "requires structured remediation to secure the foundational skills";
-    const commend =
-      min >= 90
-        ? "Term performance is highly commendable, consistently exceeding expected standards."
-        : min >= 75
-          ? "Term results are strong and reflect dependable preparation across assessments."
-          : min >= 60
-            ? "Term results are acceptable but inconsistent across higher-weight tasks."
-            : min >= 45
-              ? "Term results indicate the student is at risk of falling below standard."
-              : "Term results are well below expectations and require immediate intervention.";
-    arr.push({ min, label, strength, commend });
+/**
+ * 5-bullet report-card feedback engine.
+ *
+ * BRACKETS array spans 4% increments from 100% down to 4%.
+ * Each bracket holds exactly 5 bullet strings (B1 Strengths, B2 Trends,
+ * B3 Commendations, B4 Responsibility, B5 Improvement). Only the
+ * 88%-91% bracket ships with concrete copy as the template model;
+ * every other bracket is intentionally stubbed with empty strings so
+ * the user can paste the remaining tier text manually later.
+ *
+ * IMPORTANT: positive trend logic — when the student's recent half
+ * outperforms the earlier half (delta > 0), the bullet phrasing
+ * must reflect positive growth, never a decline.
+ */
+type Bracket = { min: number; max: number; bullets: [string, string, string, string, string] };
+
+const EMPTY_BULLETS: [string, string, string, string, string] = ["", "", "", "", ""];
+
+// Template model — fully populated bracket for 88%-91%
+const TEMPLATE_88_91: [string, string, string, string, string] = [
+  "The student consistently demonstrates a strong understanding of core concepts and applies them accurately during practical tasks. They show a high level of analytical clarity when breaking down complex topics, making connections across different units with ease. This strong foundational comprehension allows them to approach new subject material with confidence and skill.",
+  "Maintains a highly stable academic trajectory with positive performance metrics moving forward at a reliable speed. Minor tracking variances are quickly mitigated through targeted review sessions and strong self-reflection habits. The overall trend line indicates an entrenched and consistent control over the subject curriculum.",
+  "Submits work that is thoroughly researched and well-structured, maintaining a highly disciplined and organized work ethic. They carefully document their findings, adhering to all strict assignment layout guidelines with great fidelity. Their ongoing academic effort highlights an exemplary commitment to optimizing their overall classroom average.",
+  "Displays outstanding personal accountability and consistently meets assignment deadlines with excellent care, showing true maturity in managing independent study schedules. They track their progress proactively, ensuring all rubric criteria are completely fulfilled prior to final verification.",
+  "To maximize performance gains, focus targeted study sessions toward reviewing structural principles from your lowest assignment metrics. Re-evaluating past errors in execution will cleanly protect your current letter grade parameters and ensure top-tier positioning.",
+];
+
+// Build all 4%-increment brackets from 100 -> 4 (inclusive). Brackets are
+// [min, max] with width 4 (max = min + 3). 100 is its own singleton bucket.
+const BRACKETS: Bracket[] = (() => {
+  const arr: Bracket[] = [];
+  // 100 singleton (only avg === 100 can land here)
+  arr.push({ min: 100, max: 100, bullets: [...EMPTY_BULLETS] as Bracket["bullets"] });
+  for (let min = 96; min >= 4; min -= 4) {
+    const max = min + 3;
+    const bullets: Bracket["bullets"] =
+      min === 88 ? ([...TEMPLATE_88_91] as Bracket["bullets"]) : ([...EMPTY_BULLETS] as Bracket["bullets"]);
+    arr.push({ min, max, bullets });
   }
   return arr;
 })();
 
-function tierFor(pct: number) {
-  return TIERS.find((t) => pct >= t.min) ?? TIERS[TIERS.length - 1];
+function bracketFor(pct: number): Bracket {
+  return (
+    BRACKETS.find((b) => pct >= b.min && pct <= b.max) ??
+    BRACKETS[BRACKETS.length - 1]
+  );
 }
 
-function trendText(tasks: { date: string; score: number; maxScore: number }[]): string {
-  if (tasks.length < 2) return "insufficient data points to establish a trend.";
-  const sorted = [...tasks].sort((a, b) => a.date.localeCompare(b.date));
-  const half = Math.floor(sorted.length / 2);
-  const first = sorted.slice(0, half);
-  const last = sorted.slice(half);
-  const avg = (a: typeof sorted) =>
-    a.reduce((s, t) => s + (t.score / t.maxScore) * 100, 0) / a.length;
-  const delta = avg(last) - avg(first);
-  if (delta >= 8) return "strong upward trajectory across the term.";
-  if (delta >= 3) return "steady upward progress at a stable speed.";
-  if (delta > -3) return "stable performance with minimal variation.";
-  if (delta > -8) return "gradual decline that warrants attention.";
-  return "significant downward trend that requires immediate action.";
-}
+const STUB_PLACEHOLDER = "(Feedback template for this tier is pending — paste your sentence here.)";
 
 function csvEscape(s: string): string {
   if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
