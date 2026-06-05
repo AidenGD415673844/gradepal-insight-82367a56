@@ -328,18 +328,30 @@ export function AcademicFeedback() {
                           />
                         ) : (
                           <ul className="space-y-1.5 text-sm">
-                            {bullets.map((b, i) => (
-                              <li
-                                key={i}
-                                className={`leading-relaxed ${
-                                  i === 4 && urgent
-                                    ? "text-destructive font-medium"
-                                    : "text-muted-foreground"
-                                }`}
-                              >
-                                • {b}
-                              </li>
-                            ))}
+                            {bullets.map((b, i) => {
+                              const labels = [
+                                "Strengths",
+                                "Trends",
+                                "Commendations",
+                                "Responsibility",
+                                "Improvement",
+                              ];
+                              return (
+                                <li
+                                  key={i}
+                                  className={`leading-relaxed ${
+                                    i === 4 && urgent
+                                      ? "text-destructive font-medium"
+                                      : "text-muted-foreground"
+                                  }`}
+                                >
+                                  <span className="font-semibold text-foreground">
+                                    B{i + 1} ({labels[i]}):
+                                  </span>{" "}
+                                  {b}
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
