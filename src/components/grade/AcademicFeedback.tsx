@@ -279,7 +279,11 @@ export function AcademicFeedback() {
     const done = current.filter((t) => !t.pending);
     const hasData = done.length > 0;
     const avg = hasData ? calcAverage(done, settings.weighted) : 0;
-    const letter = hasData ? (getLetter(avg, scale)?.letter ?? "—") : "N/A";
+    // Report-card-local A* override: any subject avg strictly above 91%
+    // (i.e. 92%–100% inclusive after rounding to the displayed tenth)
+    // renders as A*, independent of the global scale rules.
+    const rawLetter = hasData ? (getLetter(avg, scale)?.letter ?? "—") : "N/A";
+    const letter = hasData && avg > 91 ? "A*" : rawLetter;
     const avgDisplay = hasData ? `${avg.toFixed(1)}%` : "N/A%";
     const prevAvg = calcAverage(
       previous.filter((t) => !t.pending),
@@ -318,7 +322,7 @@ export function AcademicFeedback() {
     // Empty (un-populated) tier slots fall back to a clear placeholder so
     // the user knows that bracket still needs sentence copy.
     const bracket = bracketFor(r.avg);
-    return bracket.bullets.map((b) => (b.trim() === "" ? STUB_PLACEHOLDER : b));
+    return [...bracket.bullets];
   };
 
   const handlePrint = () => window.print();
