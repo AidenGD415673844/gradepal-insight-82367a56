@@ -278,7 +278,8 @@ export function AcademicFeedback() {
     // (i.e. 92%–100% inclusive after rounding to the displayed tenth)
     // renders as A*, independent of the global scale rules.
     const rawLetter = hasData ? (getLetter(avg, scale)?.letter ?? "—") : "N/A";
-    const letter = hasData && avg > 91 ? "A*" : rawLetter;
+    // Report-card-local A* override: 92%–100% inclusive renders A*.
+    const letter = hasData && avg >= 92 ? "A*" : rawLetter;
     const avgDisplay = hasData ? `${avg.toFixed(1)}%` : "N/A%";
     const prevAvg = calcAverage(
       previous.filter((t) => !t.pending),
