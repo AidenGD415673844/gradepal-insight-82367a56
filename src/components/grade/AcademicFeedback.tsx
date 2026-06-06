@@ -5,12 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Skeleton } from "@/components/ui/skeleton";
 import { FileDown, Printer, GraduationCap } from "lucide-react";
 
 type Meta = {
@@ -283,7 +278,8 @@ export function AcademicFeedback() {
     // (i.e. 92%–100% inclusive after rounding to the displayed tenth)
     // renders as A*, independent of the global scale rules.
     const rawLetter = hasData ? (getLetter(avg, scale)?.letter ?? "—") : "N/A";
-    const letter = hasData && avg > 91 ? "A*" : rawLetter;
+    // Report-card-local A* override: 92%–100% inclusive renders A*.
+    const letter = hasData && avg >= 92 ? "A*" : rawLetter;
     const avgDisplay = hasData ? `${avg.toFixed(1)}%` : "N/A%";
     const prevAvg = calcAverage(
       previous.filter((t) => !t.pending),
@@ -359,6 +355,14 @@ export function AcademicFeedback() {
     URL.revokeObjectURL(url);
   };
 
+  // Skeleton loading buffer: re-trigger on initial mount and term switch.
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    setLoading(true);
+    const id = setTimeout(() => setLoading(false), 420);
+    return () => clearTimeout(id);
+  }, [activeTermId]);
+
   return (
     <>
       <style>{`
@@ -385,58 +389,6 @@ export function AcademicFeedback() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="py-2 px-2 font-semibold">Subject</th>
-                  <th className="py-2 px-2 font-semibold">Teacher</th>
-                  <th className="py-2 px-2 font-semibold">Aspirational</th>
-                  {hasPrevTerm && <th className="py-2 px-2 font-semibold">Previous Term</th>}
-                  <th className="py-2 px-2 font-semibold">Current Term</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.course.id} className="border-b last:border-b-0">
-                    <td className="py-2 px-2 font-medium">{r.course.name}</td>
-                    <td className="py-2 px-2">
-                      <Input
-                        className="h-8"
-                        value={meta.teachers[r.course.id] ?? ""}
-                        onChange={(e) => update("teachers", r.course.id, e.target.value)}
-                        placeholder="Teacher"
-                      />
-                    </td>
-                    <td className="py-2 px-2">
-                      <Input
-                        className="h-8 w-20"
-                        value={meta.goals[r.course.id] ?? ""}
-                        onChange={(e) => update("goals", r.course.id, e.target.value)}
-                        placeholder="A"
-                      />
-                    </td>
-                    {hasPrevTerm && (
-                      <td className="py-2 px-2">
-                        <span className="inline-flex items-center justify-center h-8 w-20 rounded-md border bg-muted/40 text-sm font-medium tabular-nums">
-                          {meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}
-                        </span>
-                      </td>
-                    )}
-                    <td className="py-2 px-2">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="font-bold">{r.letter}</span>
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {r.avgDisplay}
-                        </span>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
           <div className="flex gap-2 mt-4 no-print">
             <Button variant="outline" onClick={handlePrint} className="gap-2">
               <Printer className="h-4 w-4" /> PDF Export
@@ -446,85 +398,146 @@ export function AcademicFeedback() {
             </Button>
           </div>
 
-          <div className="mt-5">
-            <h3 className="text-sm font-semibold mb-2">Teacher Comments</h3>
-            <Accordion type="multiple" className="w-full">
+          {loading ? (
+            <div className="mt-2 space-y-4">
+              {[0, 1, 2].map((i) => (
+                <Card key={i} className="p-4 space-y-3 animate-pulse">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <Skeleton className="h-7 col-span-2 md:col-span-1" />
+                    <Skeleton className="h-7" />
+                    <Skeleton className="h-7" />
+                    <Skeleton className="h-7" />
+                    <Skeleton className="h-7" />
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <Skeleton className="h-3 w-11/12" />
+                    <Skeleton className="h-3 w-10/12" />
+                    <Skeleton className="h-3 w-9/12" />
+                    <Skeleton className="h-3 w-8/12" />
+                    <Skeleton className="h-3 w-7/12" />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-2 space-y-5">
               {rows.map((r) => {
                 const bullets = buildComment(r);
                 const manualOn = !!meta.manualOn[r.course.id];
                 const urgent = r.avg < 50;
+                const labels = [
+                  "Strengths",
+                  "Trends",
+                  "Commendations",
+                  "Responsibility",
+                  "Improvement",
+                ];
                 return (
-                  <AccordionItem key={r.course.id} value={r.course.id}>
-                    <AccordionTrigger className="text-sm">
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="inline-block h-2.5 w-2.5 rounded-full"
-                          style={{ background: r.course.color }}
-                        />
-                        {r.course.name}
+                  <Card
+                    key={r.course.id}
+                    className="p-4 md:p-5 border-l-4 animate-fade-in"
+                    style={{ borderLeftColor: r.course.color }}
+                  >
+                    {/* Unified metrics header — sits ENTIRELY on top of the comment block */}
+                    <div className="border-b pb-3 mb-4">
+                      <div className="flex items-baseline gap-3 flex-wrap mb-3">
+                        <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+                          {r.course.name}
+                        </h3>
                         <span className="text-xs text-muted-foreground">
-                          {r.letter} · {r.avgDisplay}
+                          {r.done.length} task{r.done.length === 1 ? "" : "s"} graded · {r.completion}% completion
                         </span>
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between no-print">
-                          <label className="text-xs flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={manualOn}
-                              onChange={(e) =>
-                                update("manualOn", r.course.id, e.target.checked)
-                              }
-                            />
-                            Manual mode (custom comment)
-                          </label>
-                        </div>
-                        {manualOn ? (
-                          <Textarea
-                            rows={5}
-                            value={meta.manual[r.course.id] ?? ""}
-                            onChange={(e) =>
-                              update("manual", r.course.id, e.target.value)
-                            }
-                            placeholder="Write your custom feedback..."
-                          />
-                        ) : (
-                          <ul className="space-y-1.5 text-sm">
-                            {bullets.map((b, i) => {
-                              const labels = [
-                                "Strengths",
-                                "Trends",
-                                "Commendations",
-                                "Responsibility",
-                                "Improvement",
-                              ];
-                              return (
-                                <li
-                                  key={i}
-                                  className={`leading-relaxed ${
-                                    i === 4 && urgent
-                                      ? "text-destructive font-medium"
-                                      : "text-muted-foreground"
-                                  }`}
-                                >
-                                  <span className="font-semibold text-foreground">
-                                    B{i + 1} ({labels[i]}):
-                                  </span>{" "}
-                                  {b}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="space-y-1">
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Teacher</div>
+                          <Input
+                            className="h-8 no-print"
+                            value={meta.teachers[r.course.id] ?? ""}
+                            onChange={(e) => update("teachers", r.course.id, e.target.value)}
+                            placeholder="Teacher name"
+                          />
+                          <div className="hidden print:block text-sm font-medium">
+                            {meta.teachers[r.course.id] || "—"}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Aspirational</div>
+                          <Input
+                            className="h-8 no-print"
+                            value={meta.goals[r.course.id] ?? ""}
+                            onChange={(e) => update("goals", r.course.id, e.target.value)}
+                            placeholder="A*"
+                          />
+                          <div className="hidden print:block text-sm font-medium">
+                            {meta.goals[r.course.id] || "—"}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                            Previous Term {prevTerm ? `(${prevTerm.name})` : ""}
+                          </div>
+                          <div className="inline-flex items-center justify-center h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
+                            {meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                            Current Term {activeTerm ? `(${activeTerm.name})` : ""}
+                          </div>
+                          <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-primary/10 border-primary/30 text-sm font-bold">
+                            <span>{r.letter}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 5-bullet feedback compiler — sits directly UNDERNEATH the header */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between no-print">
+                        <h4 className="text-sm font-semibold">Teacher Comments</h4>
+                        <label className="text-xs flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={manualOn}
+                            onChange={(e) => update("manualOn", r.course.id, e.target.checked)}
+                          />
+                          Manual mode
+                        </label>
+                      </div>
+                      {manualOn ? (
+                        <Textarea
+                          rows={5}
+                          value={meta.manual[r.course.id] ?? ""}
+                          onChange={(e) => update("manual", r.course.id, e.target.value)}
+                          placeholder="Write your custom feedback..."
+                        />
+                      ) : (
+                        <ul className="space-y-1.5 text-sm">
+                          {bullets.map((b, i) => (
+                            <li
+                              key={i}
+                              className={`leading-relaxed ${
+                                i === 4 && urgent
+                                  ? "text-destructive font-medium"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              <span className="font-semibold text-foreground">
+                                B{i + 1} ({labels[i]}):
+                              </span>{" "}
+                              {b}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </Card>
                 );
               })}
-            </Accordion>
-          </div>
+            </div>
+          )}
         </Card>
       </div>
     </>
