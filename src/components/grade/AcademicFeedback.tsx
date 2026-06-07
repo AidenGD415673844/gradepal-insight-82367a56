@@ -231,11 +231,15 @@ const BRACKETS: Bracket[] = [
 ];
 
 function bracketFor(pct: number): Bracket {
+  // Use Math.round to force decimals like 80.1 or 80.4 to round cleanly into an integer like 80
   const roundedPct = Math.round(pct);
+  
   return (
     BRACKETS.find((b) => roundedPct >= b.min && roundedPct <= b.max) ??
-    BRACKETS.find((b) => roundedPct >= b.min) ??
     BRACKETS[BRACKETS.length - 1]
+  );
+}
+
   );
 }
 
