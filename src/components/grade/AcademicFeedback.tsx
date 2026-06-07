@@ -231,11 +231,19 @@ const BRACKETS: Bracket[] = [
 ];
 
 function bracketFor(pct: number): Bracket {
-  return (
-    BRACKETS.find((b) => pct >= b.min && pct <= b.max) ??
-    BRACKETS[BRACKETS.length - 1]
-  );
+  // 1. Safe fallback to prevent the preview from freezing if the array is broken
+  if (!BRACKETS || BRACKETS.length === 0) {
+    return { min: 0, max: 100, bullets: ["", "", "", "", ""] };
+  }
+
+  // 2. Find the bracket using a continuous mathematical fallback
+  const match = BRACKETS.find((b) => pct >= b.min && pct <= b.max) 
+    ?? BRACKETS.find((b) => pct >= b.min) // Catch floating-point edge cases
+    ?? BRACKETS[0]; // Ultimate fallback to stop UI crashes
+
+  return match;
 }
+
 
 function csvEscape(s: string): string {
   if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
