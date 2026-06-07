@@ -231,14 +231,14 @@ const BRACKETS: Bracket[] = [
 ];
 
 function bracketFor(pct: number): Bracket {
-  // 1. Round the decimal to the nearest whole integer to eliminate dead-zone gaps
   const roundedPct = Math.round(pct);
-  
-  // 2. Find the perfect matching bracket, or safely fallback to the closest valid tier
   return (
     BRACKETS.find((b) => roundedPct >= b.min && roundedPct <= b.max) ??
     BRACKETS.find((b) => roundedPct >= b.min) ??
     BRACKETS[BRACKETS.length - 1]
+  );
+}
+
   );
 }
 
