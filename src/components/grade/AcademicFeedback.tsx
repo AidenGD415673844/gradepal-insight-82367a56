@@ -231,12 +231,21 @@ const BRACKETS: Bracket[] = [
 ];
 
 function bracketFor(pct: number): Bracket {
-  // Use Math.round to force decimals like 80.1 or 80.4 to round cleanly into an integer like 80
-  const roundedPct = Math.round(pct);
+  // 1. Force explicit float conversion and fallback to 0 if pct is a string or NaN
+  const cleanScore = typeof pct === 'number' ? pct : parseFloat(pct as any);
+  const verifiedScore = isNaN(cleanScore) ? 0 : cleanScore;
   
+  // 2. Round the verified score cleanly to clear out floating-point gaps
+  const roundedPct = Math.round(verifiedScore);
+  
+  // 3. Scan the array securely
   return (
     BRACKETS.find((b) => roundedPct >= b.min && roundedPct <= b.max) ??
+    BRACKETS.find((b) => roundedPct >= b.min) ?? 
     BRACKETS[BRACKETS.length - 1]
+  );
+}
+
   );
 }
 
