@@ -245,19 +245,6 @@ function bracketFor(pct: number): Bracket {
     BRACKETS[BRACKETS.length - 1]
   );
 }
-
-  );
-}
-
-  );
-}
-
-  );
-}
-
-  );
-}
-
 function csvEscape(s: string): string {
   if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
