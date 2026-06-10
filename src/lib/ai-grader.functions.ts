@@ -58,7 +58,10 @@ export const gradeWork = createServerFn({ method: "POST" })
     });
     if (!res.ok) {
       const t = await res.text();
-      throw new Error(`AI error ${res.status}: ${t.slice(0, 200)}`);
+      console.error("AI gateway error", res.status, t);
+      if (res.status === 429) throw new Error("Too many requests. Please try again in a moment.");
+      if (res.status === 402) throw new Error("AI credits exhausted. Please try again later.");
+      throw new Error("AI grading is temporarily unavailable. Please try again later.");
     }
     const json = await res.json();
     const content = json.choices?.[0]?.message?.content ?? "{}";
