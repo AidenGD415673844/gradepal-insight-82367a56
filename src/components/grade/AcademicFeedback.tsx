@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FileDown, Printer, GraduationCap } from "lucide-react";
 import { GradeScaleTester } from "./GradeScaleTester";
 import { GradeDistribution } from "./GradeDistribution";
+import { AIDeepGenerate, isAIBanned } from "./AIDeepGenerate";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 
 function truncate(s: string, n = 10): string {
@@ -385,6 +386,21 @@ export function AcademicFeedback() {
             </div>
           )}
         </Card>
+        {!isAIBanned() && (
+          <AIDeepGenerate
+            subjects={courses.map((c) => ({ id: c.id, name: c.name }))}
+            onApply={(courseId, text) => {
+              update("manual", courseId, text);
+              update("manualOn", courseId, true);
+            }}
+          />
+        )}
+        {isAIBanned() && (
+          <AIDeepGenerate
+            subjects={courses.map((c) => ({ id: c.id, name: c.name }))}
+            onApply={() => {}}
+          />
+        )}
         <GradeDistribution />
         <GradeScaleTester />
       </div>
