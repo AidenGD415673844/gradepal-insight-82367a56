@@ -10,10 +10,12 @@ export type Bracket = { min: number; max: number; bullets: Bullets };
 export function lookupBracket(arr: Bracket[], value: number): Bracket {
   const sorted = [...arr].sort((a, b) => b.min - a.min);
   const v = Number(value);
-  const hit = sorted.find((b) => v >= b.min && v <= b.max);
-  if (hit) return hit;
-  if (v > sorted[0].max) return sorted[0];
-  return sorted[sorted.length - 1];
+  if (v >= sorted[0].max) return sorted[0];
+  // Snap to the highest bracket whose min is ≤ value. This handles
+  // fractional scores that fall in the gap between integer-wide tiers
+  // (e.g. 96.3 between 93–96 and 97–100) without dropping to the lowest.
+  const hit = sorted.find((b) => v >= b.min);
+  return hit ?? sorted[sorted.length - 1];
 }
 
 /**
