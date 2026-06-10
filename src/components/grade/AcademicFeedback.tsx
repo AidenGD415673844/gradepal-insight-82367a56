@@ -24,15 +24,15 @@ function truncate(s: string, n = 10): string {
  * so both surfaces agree.
  */
 const REPORT_SCALE: GradeScaleRow[] = [
-  { letter: "A*", min: 91, gpa: 4 },
-  { letter: "A", min: 81, gpa: 4 },
-  { letter: "B", min: 71, gpa: 3 },
-  { letter: "C", min: 61, gpa: 2 },
-  { letter: "D", min: 51, gpa: 1 },
-  { letter: "E", min: 41, gpa: 0.5 },
-  { letter: "F", min: 31, gpa: 0 },
-  { letter: "G", min: 1, gpa: 0 },
-  { letter: "NA", min: 0, gpa: 0 },
+  { id: "rs-astar", letter: "A*", min: 91, gpa: 4, description: "91–100" },
+  { id: "rs-a", letter: "A", min: 81, gpa: 4, description: "81–90.999" },
+  { id: "rs-b", letter: "B", min: 71, gpa: 3, description: "71–80.999" },
+  { id: "rs-c", letter: "C", min: 61, gpa: 2, description: "61–70.999" },
+  { id: "rs-d", letter: "D", min: 51, gpa: 1, description: "51–60.999" },
+  { id: "rs-e", letter: "E", min: 41, gpa: 0.5, description: "41–50.999" },
+  { id: "rs-f", letter: "F", min: 31, gpa: 0, description: "31–40.999" },
+  { id: "rs-g", letter: "G", min: 1, gpa: 0, description: "1–30.999" },
+  { id: "rs-na", letter: "NA", min: 0, gpa: 0, description: "0.999 or below" },
 ];
 
 /** A* override threshold — shared by report card and tester. */
