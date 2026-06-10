@@ -120,7 +120,9 @@ describe("A* override — consistency across report card and tester", () => {
   });
 
   it("trend fallback engages with as few as 2 graded tasks (no '4 task' threshold)", () => {
-    expect(SOURCE).toMatch(/sortedDone\.length\s*>=\s*2/);
+    // computeTrendInfo gates on `sorted.length < 2` → returns "insufficient".
+    expect(SOURCE).toMatch(/sorted\.length\s*<\s*2/);
+    expect(SOURCE).not.toMatch(/sorted\.length\s*<\s*4/);
     expect(SOURCE).not.toMatch(/sortedDone\.length\s*>=\s*4/);
   });
 });
