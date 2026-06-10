@@ -386,21 +386,13 @@ export function AcademicFeedback() {
             </div>
           )}
         </Card>
-        {!isAIBanned() && (
-          <AIDeepGenerate
-            subjects={courses.map((c) => ({ id: c.id, name: c.name }))}
-            onApply={(courseId, text) => {
-              update("manual", courseId, text);
-              update("manualOn", courseId, true);
-            }}
-          />
-        )}
-        {isAIBanned() && (
-          <AIDeepGenerate
-            subjects={courses.map((c) => ({ id: c.id, name: c.name }))}
-            onApply={() => {}}
-          />
-        )}
+        <AIDeepGenerate
+          subjects={courses.map((c) => ({ id: c.id, name: c.name }))}
+          onApply={(courseId, text) => {
+            update("manual", courseId, text);
+            update("manualOn", courseId, true);
+          }}
+        />
         <GradeDistribution />
         <GradeScaleTester />
       </div>
