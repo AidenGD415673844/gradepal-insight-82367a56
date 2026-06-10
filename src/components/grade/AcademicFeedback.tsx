@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, getLetter, filterByTerm } from "@/lib/grade-utils";
+import type { GradeScaleRow } from "@/lib/grade-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,31 @@ import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./
 
 function truncate(s: string, n = 10): string {
   return s.length > n ? s.slice(0, n) + "…" : s;
+}
+
+/**
+ * Fixed grade scale used by the Report Card regardless of the user's
+ * configured global scale. Bands are inclusive of the lower bound and
+ * exclusive of the next band's lower bound (e.g. A = 81 ≤ x < 91).
+ * A* override (≥91%) is layered on top and mirrored in GradeScaleTester
+ * so both surfaces agree.
+ */
+const REPORT_SCALE: GradeScaleRow[] = [
+  { letter: "A*", min: 91, gpa: 4 },
+  { letter: "A", min: 81, gpa: 4 },
+  { letter: "B", min: 71, gpa: 3 },
+  { letter: "C", min: 61, gpa: 2 },
+  { letter: "D", min: 51, gpa: 1 },
+  { letter: "E", min: 41, gpa: 0.5 },
+  { letter: "F", min: 31, gpa: 0 },
+  { letter: "G", min: 1, gpa: 0 },
+  { letter: "NA", min: 0, gpa: 0 },
+];
+
+/** A* override threshold — shared by report card and tester. */
+export const A_STAR_MIN = 91;
+export function applyAStarOverride(avg: number, letter: string): string {
+  return avg >= A_STAR_MIN ? "A*" : letter;
 }
 
 /**
@@ -108,7 +134,9 @@ function csvEscape(s: string): string {
 }
 
 export function AcademicFeedback() {
-  const { courses, tasks, scale, terms, activeTermId, settings } = useGrades();
+  const { courses, tasks, terms, activeTermId, settings } = useGrades();
+  // Report card always uses the fixed REPORT_SCALE — not the user's scale.
+  const scale = REPORT_SCALE;
   const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
   const prevTerm = useMemo(() => {
     if (!activeTerm) return null;
@@ -143,8 +171,7 @@ export function AcademicFeedback() {
     // (i.e. 92%–100% inclusive after rounding to the displayed tenth)
     // renders as A*, independent of the global scale rules.
     const rawLetter = hasData ? (getLetter(avg, scale)?.letter ?? "—") : "N/A";
-    // Report-card-local A* override: 92%–100% inclusive renders A*.
-    const letter = hasData && avg >= 91 ? "A*" : rawLetter;
+    const letter = hasData ? applyAStarOverride(avg, rawLetter) : rawLetter;
     const avgDisplay = hasData ? `${avg.toFixed(1)}%` : "N/A%";
     // Previous-term average is computed strictly from previous-term tasks
     // (different date range from current term), so it cannot bleed when the
@@ -153,9 +180,7 @@ export function AcademicFeedback() {
     const hasPrevData = prevDone.length > 0;
     const prevAvg = hasPrevData ? calcAverage(prevDone, settings.weighted) : 0;
     const prevRawLetter = hasPrevData ? (getLetter(prevAvg, scale)?.letter ?? "—") : "";
-    // Apply identical A* override to historical/previous-term display so cached
-    // ≥91% averages render A* consistently with the active term column.
-    const prevLetterAuto = hasPrevData && prevAvg >= 91 ? "A*" : prevRawLetter;
+    const prevLetterAuto = hasPrevData ? applyAStarOverride(prevAvg, prevRawLetter) : prevRawLetter;
     const prevAvgDisplay = hasPrevData ? `${prevAvg.toFixed(1)}%` : "";
     const completion = current.length
       ? Math.round((done.length / current.length) * 100)
@@ -200,9 +225,14 @@ export function AcademicFeedback() {
     if (r.hasPrevData) {
       b2 = lookupBracket(TREND_BRACKETS, r.avg - r.prevAvg).bullets[1];
     } else {
+      // No previous term (e.g. "All terms" view or first term): derive
+      // the trend from the in-term task timeline so the bullet never
+      // collapses to a generic "stable trend" line. We split as soon as
+      // there are at least 2 graded tasks (1 earlier, 1 later) so even
+      // small term-1 datasets produce meaningful directional feedback.
       const sortedDone = [...r.done].sort((a, b) => a.date.localeCompare(b.date));
-      if (sortedDone.length >= 4) {
-        const mid = Math.floor(sortedDone.length / 2);
+      if (sortedDone.length >= 2) {
+        const mid = Math.floor(sortedDone.length / 2) || 1;
         const earlier = sortedDone.slice(0, mid);
         const later = sortedDone.slice(mid);
         const aEarlier = calcAverage(earlier, settings.weighted);
@@ -300,6 +330,10 @@ export function AcademicFeedback() {
             <Button variant="outline" onClick={handleCSV} className="gap-2">
               <FileDown className="h-4 w-4" /> Spreadsheet Export
             </Button>
+          </div>
+
+          <div className="mt-3 text-xs text-muted-foreground italic no-print">
+            This only uses the grade scale provided, sorry for the inconvenience!
           </div>
 
           {loading ? (
