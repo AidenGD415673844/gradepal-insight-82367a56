@@ -159,7 +159,11 @@ export function AcademicFeedback() {
   const rows = courses.map((c) => {
     const allCourseTasks = tasks.filter((t) => t.courseId === c.id);
     const current = filterByTerm(allCourseTasks, activeTerm);
-    const previous = filterByTerm(allCourseTasks, prevTerm);
+    // Only treat tasks as "previous-term data" when a real prior term
+    // exists. filterByTerm(_, null) returns ALL tasks, which would otherwise
+    // make a first-term or "All terms" view fabricate a phantom previous
+    // average equal to the current one.
+    const previous = prevTerm ? filterByTerm(allCourseTasks, prevTerm) : [];
     const done = current.filter((t) => !t.pending);
     const hasData = done.length > 0;
     const avg = hasData ? calcAverage(done, settings.weighted) : 0;
@@ -200,6 +204,7 @@ export function AcademicFeedback() {
       lowest,
       done,
       current,
+      allDone: allCourseTasks.filter((t) => !t.pending),
     };
   });
 
@@ -221,12 +226,14 @@ export function AcademicFeedback() {
     if (r.hasPrevData) {
       b2 = lookupBracket(TREND_BRACKETS, r.avg - r.prevAvg).bullets[1];
     } else {
-      // No previous term (e.g. "All terms" view or first term): derive
-      // the trend from the in-term task timeline so the bullet never
-      // collapses to a generic "stable trend" line. We split as soon as
-      // there are at least 2 graded tasks (1 earlier, 1 later) so even
-      // small term-1 datasets produce meaningful directional feedback.
-      const sortedDone = [...r.done].sort((a, b) => a.date.localeCompare(b.date));
+      // No real previous-term comparison available. Two sub-cases:
+      //  • "All terms" view (activeTerm === null): derive the delta from
+      //    the FULL task history for the subject so the trend reflects
+      //    cross-term progress.
+      //  • First real term (activeTerm set, no prevTerm): use only the
+      //    current term's tasks (r.done).
+      const source = activeTerm == null ? r.allDone : r.done;
+      const sortedDone = [...source].sort((a, b) => a.date.localeCompare(b.date));
       if (sortedDone.length >= 2) {
         const mid = Math.floor(sortedDone.length / 2) || 1;
         const earlier = sortedDone.slice(0, mid);
