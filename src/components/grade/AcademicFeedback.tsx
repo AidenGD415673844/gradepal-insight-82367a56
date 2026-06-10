@@ -364,8 +364,11 @@ export function AcademicFeedback() {
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
                               Previous{prevTerm ? ` (${truncate(prevTerm.name, 10)})` : ""}
                             </div>
-                            <div className="inline-flex items-center justify-center h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
-                              {meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}
+                            <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
+                              <span>{meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}</span>
+                              {r.prevAvgDisplay && !meta.prevLetters[r.course.id] && (
+                                <span className="text-xs font-normal text-muted-foreground">({r.prevAvgDisplay})</span>
+                              )}
                             </div>
                           </div>
                         )}
