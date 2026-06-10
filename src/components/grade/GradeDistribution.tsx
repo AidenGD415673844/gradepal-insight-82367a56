@@ -103,24 +103,27 @@ export function GradeDistribution() {
         <p className="text-xs text-muted-foreground">No graded tasks in this term yet.</p>
       ) : (
         <>
-          <div className="relative h-44 border-b border-l">
-            {/* Mean & Median overlay lines */}
-            <div
-              className="absolute top-0 bottom-0 border-l-2 border-dashed border-blue-500/70"
-              style={{ left: `${(meanBinPct / BIN_COUNT) * 100}%` }}
-              title={`Class average ${mean.toFixed(1)}%`}
-            />
-            <div
-              className="absolute top-0 bottom-0 border-l-2 border-dashed border-emerald-500/70"
-              style={{ left: `${(medianBinPct / BIN_COUNT) * 100}%` }}
-              title={`Median ${median.toFixed(1)}%`}
-            />
-            <div className="absolute inset-0 flex items-end gap-1 px-1">
+          <div className="relative h-48 border-b border-l pt-6">
+            {/* Horizontal frequency overlays: Class Average & Median */}
+            {(() => {
+              const meanFreq = totalBins[binFor(mean)] || 0;
+              const medFreq = totalBins[binFor(median)] || 0;
+              const meanY = 100 - (meanFreq / max) * 100;
+              const medY = 100 - (medFreq / max) * 100;
+              return (
+                <>
+                  <div className="absolute left-0 right-0 border-t-2 border-dashed border-blue-500/70 pointer-events-none" style={{ top: `${meanY}%` }} />
+                  <div className="absolute left-0 right-0 border-t-2 border-dashed border-emerald-500/70 pointer-events-none" style={{ top: `${medY}%` }} />
+                </>
+              );
+            })()}
+            <div className="absolute inset-0 pt-6 flex items-end gap-1 px-1">
               {Array.from({ length: BIN_COUNT }).map((_, i) => {
                 const stack = series.map((s) => s.bins[i]);
                 const sum = stack.reduce((a, b) => a + b, 0);
                 const pctBadge = total ? Math.round((sum / total) * 100) : 0;
                 const active = selectedBin === i;
+                const barH = (sum / max) * 100;
                 return (
                   <button
                     key={i}
@@ -140,7 +143,10 @@ export function GradeDistribution() {
                       />
                     ))}
                     {sum > 0 && (
-                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-semibold tabular-nums">
+                      <span
+                        className="absolute left-1/2 -translate-x-1/2 text-[10px] font-semibold tabular-nums text-foreground/80 bg-background/70 rounded px-1"
+                        style={{ bottom: `calc(${barH}% + 2px)` }}
+                      >
                         {pctBadge}%
                       </span>
                     )}

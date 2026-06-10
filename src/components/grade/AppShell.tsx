@@ -27,10 +27,13 @@ export function AppShell({
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm">
+                <GraduationCap className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="hidden sm:inline text-sm md:text-base font-extrabold tracking-tight">GradeCalc</span>
             </div>
-            <h1 className="text-base md:text-lg font-bold tracking-tight truncate">{title}</h1>
+            <h1 className="text-base md:text-lg font-bold tracking-tight truncate border-l pl-3 ml-1">{title}</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {actions}

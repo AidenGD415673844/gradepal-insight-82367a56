@@ -12,8 +12,9 @@ import { TermManager } from "@/components/grade/TermManager";
 import { GradeScaleDialog } from "@/components/grade/GradeScaleDialog";
 import { CSVImportDialog, exportCSV } from "@/components/grade/CSVImportDialog";
 import { AIGraderDialog } from "@/components/grade/AIGraderDialog";
+import { KanbanBoard } from "@/components/grade/KanbanBoard";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Upload, Sparkles, SlidersHorizontal, FlaskConical, Eye } from "lucide-react";
+import { Plus, Download, Upload, Sparkles, SlidersHorizontal, FlaskConical, Eye, Table2, Kanban } from "lucide-react";
 
 export const Route = createFileRoute("/grades")({
   head: () => ({
@@ -33,6 +34,7 @@ function GradesPage() {
   const [csvOpen, setCsvOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [view, setView] = useState<"table" | "kanban">("table");
 
   const handleExport = () => {
     const csv = exportCSV(tasks, (id) => courses.find((c) => c.id === id)?.name ?? "");
@@ -84,7 +86,11 @@ function GradesPage() {
               <PerformanceOverTime />
             </>
           )}
-          <GradesTable />
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant={view === "table" ? "default" : "outline"} onClick={() => setView("table")} className="gap-2"><Table2 className="h-4 w-4" /> Table</Button>
+            <Button size="sm" variant={view === "kanban" ? "default" : "outline"} onClick={() => setView("kanban")} className="gap-2"><Kanban className="h-4 w-4" /> Kanban</Button>
+          </div>
+          {view === "table" ? <GradesTable /> : <KanbanBoard />}
         </div>
       </div>
 

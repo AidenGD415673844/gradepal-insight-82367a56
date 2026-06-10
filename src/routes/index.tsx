@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useUIPrefs, setUIPrefs } from "@/lib/ui-prefs";
 import { BurnoutRadar } from "@/components/grade/BurnoutRadar";
 import { LeitnerCram } from "@/components/grade/LeitnerCram";
+import { GPAFireAlarm } from "@/components/grade/GPAFireAlarm";
 import {
   GraduationCap,
   Calculator,
@@ -54,6 +55,7 @@ function Home() {
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-5">
         <BurnoutRadar />
+        <GPAFireAlarm />
         <LeitnerCram />
         <header className="bg-card rounded-2xl shadow-soft p-4 md:p-5 flex items-center gap-3 justify-between flex-wrap">
           <div className="flex items-center gap-3">

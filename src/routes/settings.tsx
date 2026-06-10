@@ -7,6 +7,7 @@ import { useUIPrefs, setUIPrefs, resetAllLocalData } from "@/lib/ui-prefs";
 import { Moon, BarChart3, Zap, RotateCcw, Trash2, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { SnapshotManager } from "@/components/grade/SnapshotManager";
+import { BackupRestore } from "@/components/grade/BackupRestore";
 import { createAutoSnapshot } from "@/lib/snapshots";
 
 export const Route = createFileRoute("/settings")({
@@ -124,6 +125,7 @@ function SettingsPage() {
         </Row>
       </Card>
       <SnapshotManager />
+      <BackupRestore />
       </div>
     </AppShell>
   );
