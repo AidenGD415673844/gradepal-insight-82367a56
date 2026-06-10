@@ -8,7 +8,7 @@ import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./
 const LABELS = ["Strengths", "Trends", "Commendations", "Responsibility", "Improvement"] as const;
 
 function letterFor(pct: number): string {
-  if (pct >= 92) return "A*";
+  if (pct >= 91) return "A*";
   if (pct >= 85) return "A";
   if (pct >= 75) return "B";
   if (pct >= 65) return "C";
