@@ -107,7 +107,7 @@ describe("A* override — consistency across report card and tester", () => {
 
   it("GradeScaleTester imports the shared override helper from AcademicFeedback", () => {
     expect(TESTER_SOURCE).toMatch(
-      /import\s*\{[^}]*applyAStarOverride[^}]*\}\s*from\s*"\.\/AcademicFeedback"/,
+      /import\s*\{[^}]*applyAStarOverride[^}]*\}\s*from\s*"\.\/(a-star-override|AcademicFeedback)"/,
     );
     expect(TESTER_SOURCE).toMatch(/applyAStarOverride\(score,\s*rawLetter\)/);
   });
