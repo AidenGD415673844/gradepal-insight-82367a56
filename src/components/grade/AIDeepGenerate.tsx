@@ -14,6 +14,10 @@ const BAN_KEY = "_sys_core_render_integrity";
 const BAN_TOKEN = "0xFA74BANNED";
 const APPEAL_MASTER = "REDEEM_INTEGRITY_RESET_2026";
 
+function canUseBrowserStorage() {
+  return typeof window !== "undefined" && typeof localStorage !== "undefined";
+}
+
 /** Cheap reversible XOR+base64 obfuscation — discourages casual tamper, not real crypto. */
 function obf(s: string): string {
   const k = 73;
@@ -34,6 +38,7 @@ type LogEntry = { t: number; hash: string };
 type LogPayload = { entries: LogEntry[]; last: number };
 
 function readLog(): LogPayload {
+  if (!canUseBrowserStorage()) return { entries: [], last: 0 };
   const candidates = KEYS.map((k) => {
     try {
       const raw = localStorage.getItem(k);
@@ -51,10 +56,12 @@ function readLog(): LogPayload {
   return best;
 }
 function writeLog(p: LogPayload) {
+  if (!canUseBrowserStorage()) return;
   const enc = obf(JSON.stringify(p));
   for (const k of KEYS) localStorage.setItem(k, enc);
 }
 function tamperDetected(): boolean {
+  if (!canUseBrowserStorage()) return false;
   const present = KEYS.map((k) => localStorage.getItem(k));
   const any = present.some(Boolean);
   const all = present.every(Boolean);
@@ -76,12 +83,15 @@ function reconstructIfPartial() {
 /* ---------- Ban flag ------------------------------------------------ */
 
 export function isAIBanned(): boolean {
+  if (!canUseBrowserStorage()) return false;
   return deobf(localStorage.getItem(BAN_KEY) ?? "") === BAN_TOKEN;
 }
 function setBan() {
+  if (!canUseBrowserStorage()) return;
   localStorage.setItem(BAN_KEY, obf(BAN_TOKEN));
 }
 function clearBan() {
+  if (!canUseBrowserStorage()) return;
   localStorage.removeItem(BAN_KEY);
   for (const k of KEYS) localStorage.removeItem(k);
 }
@@ -118,6 +128,9 @@ function fmtCountdown(ms: number): string {
 /* ---------- Local "AI" composer (no cloud calls) -------------------- */
 
 function fingerprint(): string {
+  if (typeof navigator === "undefined" || typeof screen === "undefined") {
+    return "FP-LOCALDEVX";
+  }
   const seed = `${navigator.userAgent}|${navigator.language}|${screen.width}x${screen.height}|${new Date().getTimezoneOffset()}`;
   let h = 0x811c9dc5;
   for (let i = 0; i < seed.length; i++) {
@@ -177,7 +190,7 @@ export function AIDeepGenerate({
     return i > 0 ? sorted[i - 1] : null;
   }, [terms, activeTerm]);
 
-  const [banned, setBanned] = useState<boolean>(() => isAIBanned());
+  const [banned, setBanned] = useState<boolean>(false);
   const [violationMsg, setViolationMsg] = useState<string>("");
   const [now, setNow] = useState<number>(Date.now());
   const [target, setTarget] = useState<string>(subjects[0]?.id ?? "");
@@ -186,6 +199,7 @@ export function AIDeepGenerate({
   const [appeal, setAppeal] = useState<string>("");
 
   useEffect(() => {
+    setBanned(isAIBanned());
     reconstructIfPartial();
     const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);

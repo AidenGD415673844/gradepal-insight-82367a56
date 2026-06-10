@@ -83,6 +83,7 @@ const fmtRange = (start: Date, days: number) => {
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function loadStore(): Store {
+  if (typeof window === "undefined") return {};
   try {
     return JSON.parse(localStorage.getItem(KEY) || "{}");
   } catch {
@@ -92,9 +93,7 @@ function loadStore(): Store {
 
 export function AttendanceTimetable() {
   const [store, setStore] = useState<Store>(() => loadStore());
-  const [includeSat, setIncludeSat] = useState<boolean>(
-    () => localStorage.getItem(SAT_KEY) === "1",
-  );
+  const [includeSat, setIncludeSat] = useState<boolean>(false);
   const [weekStart, setWeekStart] = useState<Date>(() => mondayOf(new Date()));
   const [repeatN, setRepeatN] = useState<string>("4");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -103,11 +102,17 @@ export function AttendanceTimetable() {
   );
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     localStorage.setItem(KEY, JSON.stringify(store));
   }, [store]);
   useEffect(() => {
+    if (typeof window === "undefined") return;
     localStorage.setItem(SAT_KEY, includeSat ? "1" : "0");
   }, [includeSat]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setIncludeSat(localStorage.getItem(SAT_KEY) === "1");
+  }, []);
 
   const weekKey = iso(weekStart);
   const blocks = store[weekKey] ?? [];

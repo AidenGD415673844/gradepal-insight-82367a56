@@ -46,6 +46,7 @@ function currentWeekKey(): string {
 }
 
 function readQuota(): { week: string; count: number } {
+  if (typeof window === "undefined") return { week: currentWeekKey(), count: 0 };
   try {
     const raw = localStorage.getItem(AI_QUOTA_KEY);
     if (raw) {
@@ -57,6 +58,7 @@ function readQuota(): { week: string; count: number } {
 }
 
 function bumpQuota(): { week: string; count: number } {
+  if (typeof window === "undefined") return { week: currentWeekKey(), count: 0 };
   const q = readQuota();
   const next = { week: q.week, count: q.count + 1 };
   localStorage.setItem(AI_QUOTA_KEY, JSON.stringify(next));

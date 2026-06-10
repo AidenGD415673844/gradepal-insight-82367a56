@@ -14,10 +14,15 @@ function defaultCol(t: Task): Col {
 
 export function KanbanBoard() {
   const { tasks, courses, updateTask } = useGrades();
-  const [statuses, setStatuses] = useState<Record<string, Col>>(() => {
-    try { return JSON.parse(localStorage.getItem(KANBAN_KEY) ?? "{}"); } catch { return {}; }
-  });
-  useEffect(() => { localStorage.setItem(KANBAN_KEY, JSON.stringify(statuses)); }, [statuses]);
+  const [statuses, setStatuses] = useState<Record<string, Col>>({});
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try { setStatuses(JSON.parse(localStorage.getItem(KANBAN_KEY) ?? "{}")); } catch {}
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(KANBAN_KEY, JSON.stringify(statuses));
+  }, [statuses]);
 
   const [dragId, setDragId] = useState<string | null>(null);
   const [modal, setModal] = useState<{ task: Task; pct: string } | null>(null);
