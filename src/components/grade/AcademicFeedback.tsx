@@ -190,11 +190,28 @@ export function AcademicFeedback() {
     }
     // B1, B4, B5 come from the main 25-tier grade bracket.
     const main = lookupBracket(BRACKETS, r.avg);
-    // B2 (Trends) — separate logic pool, keyed by delta vs previous term.
-    // If no previous-term data exists, fall back to the main bracket's B2.
-    const b2 = r.hasPrevData
-      ? lookupBracket(TREND_BRACKETS, r.avg - r.prevAvg).bullets[1]
-      : "There isn't enough data to establish a trend and trend feedback. Once you have results from a previous term, comparative progress insights will appear here.";
+    // B2 (Trends) — separate logic pool. Preferred source is the delta vs
+    // the previous term. When there is no previous term (e.g. "All terms"
+    // view, or the very first term), fall back to a within-tasks split:
+    // compare the average of the earlier half of completed tasks against
+    // the later half. Only when neither source has enough data do we
+    // emit the preset "no trend" message.
+    let b2: string;
+    if (r.hasPrevData) {
+      b2 = lookupBracket(TREND_BRACKETS, r.avg - r.prevAvg).bullets[1];
+    } else {
+      const sortedDone = [...r.done].sort((a, b) => a.date.localeCompare(b.date));
+      if (sortedDone.length >= 4) {
+        const mid = Math.floor(sortedDone.length / 2);
+        const earlier = sortedDone.slice(0, mid);
+        const later = sortedDone.slice(mid);
+        const aEarlier = calcAverage(earlier, settings.weighted);
+        const aLater = calcAverage(later, settings.weighted);
+        b2 = lookupBracket(TREND_BRACKETS, aLater - aEarlier).bullets[1];
+      } else {
+        b2 = "There isn't enough data to establish a trend and trend feedback. Once you have more graded tasks, comparative progress insights will appear here.";
+      }
+    }
     // B3 (Completion / Responsibility) — separate logic pool, keyed by
     // completion percentage in 5% increments.
     const b3 = lookupBracket(COMPLETION_BRACKETS, r.completion).bullets[2];
