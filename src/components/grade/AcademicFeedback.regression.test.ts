@@ -65,8 +65,7 @@ describe("Report card — combined Letter (xx.x%) display", () => {
 
 describe("Report card — Bullet 5 visibility", () => {
   it("buildComment emits exactly 5 bullets and Bullet 5 is always appended a forward-looking goal", () => {
-    // Bullet 5 composition lives at this exact line shape:
-    expect(SOURCE).toMatch(/const b5 = `\$\{main\.bullets\[4\]\} \$\{nextTierGoal\(r\.avg\)\}`/);
+    expect(SOURCE).toContain("const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg)}`");
   });
 
   it("nextTierGoal always returns a non-empty string for any percentage 0–100", () => {
@@ -77,7 +76,7 @@ describe("Report card — Bullet 5 visibility", () => {
 
   it("renders the B5 (Improvement) label so the bullet is never silently dropped", () => {
     expect(SOURCE).toMatch(/"Improvement"/);
-    expect(SOURCE).toMatch(/B\$\{i \+ 1\} \(\$\{labels\[i\]\}\):/);
+    expect(SOURCE).toContain("B{i + 1} ({labels[i]}):");
   });
 
   it("bullet list uses leading-relaxed text (no fixed heights that could clip B5 on mobile)", () => {
