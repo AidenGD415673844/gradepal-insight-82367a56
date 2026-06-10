@@ -5,8 +5,32 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
 import { FileDown, Printer, GraduationCap } from "lucide-react";
+import { GradeScaleTester } from "./GradeScaleTester";
+import { GradeDistribution } from "./GradeDistribution";
+
+function truncate(s: string, n = 10): string {
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}
+
+/** Shimmer placeholder — animated linear-gradient over a light gray base. */
+function Shimmer({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-md bg-muted ${className}`}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, hsl(var(--foreground) / 0.08), transparent)",
+          animation: "gc-shimmer 1.4s ease-in-out infinite",
+        }}
+      />
+    </div>
+  );
+}
 
 type Meta = {
   teachers: Record<string, string>;
