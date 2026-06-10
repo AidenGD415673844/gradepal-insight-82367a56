@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, getLetter, filterByTerm } from "@/lib/grade-utils";
-import type { GradeScaleRow } from "@/lib/grade-store";
+import type { GradeScaleRow, Task } from "@/lib/grade-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +68,77 @@ function nextTierGoal(pct: number): string {
   const label = next.tier ? `${next.tier} ${next.letter}` : next.letter;
   const pointsAway = Math.max(1, Math.ceil(next.min - pct));
   return `Try to aim and work hard to bring your grade up into the ${label} band — roughly ${pointsAway} point${pointsAway === 1 ? "" : "s"} away.`;
+}
+
+/**
+ * Trend-source labels that drive both Bullet 2 and the small explanation
+ * caption shown beneath the bullet list. Exported so unit tests can
+ * verify "All terms" delta strictly uses the subject's full task history.
+ */
+export type TrendMode =
+  | "prev-term"
+  | "all-history"
+  | "first-term-split"
+  | "insufficient"
+  | "no-data";
+
+export type TrendInfo = {
+  mode: TrendMode;
+  delta: number | null;
+  /** Tasks the delta was actually derived from (post-sort). */
+  sourceTasks: Task[];
+};
+
+export const TREND_MODE_CAPTION: Record<TrendMode, string> = {
+  "prev-term": "Trend Δ compared against the previous term's graded tasks.",
+  "all-history":
+    "Trend Δ derived from this subject's full task history (All terms view) — earlier half vs. later half.",
+  "first-term-split":
+    "Trend Δ derived from this term's tasks — earlier half vs. later half (no previous term to compare).",
+  insufficient:
+    "Only one graded task is available — not enough data to establish a trend yet.",
+  "no-data": "No graded tasks in this term.",
+};
+
+/**
+ * Pure helper that decides which trend-delta strategy to apply. Kept
+ * outside the component so it can be unit-tested in isolation.
+ */
+export function computeTrendInfo(args: {
+  hasData: boolean;
+  hasPrevData: boolean;
+  avg: number;
+  prevAvg: number;
+  done: Task[];
+  allDone: Task[];
+  isAllTerms: boolean;
+  weighted: boolean;
+}): TrendInfo {
+  if (!args.hasData) return { mode: "no-data", delta: null, sourceTasks: [] };
+  if (args.hasPrevData) {
+    return {
+      mode: "prev-term",
+      delta: args.avg - args.prevAvg,
+      sourceTasks: [],
+    };
+  }
+  // "All terms" view uses the FULL subject history; first-term uses only
+  // current-term tasks.
+  const source = args.isAllTerms ? args.allDone : args.done;
+  const sorted = [...source].sort((a, b) => a.date.localeCompare(b.date));
+  if (sorted.length < 2) {
+    return { mode: "insufficient", delta: null, sourceTasks: sorted };
+  }
+  const mid = Math.floor(sorted.length / 2) || 1;
+  const earlier = sorted.slice(0, mid);
+  const later = sorted.slice(mid);
+  const delta =
+    calcAverage(later, args.weighted) - calcAverage(earlier, args.weighted);
+  return {
+    mode: args.isAllTerms ? "all-history" : "first-term-split",
+    delta,
+    sourceTasks: sorted,
+  };
 }
 
 /** Shimmer placeholder — animated linear-gradient over a light gray base. */
@@ -216,35 +287,22 @@ export function AcademicFeedback() {
     }
     // B1, B4, B5 come from the main 25-tier grade bracket.
     const main = lookupBracket(BRACKETS, r.avg);
-    // B2 (Trends) — separate logic pool. Preferred source is the delta vs
-    // the previous term. When there is no previous term (e.g. "All terms"
-    // view, or the very first term), fall back to a within-tasks split:
-    // compare the average of the earlier half of completed tasks against
-    // the later half. Only when neither source has enough data do we
-    // emit the preset "no trend" message.
-    let b2: string;
-    if (r.hasPrevData) {
-      b2 = lookupBracket(TREND_BRACKETS, r.avg - r.prevAvg).bullets[1];
-    } else {
-      // No real previous-term comparison available. Two sub-cases:
-      //  • "All terms" view (activeTerm === null): derive the delta from
-      //    the FULL task history for the subject so the trend reflects
-      //    cross-term progress.
-      //  • First real term (activeTerm set, no prevTerm): use only the
-      //    current term's tasks (r.done).
-      const source = activeTerm == null ? r.allDone : r.done;
-      const sortedDone = [...source].sort((a, b) => a.date.localeCompare(b.date));
-      if (sortedDone.length >= 2) {
-        const mid = Math.floor(sortedDone.length / 2) || 1;
-        const earlier = sortedDone.slice(0, mid);
-        const later = sortedDone.slice(mid);
-        const aEarlier = calcAverage(earlier, settings.weighted);
-        const aLater = calcAverage(later, settings.weighted);
-        b2 = lookupBracket(TREND_BRACKETS, aLater - aEarlier).bullets[1];
-      } else {
-        b2 = "There isn't enough data to establish a trend and trend feedback. Once you have more graded tasks, comparative progress insights will appear here.";
-      }
-    }
+    // B2 (Trends) — strategy chosen by computeTrendInfo so the same
+    // decision can be unit-tested and surfaced as a caption below.
+    const trend = computeTrendInfo({
+      hasData: r.hasData,
+      hasPrevData: r.hasPrevData,
+      avg: r.avg,
+      prevAvg: r.prevAvg,
+      done: r.done,
+      allDone: r.allDone,
+      isAllTerms: activeTerm == null,
+      weighted: settings.weighted,
+    });
+    const b2 =
+      trend.delta == null
+        ? "There isn't enough data to establish a trend and trend feedback. Once you have more graded tasks, comparative progress insights will appear here."
+        : lookupBracket(TREND_BRACKETS, trend.delta).bullets[1];
     // B3 (Completion / Responsibility) — separate logic pool, keyed by
     // completion percentage in 5% increments.
     const b3 = lookupBracket(COMPLETION_BRACKETS, r.completion).bullets[2];
@@ -459,23 +517,51 @@ export function AcademicFeedback() {
                           placeholder="Write your custom feedback..."
                         />
                       ) : (
-                        <ul className="space-y-1.5 text-sm">
-                          {bullets.map((b, i) => (
-                            <li
-                              key={i}
-                              className={`leading-relaxed ${
-                                i === 4 && urgent
-                                  ? "text-destructive font-medium"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              <span className="font-semibold text-foreground">
-                                B{i + 1} ({labels[i]}):
-                              </span>{" "}
-                              {b}
-                            </li>
-                          ))}
-                        </ul>
+                        <>
+                          <ul className="space-y-1.5 text-sm">
+                            {bullets.map((b, i) => (
+                              <li
+                                key={i}
+                                className={`leading-relaxed ${
+                                  i === 4 && urgent
+                                    ? "text-destructive font-medium"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                <span className="font-semibold text-foreground">
+                                  B{i + 1} ({labels[i]}):
+                                </span>{" "}
+                                {b}
+                              </li>
+                            ))}
+                          </ul>
+                          {(() => {
+                            const trend = computeTrendInfo({
+                              hasData: r.hasData,
+                              hasPrevData: r.hasPrevData,
+                              avg: r.avg,
+                              prevAvg: r.prevAvg,
+                              done: r.done,
+                              allDone: r.allDone,
+                              isAllTerms: activeTerm == null,
+                              weighted: settings.weighted,
+                            });
+                            const deltaTxt =
+                              trend.delta == null
+                                ? ""
+                                : ` (Δ = ${trend.delta >= 0 ? "+" : ""}${trend.delta.toFixed(1)} pts)`;
+                            return (
+                              <p
+                                data-testid={`trend-caption-${r.course.id}`}
+                                data-trend-mode={trend.mode}
+                                className="mt-2 text-[11px] italic text-muted-foreground"
+                              >
+                                {TREND_MODE_CAPTION[trend.mode]}
+                                {deltaTxt}
+                              </p>
+                            );
+                          })()}
+                        </>
                       )}
                     </div>
                   </Card>
