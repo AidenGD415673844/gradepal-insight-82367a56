@@ -36,7 +36,7 @@ describe("Report card — combined Letter (xx.x%) display", () => {
   });
 
   it("previous-term chip renders letter + percentage together with the same layout safeguards", () => {
-    const block = getBlock("prevLetterAuto", 6);
+    const block = getBlock("meta.prevLetters[r.course.id] || r.prevLetterAuto", 8);
     expect(block).toMatch(/prevLetterAuto/);
     expect(block).toMatch(/prevAvgDisplay/);
     expect(block).toMatch(/inline-flex/);
