@@ -9,11 +9,16 @@ const KEY = "gradecalc-gpa-floor";
 
 export function GPAFireAlarm() {
   const { courses, tasks, settings } = useGrades();
-  const [floor, setFloor] = useState<number>(() => {
-    const raw = localStorage.getItem(KEY);
-    return raw ? Number(raw) : 80;
-  });
+  const [floor, setFloor] = useState<number>(80);
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return;
+    const next = Number(raw);
+    if (Number.isFinite(next)) setFloor(next);
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     localStorage.setItem(KEY, String(floor));
   }, [floor]);
 
