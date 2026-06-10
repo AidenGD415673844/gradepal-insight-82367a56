@@ -9,10 +9,14 @@ const ScaleRowSchema = z.object({
 });
 
 const InputSchema = z.object({
-  text: z.string().optional(),
-  imageDataUrl: z.string().optional(),
-  rubric: z.string().optional(),
-  scale: z.array(ScaleRowSchema).optional(),
+  text: z.string().max(20000).optional(),
+  imageDataUrl: z
+    .string()
+    .max(5_000_000)
+    .regex(/^data:image\//i, "imageDataUrl must be a data:image/ URI")
+    .optional(),
+  rubric: z.string().max(2000).optional(),
+  scale: z.array(ScaleRowSchema).max(20).optional(),
 });
 
 export const gradeWork = createServerFn({ method: "POST" })
