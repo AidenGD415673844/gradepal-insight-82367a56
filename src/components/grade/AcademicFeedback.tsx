@@ -194,7 +194,7 @@ export function AcademicFeedback() {
     // If no previous-term data exists, fall back to the main bracket's B2.
     const b2 = r.hasPrevData
       ? lookupBracket(TREND_BRACKETS, r.avg - r.prevAvg).bullets[1]
-      : main.bullets[1];
+      : "There isn't enough data to establish a trend and trend feedback. Once you have results from a previous term, comparative progress insights will appear here.";
     // B3 (Completion / Responsibility) — separate logic pool, keyed by
     // completion percentage in 5% increments.
     const b3 = lookupBracket(COMPLETION_BRACKETS, r.completion).bullets[2];
