@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { A_STAR_MIN, applyAStarOverride } from "./AcademicFeedback";
 
 /**
  * UI regression checks for the report-card "Letter (xx.x%)" unified display
@@ -84,5 +85,42 @@ describe("Report card — Bullet 5 visibility", () => {
     expect(block).toMatch(/leading-relaxed/);
     expect(block).not.toMatch(/max-h-\[?\d/);
     expect(block).not.toMatch(/overflow-hidden/);
+  });
+});
+
+describe("A* override — consistency across report card and tester", () => {
+  const TESTER_SOURCE = readFileSync(
+    resolve(__dirname, "GradeScaleTester.tsx"),
+    "utf8",
+  );
+
+  it("A_STAR_MIN is exactly 91", () => {
+    expect(A_STAR_MIN).toBe(91);
+  });
+
+  it("applyAStarOverride promotes to A* at and above 91 only", () => {
+    expect(applyAStarOverride(90.999, "A")).toBe("A");
+    expect(applyAStarOverride(91, "A")).toBe("A*");
+    expect(applyAStarOverride(100, "A")).toBe("A*");
+    expect(applyAStarOverride(50, "D")).toBe("D");
+  });
+
+  it("GradeScaleTester imports the shared override helper from AcademicFeedback", () => {
+    expect(TESTER_SOURCE).toMatch(
+      /import\s*\{[^}]*applyAStarOverride[^}]*\}\s*from\s*"\.\/AcademicFeedback"/,
+    );
+    expect(TESTER_SOURCE).toMatch(/applyAStarOverride\(score,\s*rawLetter\)/);
+  });
+
+  it("report card uses the fixed REPORT_SCALE (A* 91–100, A 81+, …)", () => {
+    expect(SOURCE).toMatch(/letter: "A\*", min: 91/);
+    expect(SOURCE).toMatch(/letter: "A", min: 81/);
+    expect(SOURCE).toMatch(/letter: "G", min: 1/);
+    expect(SOURCE).toMatch(/This only uses the grade scale provided/);
+  });
+
+  it("trend fallback engages with as few as 2 graded tasks (no '4 task' threshold)", () => {
+    expect(SOURCE).toMatch(/sortedDone\.length\s*>=\s*2/);
+    expect(SOURCE).not.toMatch(/sortedDone\.length\s*>=\s*4/);
   });
 });

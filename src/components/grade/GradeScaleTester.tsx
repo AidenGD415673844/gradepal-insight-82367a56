@@ -6,6 +6,7 @@ import type { Bracket } from "./feedback-data";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { useGrades } from "@/lib/grade-store";
 import { getLetter } from "@/lib/grade-utils";
+import { A_STAR_MIN, applyAStarOverride } from "./AcademicFeedback";
 
 const LABELS = ["Strengths", "Trends", "Commendations", "Responsibility", "Improvement"] as const;
 
@@ -69,7 +70,10 @@ export function GradeScaleTester() {
   // Letter uses the user's configured grade scale (with the same A*
   // override the report card applies at ≥91%).
   const rawLetter = getLetter(score, scale)?.letter ?? "—";
-  const letter = score >= 91 ? "A*" : rawLetter;
+  // Shared with AcademicFeedback so the ≥91% A* override is identical
+  // on both surfaces. Validated by AcademicFeedback.regression.test.ts.
+  const letter = applyAStarOverride(score, rawLetter);
+  void A_STAR_MIN;
   const tier = `${main.min}–${main.max}%`;
 
   return (
