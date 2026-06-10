@@ -15,6 +15,39 @@ function truncate(s: string, n = 10): string {
   return s.length > n ? s.slice(0, n) + "…" : s;
 }
 
+/**
+ * Sub-band ladder for forward-looking goal injection (Bullet 5).
+ * Each entry marks the minimum % needed to enter that tier.
+ */
+const NEXT_TIER_LADDER: Array<{ letter: string; tier: string; min: number }> = [
+  { letter: "E", tier: "low", min: 40 },
+  { letter: "E", tier: "mid", min: 45 },
+  { letter: "E", tier: "high", min: 50 },
+  { letter: "D", tier: "low", min: 55 },
+  { letter: "D", tier: "mid", min: 59 },
+  { letter: "D", tier: "high", min: 62 },
+  { letter: "C", tier: "low", min: 65 },
+  { letter: "C", tier: "mid", min: 68 },
+  { letter: "C", tier: "high", min: 72 },
+  { letter: "B", tier: "low", min: 75 },
+  { letter: "B", tier: "mid", min: 78 },
+  { letter: "B", tier: "high", min: 82 },
+  { letter: "A", tier: "low", min: 85 },
+  { letter: "A", tier: "mid", min: 87 },
+  { letter: "A", tier: "high", min: 89 },
+  { letter: "A*", tier: "", min: 91 },
+];
+
+function nextTierGoal(pct: number): string {
+  const next = NEXT_TIER_LADDER.find((b) => b.min > pct);
+  if (!next) {
+    return "Continue to maintain your A* standing by tackling stretch challenges and competition-level questions.";
+  }
+  const label = next.tier ? `${next.tier} ${next.letter}` : next.letter;
+  const pointsAway = Math.max(1, Math.ceil(next.min - pct));
+  return `Try to aim and work hard to bring your grade up into the ${label} band — roughly ${pointsAway} point${pointsAway === 1 ? "" : "s"} away.`;
+}
+
 /** Shimmer placeholder — animated linear-gradient over a light gray base. */
 function Shimmer({ className = "" }: { className?: string }) {
   return (
@@ -119,7 +152,11 @@ export function AcademicFeedback() {
     const prevDone = previous.filter((t) => !t.pending);
     const hasPrevData = prevDone.length > 0;
     const prevAvg = hasPrevData ? calcAverage(prevDone, settings.weighted) : 0;
-    const prevLetterAuto = hasPrevData ? (getLetter(prevAvg, scale)?.letter ?? "—") : "";
+    const prevRawLetter = hasPrevData ? (getLetter(prevAvg, scale)?.letter ?? "—") : "";
+    // Apply identical A* override to historical/previous-term display so cached
+    // ≥91% averages render A* consistently with the active term column.
+    const prevLetterAuto = hasPrevData && prevAvg >= 91 ? "A*" : prevRawLetter;
+    const prevAvgDisplay = hasPrevData ? `${prevAvg.toFixed(1)}%` : "";
     const completion = current.length
       ? Math.round((done.length / current.length) * 100)
       : 100;
@@ -135,6 +172,7 @@ export function AcademicFeedback() {
       avgDisplay,
       hasData,
       prevLetterAuto,
+      prevAvgDisplay,
       prevAvg,
       hasPrevData,
       completion,
@@ -160,7 +198,10 @@ export function AcademicFeedback() {
     // B3 (Completion / Responsibility) — separate logic pool, keyed by
     // completion percentage in 5% increments.
     const b3 = lookupBracket(COMPLETION_BRACKETS, r.completion).bullets[2];
-    return [main.bullets[0], b2, b3, main.bullets[3], main.bullets[4]];
+    // B5 (Improvement / Action Items) — append a dynamically computed
+    // forward-looking milestone string based on the student's current score.
+    const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg)}`;
+    return [main.bullets[0], b2, b3, main.bullets[3], b5];
   };
 
   const handlePrint = () => window.print();
@@ -323,8 +364,11 @@ export function AcademicFeedback() {
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
                               Previous{prevTerm ? ` (${truncate(prevTerm.name, 10)})` : ""}
                             </div>
-                            <div className="inline-flex items-center justify-center h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
-                              {meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}
+                            <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
+                              <span>{meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}</span>
+                              {r.prevAvgDisplay && !meta.prevLetters[r.course.id] && (
+                                <span className="text-xs font-normal text-muted-foreground">({r.prevAvgDisplay})</span>
+                              )}
                             </div>
                           </div>
                         )}
