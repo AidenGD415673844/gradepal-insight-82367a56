@@ -131,10 +131,10 @@ function Home() {
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {CARDS.map(({ to, title, desc, Icon, accent }) => (
-            <Link key={to} to={to} className="group">
-              <Card className={`p-5 md:p-6 h-full bg-gradient-to-br ${accent} hover:shadow-lg transition-all hover:-translate-y-0.5`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
+          {CARDS.map(({ to, title, desc, Icon, accent }, idx) => (
+            <Link key={to} to={to} className="group" style={{ animationDelay: `${idx * 60}ms` }}>
+              <Card className={`p-5 md:p-6 h-full bg-gradient-to-br ${accent} hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 animate-fade-in`}>
                 <div className="flex items-start gap-4">
                   <div className="h-14 w-14 rounded-2xl bg-card flex items-center justify-center shadow-soft shrink-0 group-hover:scale-105 transition-transform">
                     <Icon className="h-7 w-7 text-primary" />
