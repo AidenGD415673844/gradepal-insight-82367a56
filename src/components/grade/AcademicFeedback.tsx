@@ -11,6 +11,8 @@ import { GradeScaleTester } from "./GradeScaleTester";
 import { GradeDistribution } from "./GradeDistribution";
 import { AIDeepGenerate } from "./AIDeepGenerate";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
+import { A_STAR_MIN, applyAStarOverride } from "./a-star-override";
+export { A_STAR_MIN, applyAStarOverride } from "./a-star-override";
 
 function truncate(s: string, n = 10): string {
   return s.length > n ? s.slice(0, n) + "…" : s;
@@ -34,12 +36,6 @@ const REPORT_SCALE: GradeScaleRow[] = [
   { id: "rs-g", letter: "G", min: 1, gpa: 0, description: "1–30.999" },
   { id: "rs-na", letter: "NA", min: 0, gpa: 0, description: "0.999 or below" },
 ];
-
-/** A* override threshold — shared by report card and tester. */
-export const A_STAR_MIN = 91;
-export function applyAStarOverride(avg: number, letter: string): string {
-  return avg >= A_STAR_MIN ? "A*" : letter;
-}
 
 /**
  * Sub-band ladder for forward-looking goal injection (Bullet 5).
