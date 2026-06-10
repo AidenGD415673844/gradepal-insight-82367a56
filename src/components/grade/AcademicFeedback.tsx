@@ -11,7 +11,7 @@ import { GradeScaleTester } from "./GradeScaleTester";
 import { GradeDistribution } from "./GradeDistribution";
 import { AIDeepGenerate } from "./AIDeepGenerate";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
-import { A_STAR_MIN, applyAStarOverride } from "./a-star-override";
+import { applyAStarOverride } from "./a-star-override";
 export { A_STAR_MIN, applyAStarOverride } from "./a-star-override";
 
 function truncate(s: string, n = 10): string {
