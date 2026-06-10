@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FileDown, Printer, GraduationCap } from "lucide-react";
 import { GradeScaleTester } from "./GradeScaleTester";
 import { GradeDistribution } from "./GradeDistribution";
+import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 
 function truncate(s: string, n = 10): string {
   return s.length > n ? s.slice(0, n) + "…" : s;
@@ -111,11 +112,13 @@ export function AcademicFeedback() {
     // Report-card-local A* override: 92%–100% inclusive renders A*.
     const letter = hasData && avg >= 92 ? "A*" : rawLetter;
     const avgDisplay = hasData ? `${avg.toFixed(1)}%` : "N/A%";
-    const prevAvg = calcAverage(
-      previous.filter((t) => !t.pending),
-      settings.weighted,
-    );
-    const prevLetterAuto = previous.length ? (getLetter(prevAvg, scale)?.letter ?? "—") : "";
+    // Previous-term average is computed strictly from previous-term tasks
+    // (different date range from current term), so it cannot bleed when the
+    // current term's tasks are edited.
+    const prevDone = previous.filter((t) => !t.pending);
+    const hasPrevData = prevDone.length > 0;
+    const prevAvg = hasPrevData ? calcAverage(prevDone, settings.weighted) : 0;
+    const prevLetterAuto = hasPrevData ? (getLetter(prevAvg, scale)?.letter ?? "—") : "";
     const completion = current.length
       ? Math.round((done.length / current.length) * 100)
       : 100;
@@ -131,6 +134,8 @@ export function AcademicFeedback() {
       avgDisplay,
       hasData,
       prevLetterAuto,
+      prevAvg,
+      hasPrevData,
       completion,
       lowest,
       done,
@@ -144,11 +149,17 @@ export function AcademicFeedback() {
         "No tasks has been ever submitted or added in this term. It is important to complete your work if you haven’t submitted anything.";
       return [msg, msg, msg, msg, msg];
     }
-    // Look up the 4%-increment bracket and emit its 5 bullets verbatim.
-    // Empty (un-populated) tier slots fall back to a clear placeholder so
-    // the user knows that bracket still needs sentence copy.
-    const bracket = bracketFor(r.avg);
-    return [...bracket.bullets];
+    // B1, B4, B5 come from the main 25-tier grade bracket.
+    const main = lookupBracket(BRACKETS, r.avg);
+    // B2 (Trends) — separate logic pool, keyed by delta vs previous term.
+    // If no previous-term data exists, fall back to the main bracket's B2.
+    const b2 = r.hasPrevData
+      ? lookupBracket(TREND_BRACKETS, r.avg - r.prevAvg).bullets[1]
+      : main.bullets[1];
+    // B3 (Completion / Responsibility) — separate logic pool, keyed by
+    // completion percentage in 5% increments.
+    const b3 = lookupBracket(COMPLETION_BRACKETS, r.completion).bullets[2];
+    return [main.bullets[0], b2, b3, main.bullets[3], main.bullets[4]];
   };
 
   const handlePrint = () => window.print();
@@ -185,11 +196,11 @@ export function AcademicFeedback() {
     URL.revokeObjectURL(url);
   };
 
-  // Skeleton loading buffer: re-trigger on initial mount and term switch.
+  // Shimmer loading buffer: 1.5 s on mount and on term switch.
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     setLoading(true);
-    const id = setTimeout(() => setLoading(false), 420);
+    const id = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(id);
   }, [activeTermId]);
 
@@ -203,6 +214,10 @@ export function AcademicFeedback() {
           .no-print { display: none !important; }
           @page { size: A4; margin: 16mm; }
         }
+        @keyframes gc-shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
       `}</style>
 
       <div className="space-y-5">
@@ -214,7 +229,7 @@ export function AcademicFeedback() {
             </div>
             <div className="text-xs text-muted-foreground">
               {activeTerm
-                ? `${activeTerm.name} · ${activeTerm.start} → ${activeTerm.end}`
+                ? `${truncate(activeTerm.name, 10)} · ${activeTerm.start} → ${activeTerm.end}`
                 : "All terms"}
             </div>
           </div>
@@ -231,20 +246,19 @@ export function AcademicFeedback() {
           {loading ? (
             <div className="mt-2 space-y-4">
               {[0, 1, 2].map((i) => (
-                <Card key={i} className="p-4 space-y-3 animate-pulse">
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <Skeleton className="h-7 col-span-2 md:col-span-1" />
-                    <Skeleton className="h-7" />
-                    <Skeleton className="h-7" />
-                    <Skeleton className="h-7" />
-                    <Skeleton className="h-7" />
+                <Card key={i} className="p-4 space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Shimmer className="h-7" />
+                    <Shimmer className="h-7" />
+                    <Shimmer className="h-7" />
+                    <Shimmer className="h-7" />
                   </div>
                   <div className="space-y-2 pt-2">
-                    <Skeleton className="h-3 w-11/12" />
-                    <Skeleton className="h-3 w-10/12" />
-                    <Skeleton className="h-3 w-9/12" />
-                    <Skeleton className="h-3 w-8/12" />
-                    <Skeleton className="h-3 w-7/12" />
+                    <Shimmer className="h-10" />
+                    <Shimmer className="h-10" />
+                    <Shimmer className="h-10" />
+                    <Shimmer className="h-10" />
+                    <Shimmer className="h-10" />
                   </div>
                 </Card>
               ))}
@@ -270,15 +284,15 @@ export function AcademicFeedback() {
                   >
                     {/* Unified metrics header — sits ENTIRELY on top of the comment block */}
                     <div className="border-b pb-3 mb-4">
-                      <div className="flex items-baseline gap-3 flex-wrap mb-3">
-                        <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+                      <div className="flex items-baseline gap-3 flex-wrap mb-3 min-w-0">
+                        <h3 className="text-xl md:text-3xl font-extrabold tracking-tight break-words min-w-0">
                           {r.course.name}
                         </h3>
                         <span className="text-xs text-muted-foreground">
                           {r.done.length} task{r.done.length === 1 ? "" : "s"} graded · {r.completion}% completion
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className={`grid grid-cols-1 sm:grid-cols-2 ${hasPrevTerm ? "md:grid-cols-4" : "md:grid-cols-3"} gap-3`}>
                         <div className="space-y-1">
                           <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Teacher</div>
                           <Input
@@ -292,28 +306,30 @@ export function AcademicFeedback() {
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Aspirational</div>
+                          <div className="text-[10px] uppercase tracking-wider text-primary font-semibold">Aspirational Goal</div>
                           <Input
-                            className="h-8 no-print"
+                            className="h-8 no-print border-primary/40"
                             value={meta.goals[r.course.id] ?? ""}
                             onChange={(e) => update("goals", r.course.id, e.target.value)}
                             placeholder="A*"
                           />
-                          <div className="hidden print:block text-sm font-medium">
+                          <div className="hidden print:block text-sm font-medium text-primary">
                             {meta.goals[r.course.id] || "—"}
                           </div>
                         </div>
-                        <div className="space-y-1">
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                            Previous Term {prevTerm ? `(${prevTerm.name})` : ""}
+                        {hasPrevTerm && (
+                          <div className="space-y-1 min-w-0">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
+                              Previous{prevTerm ? ` (${truncate(prevTerm.name, 10)})` : ""}
+                            </div>
+                            <div className="inline-flex items-center justify-center h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
+                              {meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}
+                            </div>
                           </div>
-                          <div className="inline-flex items-center justify-center h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
-                            {meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}
-                          </div>
-                        </div>
+                        )}
                         <div className="space-y-1">
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                            Current Term {activeTerm ? `(${activeTerm.name})` : ""}
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
+                            Term Grade{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
                           </div>
                           <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-primary/10 border-primary/30 text-sm font-bold">
                             <span>{r.letter}</span>
@@ -369,6 +385,8 @@ export function AcademicFeedback() {
             </div>
           )}
         </Card>
+        <GradeDistribution />
+        <GradeScaleTester />
       </div>
     </>
   );
