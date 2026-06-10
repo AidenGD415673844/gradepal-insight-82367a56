@@ -6,7 +6,7 @@ import type { Bracket } from "./feedback-data";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { useGrades } from "@/lib/grade-store";
 import { getLetter } from "@/lib/grade-utils";
-import { A_STAR_MIN, applyAStarOverride } from "./AcademicFeedback";
+import { A_STAR_MIN, applyAStarOverride } from "./a-star-override";
 
 const LABELS = ["Strengths", "Trends", "Commendations", "Responsibility", "Improvement"] as const;
 
