@@ -183,6 +183,31 @@ export const TREND_MODE_CAPTION: Record<TrendMode, string> = {
 };
 
 /**
+ * Rewrites trend-bullet copy so it doesn't reference a "previous term"
+ * when the delta was actually computed from earlier-vs-later halves of
+ * the current term (or full subject history). Pure string transform so
+ * it's safe to unit-test.
+ */
+export function adaptTrendCopy(text: string, mode: TrendMode): string {
+  if (mode === "prev-term") return text;
+  const replacement =
+    mode === "all-history"
+      ? "compared with earlier tasks in this subject"
+      : "compared with earlier tasks this term";
+  const steadyReplacement =
+    mode === "all-history"
+      ? "across this subject's history so far"
+      : "across earlier tasks this term";
+  return text
+    .replace(/compared to the previous term/gi, replacement)
+    .replace(/relative to the previous term/gi, replacement)
+    .replace(/held exactly steady relative to the previous term/gi,
+      `held exactly steady ${steadyReplacement}`)
+    .replace(/the previous term/gi,
+      mode === "all-history" ? "earlier tasks in this subject" : "earlier tasks this term");
+}
+
+/**
  * Pure helper that decides which trend-delta strategy to apply. Kept
  * outside the component so it can be unit-tested in isolation.
  */
