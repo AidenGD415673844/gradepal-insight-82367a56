@@ -326,6 +326,7 @@ function CriterionCard({
                 criterionId={criterion.id}
                 entry={entry}
                 editable={editable}
+                assignedGrade={criterion.assignedGrade ?? null}
               />
             ))}
           </div>
@@ -389,10 +390,12 @@ function GradeRow({
   criterionId,
   entry,
   editable,
+  assignedGrade,
 }: {
   criterionId: string;
   entry: { letter: AllowedGrade; description: string };
   editable: boolean;
+  assignedGrade?: AllowedGrade | null;
 }) {
   const [value, setValue] = useState(entry.description);
   useEffect(() => setValue(entry.description), [entry.description]);
@@ -403,9 +406,27 @@ function GradeRow({
     }
   };
 
+  // For students (read-only) with an assigned grade, only the chosen grade is
+  // highlighted green; the rest fade to muted gray so the result is obvious.
+  const isChosen = !editable && assignedGrade === entry.letter;
+  const dim = !editable && assignedGrade && !isChosen;
   return (
-    <div className="flex items-start gap-2 rounded-md border border-border bg-card/50 p-2">
-      <span className="min-w-[40px] px-2 h-8 inline-flex items-center justify-center rounded-md text-xs font-bold tabular-nums bg-success text-success-foreground border border-success shrink-0">
+    <div
+      className={`flex items-start gap-2 rounded-md border p-2 ${
+        isChosen
+          ? "border-success/60 bg-success/5"
+          : dim
+            ? "border-border bg-muted/30 opacity-70"
+            : "border-border bg-card/50"
+      }`}
+    >
+      <span
+        className={`min-w-[40px] px-2 h-8 inline-flex items-center justify-center rounded-md text-xs font-bold tabular-nums border shrink-0 ${
+          dim
+            ? "bg-muted text-muted-foreground border-border"
+            : "bg-success text-success-foreground border-success"
+        }`}
+      >
         {entry.letter}
       </span>
       {editable ? (
