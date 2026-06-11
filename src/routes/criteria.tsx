@@ -13,12 +13,13 @@ import {
   addCriterion,
   removeCriterion,
   seedPresetCriteriaOnce,
+  setAssignedGrade,
   setGradeDescription,
   toggleGrade,
   updateCriterion,
   useCriteriaList,
 } from "@/lib/criteria-store";
-import { Plus, Trash2, Save, Lock, LogOut, BadgeCheck } from "lucide-react";
+import { Plus, Trash2, Save, Lock, LogOut, BadgeCheck, Award } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
@@ -205,6 +206,66 @@ function CriterionCard({
           </h3>
         )}
       </div>
+
+      {/* Teacher-assigned grade — prominent for students, editable for teachers. */}
+      {criterion.assignedGrade && !editable && (
+        <div className="flex items-center gap-2 rounded-md border border-success/40 bg-success/10 px-3 py-2">
+          <Award className="h-4 w-4 text-success" />
+          <span className="text-xs font-medium text-muted-foreground">
+            Your grade:
+          </span>
+          <span className="min-w-[40px] px-2 h-7 inline-flex items-center justify-center rounded-md text-sm font-bold tabular-nums bg-success text-success-foreground">
+            {criterion.assignedGrade}
+          </span>
+          {(() => {
+            const entry = criterion.grades.find(
+              (g) => g.letter === criterion.assignedGrade,
+            );
+            return entry?.description ? (
+              <span className="text-xs text-foreground/80 line-clamp-2">
+                {entry.description}
+              </span>
+            ) : null;
+          })()}
+        </div>
+      )}
+
+      {editable && criterion.grades.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-border bg-muted/30 p-2">
+          <Award className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">
+            Assign student grade:
+          </span>
+          {criterion.grades.map((g) => {
+            const active = criterion.assignedGrade === g.letter;
+            return (
+              <button
+                key={g.letter}
+                type="button"
+                onClick={() =>
+                  setAssignedGrade(criterion.id, active ? null : g.letter)
+                }
+                className={`min-w-[36px] px-2 h-7 rounded-md text-xs font-bold tabular-nums border transition-all ${
+                  active
+                    ? "bg-success text-success-foreground border-success shadow-sm"
+                    : "bg-card hover:bg-muted border-border"
+                }`}
+              >
+                {g.letter}
+              </button>
+            );
+          })}
+          {criterion.assignedGrade && (
+            <button
+              type="button"
+              onClick={() => setAssignedGrade(criterion.id, null)}
+              className="text-[11px] text-muted-foreground underline hover:text-foreground"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
 
       {editing ? (
         <Textarea
