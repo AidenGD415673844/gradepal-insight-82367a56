@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { calcAverage } from "@/lib/grade-utils";
+import { VelocityBadge } from "@/components/grade/VelocityBadge";
 
 export function CoursesSidebar() {
   const { courses, tasks, settings, setSettings, addCourse, deleteCourse, categories, addCategory, deleteCategory, renameCourse, subjectGoals, setSubjectGoal } =
@@ -185,6 +186,11 @@ export function CoursesSidebar() {
                     {avg !== null ? `${avg.toFixed(0)}%` : count}
                     {goal !== undefined && <span className="ml-1">/{goal}</span>}
                   </span>
+                  <VelocityBadge
+                    compact
+                    className="ml-1.5 shrink-0"
+                    tasks={tasks.filter((t) => t.courseId === c.id && !t.pending)}
+                  />
                 </button>
                 {!readOnly && (
                   <>
