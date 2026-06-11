@@ -66,7 +66,7 @@ describe("Report card — combined Letter (xx.x%) display", () => {
 
 describe("Report card — Bullet 5 visibility", () => {
   it("buildComment emits exactly 5 bullets and Bullet 5 is always appended a forward-looking goal", () => {
-    expect(SOURCE).toContain("const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg)}`");
+    expect(SOURCE).toMatch(/const b5 = `\$\{main\.bullets\[4\]\} \$\{nextTierGoal\(r\.avg/);
   });
 
   it("nextTierGoal always returns a non-empty string for any percentage 0–100", () => {
