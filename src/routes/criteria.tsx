@@ -39,7 +39,10 @@ export const Route = createFileRoute("/criteria")({
 
 function CriteriaPage() {
   const { unlocked } = useTeacherMode();
-  const list = useCriteriaList();
+  const allList = useCriteriaList();
+  const list = unlocked
+    ? allList
+    : allList.filter((c) => !!c.assignedGrade);
   const [mounted, setMounted] = useState(false);
 
   // Seed the four preset criteria on first visit so students always
@@ -101,10 +104,9 @@ function CriteriaPage() {
           </Card>
         ) : list.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
-            No criteria yet.{" "}
             {unlocked
-              ? "Add the first one above."
-              : "Ask your teacher to add criteria."}
+              ? "No criteria yet. Add the first one above."
+              : "No graded criteria yet. Your teacher hasn't assigned you a grade."}
           </Card>
         ) : (
           <div className="space-y-3">
