@@ -176,7 +176,14 @@ export function CoursesSidebar() {
                   }`}
                 >
                   <span className="flex items-center gap-2 font-medium truncate min-w-0">
-                    <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: c.color }} />
+                    <span
+                      className={`h-2.5 w-2.5 rounded-full shrink-0 ${
+                        isActive(c.id)
+                          ? "ring-2 ring-primary-foreground/80"
+                          : ""
+                      }`}
+                      style={{ background: c.color }}
+                    />
                     <span className="truncate">{c.name}</span>
                     {danger && (
                       <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
