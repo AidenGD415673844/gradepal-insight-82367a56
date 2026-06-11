@@ -34,13 +34,12 @@ export function CurveSimulator({
   const [m, setM] = useState(1);
   const [c, setC] = useState(5);
   const [expr, setExpr] = useState("x + 5");
-  const [exprError, setExprError] = useState<string | null>(null);
 
   if (score >= 71) return null;
 
   let curved = score;
+  let exprError: string | null = null;
   try {
-    setExprError(null);
     curved =
       kind === "sqrt"
         ? applyCurve(score, { kind: "sqrt" })
@@ -50,7 +49,7 @@ export function CurveSimulator({
             ? applyCurve(score, { kind: "linear", m, c })
             : applyCurve(score, { kind: "formula", expr });
   } catch {
-    setExprError("Invalid formula");
+    exprError = "Invalid formula";
     curved = score;
   }
 
