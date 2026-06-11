@@ -131,3 +131,52 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/* ===========================
+   WYSIWYG Transcript Print Engine
+   Toggled by body.transcript-print-mode
+   =========================== */
+.transcript-sheet { display: none; }
+
+body.transcript-print-mode .transcript-sheet {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  color: #000;
+  padding: 24mm 18mm;
+  font-family: "Times New Roman", Georgia, serif;
+  z-index: 9999;
+  overflow: auto;
+}
+body.transcript-print-mode > *:not(.transcript-sheet-portal):not(.transcript-sheet) {
+  /* keep app interactable in screen mode; only print swaps visibility */
+}
+
+.transcript-sheet .transcript-header { text-align: center; margin-bottom: 18px; border-bottom: 2px solid #000; padding-bottom: 12px; }
+.transcript-sheet .transcript-header h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; margin: 0; text-transform: uppercase; }
+.transcript-sheet .transcript-sub { font-size: 11px; margin-top: 4px; color: #444; }
+.transcript-sheet .transcript-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+.transcript-sheet .transcript-table th,
+.transcript-sheet .transcript-table td { border-bottom: 1px solid #000; padding: 8px 10px; text-align: left; }
+.transcript-sheet .transcript-table th { text-transform: uppercase; font-size: 10px; letter-spacing: 1px; border-bottom-width: 2px; }
+.transcript-sheet .transcript-table .bold { font-weight: 700; }
+.transcript-sheet .transcript-table .right { text-align: right; }
+.transcript-sheet .transcript-footer { margin-top: 36px; }
+.transcript-sheet .transcript-sig-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #444; }
+.transcript-sheet .transcript-sig-img { height: 64px; }
+.transcript-sheet .transcript-sig-line { margin-top: 28px; border-top: 1px solid #000; width: 280px; }
+
+@media print {
+  body.transcript-print-mode * { visibility: hidden !important; }
+  body.transcript-print-mode .transcript-sheet,
+  body.transcript-print-mode .transcript-sheet * { visibility: visible !important; }
+  body.transcript-print-mode .transcript-sheet {
+    position: absolute !important;
+    inset: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+  @page { size: A4; margin: 14mm; }
+}

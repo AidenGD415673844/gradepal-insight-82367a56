@@ -58,7 +58,9 @@ import {
   Legend,
   LineChart,
   Line,
+  ReferenceArea,
 } from "recharts";
+import { stddev, classifyVolatility, corridorBand } from "@/lib/grade-stats";
 
 /** Hidden-by-default dot. Reveals a labeled marker when clicked OR when focused
  *  via keyboard (Tab) and toggled with Enter/Space. Keeps lines clean while
@@ -244,6 +246,13 @@ export function PerformanceOverTime() {
     .filter((t) => !t.pending)
     .sort((a, b) => a.date.localeCompare(b.date));
 
+  // Grade Corridor volatility analytics — local statistical helpers.
+  const rawPcts = filtered.map((t) => (t.score / t.maxScore) * 100);
+  const avgPct = rawPcts.length ? rawPcts.reduce((a, b) => a + b, 0) / rawPcts.length : 0;
+  const sd = stddev(rawPcts);
+  const band = corridorBand(avgPct, sd);
+  const status = classifyVolatility(sd);
+
   // Single-course trajectory
   const activeCourses = courses.filter((c) => c.id === lineCourse);
   const dates = Array.from(new Set(filtered.map((t) => t.date))).sort();
@@ -324,6 +333,29 @@ export function PerformanceOverTime() {
           </SelectContent>
         </Select>
       </div>
+      {rawPcts.length >= 2 && (
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <span
+            className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
+              status === "stable"
+                ? "bg-success/15 text-success"
+                : status === "volatile"
+                  ? "bg-warning/20 text-warning-foreground"
+                  : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {status === "stable"
+              ? "High Stability"
+              : status === "volatile"
+                ? "High Volatility Warning"
+                : "Moderate Variance"}
+            <span className="font-normal opacity-80">· σ {sd.toFixed(1)}%</span>
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            Grade Corridor: {band.low.toFixed(1)}% – {band.high.toFixed(1)}%
+          </span>
+        </div>
+      )}
       <p className="text-xs text-muted-foreground mb-2">
         Solid = actual cumulative average. Dashed = projection. Click any point on the line to
         reveal its score.
@@ -348,6 +380,17 @@ export function PerformanceOverTime() {
               }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              {rawPcts.length >= 2 && (
+                <ReferenceArea
+                  y1={band.low}
+                  y2={band.high}
+                  fill="var(--primary)"
+                  fillOpacity={0.08}
+                  stroke="var(--primary)"
+                  strokeOpacity={0.15}
+                  ifOverflow="extendDomain"
+                />
+              )}
               <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11} />
               <YAxis
                 domain={[0, 100]}

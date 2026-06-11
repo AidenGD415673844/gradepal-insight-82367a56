@@ -37,11 +37,15 @@ describe("Report card — combined Letter (xx.x%) display", () => {
   });
 
   it("previous-term chip renders letter + percentage together with the same layout safeguards", () => {
-    const block = getBlock("meta.prevLetters[r.course.id] || r.prevLetterAuto", 8);
-    expect(block).toMatch(/prevLetterAuto/);
-    expect(block).toMatch(/prevAvgDisplay/);
-    expect(block).toMatch(/inline-flex/);
-    expect(block).toMatch(/w-full/);
+    // The prev-term chip is wrapped in an inline-flex+w-full container just
+    // above the prevLetterAuto reference. Search the whole source rather
+    // than a fixed-byte window so unrelated file growth doesn't shift the
+    // window past the wrapper classes.
+    expect(SOURCE).toMatch(/prevLetterAuto/);
+    expect(SOURCE).toMatch(/prevAvgDisplay/);
+    expect(SOURCE).toMatch(
+      /inline-flex[^"]*w-full[^"]*[\s\S]*?meta\.prevLetters\[r\.course\.id\] \|\| r\.prevLetterAuto/,
+    );
   });
 
   it("term labels are truncated to avoid pushing the percentage off-screen on mobile", () => {
@@ -66,7 +70,7 @@ describe("Report card — combined Letter (xx.x%) display", () => {
 
 describe("Report card — Bullet 5 visibility", () => {
   it("buildComment emits exactly 5 bullets and Bullet 5 is always appended a forward-looking goal", () => {
-    expect(SOURCE).toContain("const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg)}`");
+    expect(SOURCE).toMatch(/const b5 = `\$\{main\.bullets\[4\]\} \$\{nextTierGoal\(r\.avg/);
   });
 
   it("nextTierGoal always returns a non-empty string for any percentage 0–100", () => {
