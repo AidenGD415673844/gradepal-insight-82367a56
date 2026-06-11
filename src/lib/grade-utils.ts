@@ -7,16 +7,29 @@ export function filterByTerm(tasks: Task[], term: Term | null | undefined): Task
 
 
 export function calcAverage(tasks: Task[], weighted: boolean): number {
-  if (!tasks.length) return 0;
+  // Dynamic Weight Exclusion: drop tasks with no entered score, pending, or
+  // hypothetical flags. The denominator (sum of weights or count) is then
+  // computed strictly from active scored tasks — never penalising 0% for a
+  // missing/un-graded entry.
+  const active = tasks.filter(
+    (t) =>
+      !t.pending &&
+      !t.hypothetical &&
+      typeof t.score === "number" &&
+      Number.isFinite(t.score) &&
+      typeof t.maxScore === "number" &&
+      t.maxScore > 0,
+  );
+  if (!active.length) return 0;
   if (weighted) {
-    const totalW = tasks.reduce((s, t) => s + (t.weight || 1), 0);
+    const totalW = active.reduce((s, t) => s + (t.weight || 1), 0);
     if (totalW === 0) return 0;
     return (
-      tasks.reduce((s, t) => s + (t.score / t.maxScore) * 100 * (t.weight || 1), 0) /
+      active.reduce((s, t) => s + (t.score / t.maxScore) * 100 * (t.weight || 1), 0) /
       totalW
     );
   }
-  return tasks.reduce((s, t) => s + (t.score / t.maxScore) * 100, 0) / tasks.length;
+  return active.reduce((s, t) => s + (t.score / t.maxScore) * 100, 0) / active.length;
 }
 
 export function getLetter(pct: number, scale: GradeScaleRow[]): GradeScaleRow | null {

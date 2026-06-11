@@ -10,6 +10,7 @@ import { FileDown, Printer, GraduationCap, Save, FileText } from "lucide-react";
 import { GradeScaleTester } from "./GradeScaleTester";
 import { GradeDistribution } from "./GradeDistribution";
 import { AIDeepGenerate } from "./AIDeepGenerate";
+import { CommentBankPalette } from "./CommentBankPalette";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
@@ -724,12 +725,18 @@ export function AcademicFeedback() {
                         </label>
                       </div>
                       {manualOn ? (
-                        <Textarea
-                          rows={5}
-                          value={meta.manual[r.course.id] ?? ""}
-                          onChange={(e) => update("manual", r.course.id, e.target.value)}
-                          placeholder="Write your custom feedback..."
-                        />
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
+                          <Textarea
+                            rows={8}
+                            value={meta.manual[r.course.id] ?? ""}
+                            onChange={(e) => update("manual", r.course.id, e.target.value)}
+                            placeholder="Write your custom feedback..."
+                          />
+                          <CommentBankPalette
+                            value={meta.manual[r.course.id] ?? ""}
+                            onAppend={(next) => update("manual", r.course.id, next)}
+                          />
+                        </div>
                       ) : (
                         <>
                           <ul className="space-y-1.5 text-sm">
