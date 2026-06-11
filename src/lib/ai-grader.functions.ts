@@ -3,8 +3,8 @@ import { z } from "zod";
 
 const ScaleRowSchema = z.object({
   min: z.number(),
-  letter: z.string(),
-  description: z.string().optional(),
+  letter: z.string().max(10),
+  description: z.string().max(100).optional(),
   gpa: z.number().optional(),
 });
 
