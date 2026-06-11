@@ -48,24 +48,25 @@ function emit() {
 function normalise(raw: any): Criterion | null {
   if (!raw || typeof raw.id !== "string") return null;
   const grades: GradeEntry[] = Array.isArray(raw.grades)
-    ? raw.grades
-        .map((g: any): GradeEntry | null => {
+    ? (raw.grades as unknown[])
+        .map((g): GradeEntry | null => {
           if (typeof g === "string" && (ALLOWED_GRADES as readonly string[]).includes(g)) {
             return { letter: g as AllowedGrade, description: "" };
           }
+          const obj = g as { letter?: unknown; description?: unknown } | null | undefined;
           if (
-            g &&
-            typeof g.letter === "string" &&
-            (ALLOWED_GRADES as readonly string[]).includes(g.letter)
+            obj &&
+            typeof obj.letter === "string" &&
+            (ALLOWED_GRADES as readonly string[]).includes(obj.letter)
           ) {
             return {
-              letter: g.letter as AllowedGrade,
-              description: typeof g.description === "string" ? g.description : "",
+              letter: obj.letter as AllowedGrade,
+              description: typeof obj.description === "string" ? obj.description : "",
             };
           }
           return null;
         })
-        .filter((g): g is GradeEntry => g != null)
+        .filter((g: GradeEntry | null): g is GradeEntry => g != null)
     : [];
   return {
     id: raw.id,
