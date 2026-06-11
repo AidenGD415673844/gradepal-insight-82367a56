@@ -6,12 +6,23 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileDown, Printer, GraduationCap } from "lucide-react";
+import { FileDown, Printer, GraduationCap, Save, FileText } from "lucide-react";
 import { GradeScaleTester } from "./GradeScaleTester";
 import { GradeDistribution } from "./GradeDistribution";
 import { AIDeepGenerate } from "./AIDeepGenerate";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { applyAStarOverride } from "./a-star-override";
+import { TranscriptSheet } from "./TranscriptSheet";
+import { saveReport } from "@/lib/saved-reports";
+import { stddev } from "@/lib/grade-stats";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 export { A_STAR_MIN, applyAStarOverride } from "./a-star-override";
 
 function truncate(s: string, n = 10): string {
@@ -60,14 +71,39 @@ const NEXT_TIER_LADDER: Array<{ letter: string; tier: string; min: number }> = [
   { letter: "A*", tier: "", min: 91 },
 ];
 
-function nextTierGoal(pct: number): string {
+/**
+ * Returns a "between bands" phrase when the student is within ±2% of a
+ * tier boundary, instead of the misleading "you are in the high D band"
+ * when they are actually almost in C territory.
+ */
+function currentBandPhrase(pct: number): string {
+  // Find the bracket the score belongs to + the next tier above it.
+  const sorted = [...NEXT_TIER_LADDER].sort((a, b) => a.min - b.min);
+  const above = sorted.find((b) => b.min > pct);
+  const below = [...sorted].reverse().find((b) => b.min <= pct);
+  if (!above) return "the top A* band";
+  if (!below) return `the entry to the ${above.tier ? `${above.tier} ${above.letter}` : above.letter} band`;
+  const distAbove = above.min - pct;
+  const distBelow = pct - below.min;
+  const fmt = (b: { letter: string; tier: string }) =>
+    b.tier ? `${b.tier} ${b.letter}` : b.letter;
+  if (distAbove <= 2 || distBelow <= 2) {
+    return `between the higher ${fmt(below)} band and the lower ${fmt(above)} band`;
+  }
+  return `the ${fmt(below)} band`;
+}
+
+function nextTierGoal(pct: number, sdSubject = 0): string {
   const next = NEXT_TIER_LADDER.find((b) => b.min > pct);
   if (!next) {
     return "Continue to maintain your A* standing by tackling stretch challenges and competition-level questions.";
   }
   const label = next.tier ? `${next.tier} ${next.letter}` : next.letter;
-  const pointsAway = Math.max(1, Math.ceil(next.min - pct));
-  return `Try to aim and work hard to bring your grade up into the ${label} band — roughly ${pointsAway} point${pointsAway === 1 ? "" : "s"} away.`;
+  const low = Math.max(1, Math.ceil(next.min - pct));
+  // Adaptive cushion: more volatility → wider stated range.
+  const cushion = Math.max(2, Math.ceil(sdSubject / 2));
+  const high = low + cushion;
+  return `You are currently in ${currentBandPhrase(pct)}. Try to aim and work hard to bring your grade up into the ${label} band — roughly ${low}% to ${high}% away.`;
 }
 
 /**
@@ -285,8 +321,23 @@ export function AcademicFeedback() {
         "No tasks has been ever submitted or added in this term. It is important to complete your work if you haven’t submitted anything.";
       return [msg, msg, msg, msg, msg];
     }
-    // B1, B4, B5 come from the main 25-tier grade bracket.
+    // Trajectory-aware shift: when the predicted final is very different
+    // from current, B1 and B4 should reflect a higher / lower band so the
+    // tone matches where the student is heading, not just where they sit.
+    const pcts = r.done.map((t) => (t.score / t.maxScore) * 100);
+    const sdSubject = stddev(pcts);
+    let projected = r.avg;
+    if (pcts.length >= 2) {
+      const sorted = [...r.done].sort((a, b) => a.date.localeCompare(b.date));
+      const last = (sorted[sorted.length - 1].score / sorted[sorted.length - 1].maxScore) * 100;
+      const prev = (sorted[sorted.length - 2].score / sorted[sorted.length - 2].maxScore) * 100;
+      projected = Math.max(0, Math.min(100, r.avg + (last - prev) * 0.5));
+    }
+    const drift = projected - r.avg;
+    const shifted = Math.max(0, Math.min(100, r.avg + (drift >= 10 ? 4 : drift <= -10 ? -4 : 0)));
+    // B1, B4 from trajectory-shifted band; B5 from current-tier ladder.
     const main = lookupBracket(BRACKETS, r.avg);
+    const shiftedMain = lookupBracket(BRACKETS, shifted);
     // B2 (Trends) — strategy chosen by computeTrendInfo so the same
     // decision can be unit-tested and surfaced as a caption below.
     const trend = computeTrendInfo({
@@ -307,12 +358,89 @@ export function AcademicFeedback() {
     // completion percentage in 5% increments.
     const b3 = lookupBracket(COMPLETION_BRACKETS, r.completion).bullets[2];
     // B5 (Improvement / Action Items) — append a dynamically computed
-    // forward-looking milestone string based on the student's current score.
-    const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg)}`;
-    return [main.bullets[0], b2, b3, main.bullets[3], b5];
+    // forward-looking milestone string based on the student's current
+    // score AND volatility, phrased as a "X% to Y% away" range.
+    const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg, sdSubject)}`;
+    // Tail clauses add statistical colour (σ + Δ) to keep bullets 2–4 longer.
+    const sdClause =
+      pcts.length >= 2
+        ? ` Score variance is ${sdSubject.toFixed(1)}% across ${pcts.length} graded task${pcts.length === 1 ? "" : "s"}.`
+        : "";
+    const respClause = ` Completion currently sits at ${r.completion}%.`;
+    return [
+      shiftedMain.bullets[0],
+      b2 + sdClause,
+      b3 + respClause,
+      shiftedMain.bullets[3] + sdClause,
+      b5,
+    ];
   };
 
   const handlePrint = () => window.print();
+
+  const handleTranscript = () => {
+    document.body.classList.add("transcript-print-mode");
+    // Give the browser a tick to apply the class before invoking print.
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => document.body.classList.remove("transcript-print-mode"), 200);
+    }, 50);
+  };
+
+  const [capOpen, setCapOpen] = useState(false);
+
+  const handleSaveReport = () => {
+    const labels: [string, string, string, string, string] = [
+      "Strengths",
+      "Trends",
+      "Commendations",
+      "Responsibility",
+      "Improvement",
+    ];
+    const sig =
+      typeof window !== "undefined"
+        ? localStorage.getItem("gradecalc-signature")
+        : null;
+    const snapRows = rows.map((r) => {
+      const trend = computeTrendInfo({
+        hasData: r.hasData,
+        hasPrevData: r.hasPrevData,
+        avg: r.avg,
+        prevAvg: r.prevAvg,
+        done: r.done,
+        allDone: r.allDone,
+        isAllTerms: activeTerm == null,
+        weighted: settings.weighted,
+      });
+      const bullets = buildComment(r) as unknown as [string, string, string, string, string];
+      return {
+        courseId: r.course.id,
+        courseName: r.course.name,
+        color: r.course.color,
+        teacher: meta.teachers[r.course.id] ?? "",
+        goal: meta.goals[r.course.id] ?? "",
+        letter: r.letter,
+        avgDisplay: r.avgDisplay,
+        avg: r.avg,
+        prevLetter: meta.prevLetters[r.course.id] || r.prevLetterAuto,
+        prevAvgDisplay: r.prevAvgDisplay,
+        bullets,
+        labels,
+        trendCaption: TREND_MODE_CAPTION[trend.mode],
+        trendDelta: trend.delta,
+      };
+    });
+    const res = saveReport({
+      termLabel: activeTerm ? activeTerm.name : "All terms",
+      signatureDataUrl: sig,
+      rows: snapRows,
+    });
+    if (!res.ok) {
+      setCapOpen(true);
+      return;
+    }
+    toast.success("Report saved to history hub.");
+  };
 
   const handleCSV = () => {
     const header = [
@@ -390,6 +518,12 @@ export function AcademicFeedback() {
             </Button>
             <Button variant="outline" onClick={handleCSV} className="gap-2">
               <FileDown className="h-4 w-4" /> Spreadsheet Export
+            </Button>
+            <Button onClick={handleSaveReport} className="gap-2">
+              <Save className="h-4 w-4" /> Save Report to History Hub
+            </Button>
+            <Button variant="outline" onClick={handleTranscript} className="gap-2">
+              <FileText className="h-4 w-4" /> Generate Official Transcript Document
             </Button>
           </div>
 
@@ -580,6 +714,21 @@ export function AcademicFeedback() {
         <GradeDistribution />
         <GradeScaleTester />
       </div>
+      <TranscriptSheet />
+      <Dialog open={capOpen} onOpenChange={setCapOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>History Capacity Reached</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Please delete an older report card entry from your Saved Reports hub
+            to free up local space.
+          </p>
+          <DialogFooter>
+            <Button onClick={() => setCapOpen(false)}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
