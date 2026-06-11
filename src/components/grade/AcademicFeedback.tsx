@@ -51,59 +51,105 @@ const REPORT_SCALE: GradeScaleRow[] = [
 /**
  * Sub-band ladder for forward-looking goal injection (Bullet 5).
  * Each entry marks the minimum % needed to enter that tier.
+ *
+ * The "low" tier of every letter MUST equal that letter's `REPORT_SCALE.min`
+ * so a student exactly on a letter boundary (e.g. 81 → A) is never described
+ * as the previous letter. Mid/high tiers split the remaining band evenly.
  */
-const NEXT_TIER_LADDER: Array<{ letter: string; tier: string; min: number }> = [
-  { letter: "E", tier: "low", min: 40 },
+export const NEXT_TIER_LADDER: Array<{ letter: string; tier: string; min: number }> = [
+  { letter: "E", tier: "low", min: 41 },
   { letter: "E", tier: "mid", min: 45 },
-  { letter: "E", tier: "high", min: 50 },
-  { letter: "D", tier: "low", min: 55 },
-  { letter: "D", tier: "mid", min: 59 },
-  { letter: "D", tier: "high", min: 62 },
-  { letter: "C", tier: "low", min: 65 },
-  { letter: "C", tier: "mid", min: 68 },
-  { letter: "C", tier: "high", min: 72 },
-  { letter: "B", tier: "low", min: 75 },
-  { letter: "B", tier: "mid", min: 78 },
-  { letter: "B", tier: "high", min: 82 },
-  { letter: "A", tier: "low", min: 85 },
-  { letter: "A", tier: "mid", min: 87 },
-  { letter: "A", tier: "high", min: 89 },
+  { letter: "E", tier: "high", min: 48 },
+  { letter: "D", tier: "low", min: 51 },
+  { letter: "D", tier: "mid", min: 55 },
+  { letter: "D", tier: "high", min: 58 },
+  { letter: "C", tier: "low", min: 61 },
+  { letter: "C", tier: "mid", min: 65 },
+  { letter: "C", tier: "high", min: 68 },
+  { letter: "B", tier: "low", min: 71 },
+  { letter: "B", tier: "mid", min: 75 },
+  { letter: "B", tier: "high", min: 78 },
+  { letter: "A", tier: "low", min: 81 },
+  { letter: "A", tier: "mid", min: 85 },
+  { letter: "A", tier: "high", min: 88 },
   { letter: "A*", tier: "", min: 91 },
 ];
 
+const LETTER_MINS = [41, 51, 61, 71, 81, 91];
+
 /**
- * Returns a "between bands" phrase when the student is within ±2% of a
- * tier boundary, instead of the misleading "you are in the high D band"
- * when they are actually almost in C territory.
+ * Returns a human-readable description of the student's current band.
+ * When the score is within ±1.5% of a real LETTER boundary (e.g. 70.5 is
+ * very close to B's 71 cutoff) it returns a "between higher X and lower Y"
+ * phrase. Otherwise it picks the matching sub-tier (low/mid/high) within
+ * the letter the score actually falls into per REPORT_SCALE.
  */
-function currentBandPhrase(pct: number): string {
-  // Find the bracket the score belongs to + the next tier above it.
+const fmtTier = (b: { letter: string; tier: string }) =>
+  b.tier ? `${b.tier} ${b.letter}` : b.letter;
+
+export function currentBandPhrase(pct: number): string {
+  if (pct >= 91) return "the A* band";
   const sorted = [...NEXT_TIER_LADDER].sort((a, b) => a.min - b.min);
-  const above = sorted.find((b) => b.min > pct);
   const below = [...sorted].reverse().find((b) => b.min <= pct);
-  if (!above) return "the top A* band";
-  if (!below) return `the entry to the ${above.tier ? `${above.tier} ${above.letter}` : above.letter} band`;
-  const distAbove = above.min - pct;
-  const distBelow = pct - below.min;
-  const fmt = (b: { letter: string; tier: string }) =>
-    b.tier ? `${b.tier} ${b.letter}` : b.letter;
-  if (distAbove <= 2 || distBelow <= 2) {
-    return `between the higher ${fmt(below)} band and the lower ${fmt(above)} band`;
+  // Detect proximity to a real letter boundary (not a sub-tier one).
+  const nextLetterMin = LETTER_MINS.find((m) => m > pct);
+  if (nextLetterMin != null && nextLetterMin - pct <= 1.5 && below) {
+    const aboveAtLetter = sorted.find((b) => b.min >= nextLetterMin);
+    if (aboveAtLetter) {
+      return `between the higher ${fmtTier(below)} band and the lower ${fmtTier(aboveAtLetter)} band`;
+    }
   }
-  return `the ${fmt(below)} band`;
+  if (!below) return `the ${sorted[0].letter} band`;
+  return `the ${fmtTier(below)} band`;
 }
 
-function nextTierGoal(pct: number, sdSubject = 0): string {
-  const next = NEXT_TIER_LADDER.find((b) => b.min > pct);
-  if (!next) {
+export function nextTierGoal(pct: number, sdSubject = 0, done: Task[] = []): string {
+  if (pct >= 91) {
     return "Continue to maintain your A* standing by tackling stretch challenges and competition-level questions.";
   }
-  const label = next.tier ? `${next.tier} ${next.letter}` : next.letter;
-  const low = Math.max(1, Math.ceil(next.min - pct));
-  // Adaptive cushion: more volatility → wider stated range.
-  const cushion = Math.max(2, Math.ceil(sdSubject / 2));
-  const high = low + cushion;
-  return `You are currently in ${currentBandPhrase(pct)}. Try to aim and work hard to bring your grade up into the ${label} band — roughly ${low}% to ${high}% away.`;
+  // Strictly above current — never recommend the band you're already in.
+  const next = NEXT_TIER_LADDER.find((b) => b.min > pct);
+  if (!next) {
+    const gap = Math.max(1, Math.ceil(91 - pct));
+    return `You are currently in ${currentBandPhrase(pct)}. You're roughly ${gap}% from clearing the A* threshold — sustained top-band performance on remaining tasks will get you there.`;
+  }
+  const label = fmtTier(next);
+  const rawGap = next.min - pct;
+  // On the cusp — skip the "X% away" range, give a micro-goal instead.
+  if (rawGap <= 1) {
+    return `You are currently in ${currentBandPhrase(pct)}. You're on the cusp of the ${label} band — one strong task pushes you over.`;
+  }
+  const gap = Math.max(1, Math.ceil(rawGap));
+  // Capped cushion (never wider than 4 pts regardless of volatility).
+  const cushion = Math.max(1, Math.min(4, Math.ceil(sdSubject / 3)));
+  // Don't quote a range that overshoots the tier *after* the goal tier.
+  const tierAfter = NEXT_TIER_LADDER.find((b) => b.min > next.min);
+  const ceiling = tierAfter
+    ? Math.max(gap + 1, Math.ceil(tierAfter.min - pct) - 1)
+    : gap + cushion;
+  const high = Math.min(gap + cushion, ceiling);
+
+  // Personalised colour from the student's own task history.
+  let extra = "";
+  if (done.length >= 2) {
+    const pcts = done
+      .map((t) => (t.score / t.maxScore) * 100)
+      .filter((n) => Number.isFinite(n));
+    if (pcts.length >= 2) {
+      const best = Math.max(...pcts);
+      const recent = pcts.slice(-3);
+      const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+      if (best > pct + 2) {
+        extra = ` Your highest task this term was ${best.toFixed(1)}% — repeating that level on remaining work would lift your average toward the ${label} band.`;
+      } else if (recentAvg > pct + 1) {
+        extra = ` Your recent task average (${recentAvg.toFixed(1)}%) is trending above your overall average — keep that momentum.`;
+      } else if (recentAvg < pct - 1) {
+        extra = ` Your recent task average has dipped to ${recentAvg.toFixed(1)}% — stabilising at your prior level is the first step before reaching for ${label}.`;
+      }
+    }
+  }
+
+  return `You are currently in ${currentBandPhrase(pct)}. Try to aim and work hard to bring your grade up into the ${label} band — roughly ${gap}% to ${high}% away.${extra}`;
 }
 
 /**
@@ -360,7 +406,7 @@ export function AcademicFeedback() {
     // B5 (Improvement / Action Items) — append a dynamically computed
     // forward-looking milestone string based on the student's current
     // score AND volatility, phrased as a "X% to Y% away" range.
-    const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg, sdSubject)}`;
+    const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg, sdSubject, r.done)}`;
     // Tail clauses add statistical colour (σ + Δ) to keep bullets 2–4 longer.
     const sdClause =
       pcts.length >= 2
