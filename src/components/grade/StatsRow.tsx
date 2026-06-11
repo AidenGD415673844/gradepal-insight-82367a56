@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { VelocityBadge } from "@/components/grade/VelocityBadge";
+import { CurveSimulator } from "@/components/grade/CurveSimulator";
 
 export function StatsRow() {
   const { tasks, scale, settings, setSettings, courses, terms, activeTermId } = useGrades();
@@ -22,6 +23,7 @@ export function StatsRow() {
   const gpa = calcGPA(courses, completed, scale);
 
   return (
+    <div className="space-y-4">
     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
       <Stat
         label="Average"
@@ -50,6 +52,8 @@ export function StatsRow() {
           </Label>
         </div>
       </Card>
+    </div>
+    <CurveSimulator score={avg} scale={scale} />
     </div>
   );
 }
