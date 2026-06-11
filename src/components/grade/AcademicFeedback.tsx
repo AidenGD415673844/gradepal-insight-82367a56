@@ -57,6 +57,12 @@ const REPORT_SCALE: GradeScaleRow[] = [
  * as the previous letter. Mid/high tiers split the remaining band evenly.
  */
 export const NEXT_TIER_LADDER: Array<{ letter: string; tier: string; min: number }> = [
+  { letter: "G", tier: "low", min: 1 },
+  { letter: "G", tier: "mid", min: 11 },
+  { letter: "G", tier: "high", min: 21 },
+  { letter: "F", tier: "low", min: 31 },
+  { letter: "F", tier: "mid", min: 34 },
+  { letter: "F", tier: "high", min: 37 },
   { letter: "E", tier: "low", min: 41 },
   { letter: "E", tier: "mid", min: 45 },
   { letter: "E", tier: "high", min: 48 },
