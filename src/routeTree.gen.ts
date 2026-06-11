@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtilitiesRouteImport } from './routes/utilities'
 import { Route as TimetableRouteImport } from './routes/timetable'
+import { Route as TeacherRouteImport } from './routes/teacher'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SavedReportsRouteImport } from './routes/saved-reports'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as GradesRouteImport } from './routes/grades'
 import { Route as IndexRouteImport } from './routes/index'
@@ -26,9 +28,19 @@ const TimetableRoute = TimetableRouteImport.update({
   path: '/timetable',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeacherRoute = TeacherRouteImport.update({
+  id: '/teacher',
+  path: '/teacher',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavedReportsRoute = SavedReportsRouteImport.update({
+  id: '/saved-reports',
+  path: '/saved-reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -51,7 +63,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/grades': typeof GradesRoute
   '/reports': typeof ReportsRoute
+  '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
+  '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
   '/utilities': typeof UtilitiesRoute
 }
@@ -59,7 +73,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/grades': typeof GradesRoute
   '/reports': typeof ReportsRoute
+  '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
+  '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
   '/utilities': typeof UtilitiesRoute
 }
@@ -68,7 +84,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/grades': typeof GradesRoute
   '/reports': typeof ReportsRoute
+  '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
+  '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
   '/utilities': typeof UtilitiesRoute
 }
@@ -78,17 +96,29 @@ export interface FileRouteTypes {
     | '/'
     | '/grades'
     | '/reports'
+    | '/saved-reports'
     | '/settings'
+    | '/teacher'
     | '/timetable'
     | '/utilities'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/grades' | '/reports' | '/settings' | '/timetable' | '/utilities'
+  to:
+    | '/'
+    | '/grades'
+    | '/reports'
+    | '/saved-reports'
+    | '/settings'
+    | '/teacher'
+    | '/timetable'
+    | '/utilities'
   id:
     | '__root__'
     | '/'
     | '/grades'
     | '/reports'
+    | '/saved-reports'
     | '/settings'
+    | '/teacher'
     | '/timetable'
     | '/utilities'
   fileRoutesById: FileRoutesById
@@ -97,7 +127,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GradesRoute: typeof GradesRoute
   ReportsRoute: typeof ReportsRoute
+  SavedReportsRoute: typeof SavedReportsRoute
   SettingsRoute: typeof SettingsRoute
+  TeacherRoute: typeof TeacherRoute
   TimetableRoute: typeof TimetableRoute
   UtilitiesRoute: typeof UtilitiesRoute
 }
@@ -118,11 +150,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TimetableRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/teacher': {
+      id: '/teacher'
+      path: '/teacher'
+      fullPath: '/teacher'
+      preLoaderRoute: typeof TeacherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved-reports': {
+      id: '/saved-reports'
+      path: '/saved-reports'
+      fullPath: '/saved-reports'
+      preLoaderRoute: typeof SavedReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -153,10 +199,22 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GradesRoute: GradesRoute,
   ReportsRoute: ReportsRoute,
+  SavedReportsRoute: SavedReportsRoute,
   SettingsRoute: SettingsRoute,
+  TeacherRoute: TeacherRoute,
   TimetableRoute: TimetableRoute,
   UtilitiesRoute: UtilitiesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
