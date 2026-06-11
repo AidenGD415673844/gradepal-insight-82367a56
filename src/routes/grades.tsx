@@ -15,6 +15,8 @@ import { AIGraderDialog } from "@/components/grade/AIGraderDialog";
 import { KanbanBoard } from "@/components/grade/KanbanBoard";
 import { GradeHorizonMap } from "@/components/grade/GradeHorizonMap";
 import { StressTestSimulator } from "@/components/grade/StressTestSimulator";
+import { SyllabusMastery } from "@/components/grade/SyllabusMastery";
+import { StudyBlockPlanner } from "@/components/grade/StudyBlockPlanner";
 import { Button } from "@/components/ui/button";
 import { Plus, Download, Upload, Sparkles, SlidersHorizontal, FlaskConical, Eye, Table2, Kanban } from "lucide-react";
 
@@ -77,6 +79,8 @@ function GradesPage() {
         <CoursesSidebar />
         <div className="space-y-5 min-w-0">
           <StatsRow />
+          <StudyBlockPlanner />
+          <SyllabusMastery />
           <PredictiveAnalysis />
           <GoalTracker />
           <GradeHorizonMap />
