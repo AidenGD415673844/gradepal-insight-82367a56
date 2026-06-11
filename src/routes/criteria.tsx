@@ -13,12 +13,13 @@ import {
   addCriterion,
   removeCriterion,
   seedPresetCriteriaOnce,
+  setAssignedGrade,
   setGradeDescription,
   toggleGrade,
   updateCriterion,
   useCriteriaList,
 } from "@/lib/criteria-store";
-import { Plus, Trash2, Save, Lock, LogOut, BadgeCheck } from "lucide-react";
+import { Plus, Trash2, Save, Lock, LogOut, BadgeCheck, Award } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
