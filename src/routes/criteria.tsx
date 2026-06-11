@@ -39,7 +39,10 @@ export const Route = createFileRoute("/criteria")({
 
 function CriteriaPage() {
   const { unlocked } = useTeacherMode();
-  const list = useCriteriaList();
+  const allList = useCriteriaList();
+  const list = unlocked
+    ? allList
+    : allList.filter((c) => !!c.assignedGrade);
   const [mounted, setMounted] = useState(false);
 
   // Seed the four preset criteria on first visit so students always
@@ -101,10 +104,9 @@ function CriteriaPage() {
           </Card>
         ) : list.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
-            No criteria yet.{" "}
             {unlocked
-              ? "Add the first one above."
-              : "Ask your teacher to add criteria."}
+              ? "No criteria yet. Add the first one above."
+              : "No graded criteria yet. Your teacher hasn't assigned you a grade."}
           </Card>
         ) : (
           <div className="space-y-3">
@@ -324,6 +326,7 @@ function CriterionCard({
                 criterionId={criterion.id}
                 entry={entry}
                 editable={editable}
+                assignedGrade={criterion.assignedGrade ?? null}
               />
             ))}
           </div>
@@ -387,10 +390,12 @@ function GradeRow({
   criterionId,
   entry,
   editable,
+  assignedGrade,
 }: {
   criterionId: string;
   entry: { letter: AllowedGrade; description: string };
   editable: boolean;
+  assignedGrade?: AllowedGrade | null;
 }) {
   const [value, setValue] = useState(entry.description);
   useEffect(() => setValue(entry.description), [entry.description]);
@@ -401,9 +406,27 @@ function GradeRow({
     }
   };
 
+  // For students (read-only) with an assigned grade, only the chosen grade is
+  // highlighted green; the rest fade to muted gray so the result is obvious.
+  const isChosen = !editable && assignedGrade === entry.letter;
+  const dim = !editable && assignedGrade && !isChosen;
   return (
-    <div className="flex items-start gap-2 rounded-md border border-border bg-card/50 p-2">
-      <span className="min-w-[40px] px-2 h-8 inline-flex items-center justify-center rounded-md text-xs font-bold tabular-nums bg-success text-success-foreground border border-success shrink-0">
+    <div
+      className={`flex items-start gap-2 rounded-md border p-2 ${
+        isChosen
+          ? "border-success/60 bg-success/5"
+          : dim
+            ? "border-border bg-muted/30 opacity-70"
+            : "border-border bg-card/50"
+      }`}
+    >
+      <span
+        className={`min-w-[40px] px-2 h-8 inline-flex items-center justify-center rounded-md text-xs font-bold tabular-nums border shrink-0 ${
+          dim
+            ? "bg-muted text-muted-foreground border-border"
+            : "bg-success text-success-foreground border-success"
+        }`}
+      >
         {entry.letter}
       </span>
       {editable ? (
