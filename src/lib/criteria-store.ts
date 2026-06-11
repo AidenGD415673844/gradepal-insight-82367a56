@@ -33,6 +33,7 @@ export type Criterion = {
   description: string;
   grades: GradeEntry[];
   preset?: boolean;
+  assignedGrade?: AllowedGrade | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -74,6 +75,11 @@ function normalise(raw: any): Criterion | null {
     description: typeof raw.description === "string" ? raw.description : "",
     grades: dedupe(grades),
     preset: !!raw.preset,
+    assignedGrade:
+      typeof raw.assignedGrade === "string" &&
+      (ALLOWED_GRADES as readonly string[]).includes(raw.assignedGrade)
+        ? (raw.assignedGrade as AllowedGrade)
+        : null,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString(),
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : new Date().toISOString(),
   };
@@ -174,6 +180,21 @@ export function setGradeDescription(
       ),
       updatedAt: new Date().toISOString(),
     };
+  });
+  persist(list);
+}
+
+/** Teacher-assigned grade for a criterion, visible to students. Pass
+ *  null to clear. The chosen grade must already be attached to the
+ *  criterion (or null). */
+export function setAssignedGrade(
+  id: string,
+  grade: AllowedGrade | null,
+): void {
+  const list = loadCriteriaList().map((c) => {
+    if (c.id !== id) return c;
+    if (grade && !c.grades.some((g) => g.letter === grade)) return c;
+    return { ...c, assignedGrade: grade, updatedAt: new Date().toISOString() };
   });
   persist(list);
 }
