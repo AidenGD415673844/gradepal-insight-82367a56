@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, calcGPA, getLetter, filterByTerm } from "@/lib/grade-utils";
 
@@ -8,8 +9,12 @@ const SIG_KEY = "gradecalc-signature";
 export function TranscriptSheet() {
   const { courses, tasks, scale, terms, activeTermId, settings } = useGrades();
   const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
-  const signature =
-    typeof window !== "undefined" ? localStorage.getItem(SIG_KEY) : null;
+  const [signature, setSignature] = useState<string | null>(null);
+  const [today, setToday] = useState<string>("");
+  useEffect(() => {
+    setSignature(localStorage.getItem(SIG_KEY));
+    setToday(new Date().toLocaleDateString());
+  }, []);
 
   const overallGPA = calcGPA(courses, tasks, scale);
 
@@ -18,7 +23,7 @@ export function TranscriptSheet() {
       <header className="transcript-header">
         <h1>Official Academic Transcript</h1>
         <p className="transcript-sub">
-          Generated {new Date().toLocaleDateString()} ·{" "}
+          Generated {today} ·{" "}
           {activeTerm ? activeTerm.name : "All terms"}
         </p>
       </header>
