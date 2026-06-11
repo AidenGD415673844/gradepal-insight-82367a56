@@ -399,7 +399,10 @@ export function AcademicFeedback() {
     const b2 =
       trend.delta == null
         ? "There isn't enough data to establish a trend and trend feedback. Once you have more graded tasks, comparative progress insights will appear here."
-        : lookupBracket(TREND_BRACKETS, trend.delta).bullets[1];
+        : adaptTrendCopy(
+            lookupBracket(TREND_BRACKETS, trend.delta).bullets[1],
+            trend.mode,
+          );
     // B3 (Completion / Responsibility) — separate logic pool, keyed by
     // completion percentage in 5% increments.
     const b3 = lookupBracket(COMPLETION_BRACKETS, r.completion).bullets[2];
