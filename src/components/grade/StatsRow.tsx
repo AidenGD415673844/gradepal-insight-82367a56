@@ -3,6 +3,7 @@ import { calcAverage, getLetter, calcGPA, filterByTerm } from "@/lib/grade-utils
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { VelocityBadge } from "@/components/grade/VelocityBadge";
 
 export function StatsRow() {
   const { tasks, scale, settings, setSettings, courses, terms, activeTermId } = useGrades();
@@ -22,7 +23,12 @@ export function StatsRow() {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-      <Stat label="Average" value={`${(Math.floor(avg * 10) / 10).toFixed(1)}%`} accent />
+      <Stat
+        label="Average"
+        value={`${(Math.floor(avg * 10) / 10).toFixed(1)}%`}
+        accent
+        extra={<VelocityBadge tasks={completed} />}
+      />
       <Stat
         label="Letter Grade"
         value={letter?.letter ?? "—"}
@@ -53,11 +59,13 @@ function Stat({
   value,
   sub,
   accent,
+  extra,
 }: {
   label: string;
   value: string;
   sub?: string;
   accent?: boolean;
+  extra?: React.ReactNode;
 }) {
   return (
     <Card className="p-4 shadow-soft">
@@ -70,6 +78,7 @@ function Stat({
         {value}
       </div>
       {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
+      {extra && <div className="mt-2">{extra}</div>}
     </Card>
   );
 }
