@@ -13,6 +13,8 @@ import { GradeScaleDialog } from "@/components/grade/GradeScaleDialog";
 import { CSVImportDialog, exportCSV } from "@/components/grade/CSVImportDialog";
 import { AIGraderDialog } from "@/components/grade/AIGraderDialog";
 import { KanbanBoard } from "@/components/grade/KanbanBoard";
+import { GradeHorizonMap } from "@/components/grade/GradeHorizonMap";
+import { StressTestSimulator } from "@/components/grade/StressTestSimulator";
 import { Button } from "@/components/ui/button";
 import { Plus, Download, Upload, Sparkles, SlidersHorizontal, FlaskConical, Eye, Table2, Kanban } from "lucide-react";
 
@@ -77,6 +79,8 @@ function GradesPage() {
           <StatsRow />
           <PredictiveAnalysis />
           <GoalTracker />
+          <GradeHorizonMap />
+          <StressTestSimulator />
           {!prefs.hideCharts && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
