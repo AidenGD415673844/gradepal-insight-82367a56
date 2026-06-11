@@ -24,8 +24,14 @@ import { toast } from "sonner";
 type Mode = "login" | "create" | "recover";
 
 export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
-  const [unlocked, setU] = useState<boolean>(() => isUnlocked());
-  const [mode, setMode] = useState<Mode>(() => (loadAuth() ? "login" : "create"));
+  // Start in a neutral "hydrating" state so the SSR pass (which can't read
+  // localStorage) renders identical markup to the client's first paint.
+  // Without this, the server always renders "Create Teacher Password"
+  // while a returning user's client renders "Teacher Gradebook Login",
+  // triggering a React hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  const [unlocked, setU] = useState<boolean>(false);
+  const [mode, setMode] = useState<Mode>("login");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [recovery, setRecovery] = useState("");
@@ -33,9 +39,22 @@ export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (loadAuth()) setMode("login");
-    else setMode("create");
+    setU(isUnlocked());
+    setMode(loadAuth() ? "login" : "create");
+    setMounted(true);
   }, []);
+
+  if (!mounted) {
+    return (
+      <Card className="max-w-md mx-auto p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Lock className="h-5 w-5 text-primary" />
+          <h2 className="font-bold text-lg">Teacher Gradebook</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">Loading…</p>
+      </Card>
+    );
+  }
 
   if (unlocked) return <>{children}</>;
 
