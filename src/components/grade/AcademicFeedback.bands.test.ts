@@ -82,7 +82,7 @@ describe("nextTierGoal — realistic, attainable ranges", () => {
   });
 
   it("flags a recent dip rather than promising a jump", () => {
-    const done = [t(85), t(86), t(70), t(68), t(66)];
+    const done = [t(76), t(75), t(70), t(68), t(66)];
     const out = nextTierGoal(75, 8, done);
     expect(out).toMatch(/recent task average has dipped/);
   });
