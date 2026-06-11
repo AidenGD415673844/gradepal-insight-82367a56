@@ -406,7 +406,7 @@ export function AcademicFeedback() {
     // B5 (Improvement / Action Items) — append a dynamically computed
     // forward-looking milestone string based on the student's current
     // score AND volatility, phrased as a "X% to Y% away" range.
-    const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg, sdSubject)}`;
+    const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg, sdSubject, r.done)}`;
     // Tail clauses add statistical colour (σ + Δ) to keep bullets 2–4 longer.
     const sdClause =
       pcts.length >= 2
