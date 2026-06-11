@@ -4,8 +4,10 @@ import type { Task } from "@/lib/grade-store";
 
 const t = (score: number, maxScore = 100, date = "2025-01-01"): Task => ({
   id: Math.random().toString(36),
+  courseId: "c1",
   name: "t",
   category: "c",
+  weight: 1,
   score,
   maxScore,
   date,
