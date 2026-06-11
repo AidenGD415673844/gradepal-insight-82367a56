@@ -39,11 +39,13 @@ export const Route = createFileRoute("/criteria")({
 function CriteriaPage() {
   const { unlocked } = useTeacherMode();
   const list = useCriteriaList();
+  const [mounted, setMounted] = useState(false);
 
   // Seed the four preset criteria on first visit so students always
   // have something to read even if no teacher has signed in yet.
   useEffect(() => {
     seedPresetCriteriaOnce();
+    setMounted(true);
   }, []);
 
   const handleExitTeacherMode = () => {
@@ -92,7 +94,11 @@ function CriteriaPage() {
 
         {unlocked && <CriterionCreator />}
 
-        {list.length === 0 ? (
+        {!mounted ? (
+          <Card className="p-6 text-center text-sm text-muted-foreground">
+            Loading criteria…
+          </Card>
+        ) : list.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             No criteria yet.{" "}
             {unlocked
