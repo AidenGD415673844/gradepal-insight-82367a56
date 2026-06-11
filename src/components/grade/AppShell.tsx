@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, GraduationCap, CalendarRange } from "lucide-react";
 import { type ReactNode } from "react";
+import { SandboxFrame, SandboxToggle } from "@/components/grade/SandboxToggle";
 
 export function AppShell({
   title,
@@ -15,6 +16,7 @@ export function AppShell({
   const navigate = useNavigate();
 
   return (
+    <SandboxFrame>
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-5">
         <header className="bg-card rounded-2xl shadow-soft p-3 md:p-4 flex items-center gap-3 justify-between flex-wrap">
@@ -37,6 +39,7 @@ export function AppShell({
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {actions}
+            <SandboxToggle />
             <Button variant="outline" size="sm" asChild className="gap-2">
               <Link to="/timetable">
                 <CalendarRange className="h-4 w-4" /> Calendar
@@ -47,5 +50,6 @@ export function AppShell({
         {children}
       </div>
     </div>
+    </SandboxFrame>
   );
 }
