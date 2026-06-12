@@ -131,7 +131,9 @@ export function projectGrade(
 }
 
 export const HORIZON_OPTIONS: Array<{ label: string; weeks: number }> = [
+  { label: "1 week", weeks: 1 },
   { label: "2 weeks", weeks: 2 },
-  { label: "1 month", weeks: 4.345 },
+  { label: "4 weeks", weeks: 4 },
   { label: "6 weeks", weeks: 6 },
+  { label: "10 weeks", weeks: 10 },
 ];
