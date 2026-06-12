@@ -14,6 +14,7 @@ import { CommentBankPalette } from "./CommentBankPalette";
 import { ReportTemplateDialog } from "./ReportTemplateDialog";
 import { useReportTemplate, I18N, computeBadges } from "@/lib/report-template";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
+import { addonBulletsFor } from "./feedback-addons";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
 import { saveReport } from "@/lib/saved-reports";
@@ -477,12 +478,17 @@ export function AcademicFeedback() {
         ? ` Score variance is ${sdSubject.toFixed(1)}% across ${pcts.length} graded task${pcts.length === 1 ? "" : "s"}.`
         : "";
     const respClause = ` Completion currently sits at ${r.completion}%.`;
+    // Universal addons — appended to each existing bullet (never replacing
+    // prior text) plus a brand-new 6th bullet (Future Outlook). Continuous
+    // 5% increment lookup keyed by the subject's term average.
+    const addons = addonBulletsFor(r.avg);
     return [
-      shiftedMain.bullets[0],
-      b2 + sdClause,
-      b3 + respClause,
-      shiftedMain.bullets[3] + sdClause,
-      b5,
+      `${shiftedMain.bullets[0]} ${addons.b1}`,
+      `${b2 + sdClause} ${addons.b2}`,
+      `${b3 + respClause} ${addons.b3}`,
+      `${shiftedMain.bullets[3] + sdClause} ${addons.b4}`,
+      `${b5} ${addons.b5}`,
+      addons.b6,
     ];
   };
 
