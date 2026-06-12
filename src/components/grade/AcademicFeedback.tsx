@@ -14,6 +14,7 @@ import { CommentBankPalette } from "./CommentBankPalette";
 import { ReportTemplateDialog } from "./ReportTemplateDialog";
 import { useReportTemplate, I18N, computeBadges } from "@/lib/report-template";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
+import { addonBulletsFor } from "./feedback-addons";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
 import { saveReport } from "@/lib/saved-reports";
@@ -477,12 +478,17 @@ export function AcademicFeedback() {
         ? ` Score variance is ${sdSubject.toFixed(1)}% across ${pcts.length} graded task${pcts.length === 1 ? "" : "s"}.`
         : "";
     const respClause = ` Completion currently sits at ${r.completion}%.`;
+    // Universal addons — appended to each existing bullet (never replacing
+    // prior text) plus a brand-new 6th bullet (Future Outlook). Continuous
+    // 5% increment lookup keyed by the subject's term average.
+    const addons = addonBulletsFor(r.avg);
     return [
-      shiftedMain.bullets[0],
-      b2 + sdClause,
-      b3 + respClause,
-      shiftedMain.bullets[3] + sdClause,
-      b5,
+      `${shiftedMain.bullets[0]} ${addons.b1}`,
+      `${b2 + sdClause} ${addons.b2}`,
+      `${b3 + respClause} ${addons.b3}`,
+      `${shiftedMain.bullets[3] + sdClause} ${addons.b4}`,
+      `${b5} ${addons.b5}`,
+      addons.b6,
     ];
   };
 
@@ -712,6 +718,7 @@ export function AcademicFeedback() {
                   tr.commendations,
                   tr.responsibility,
                   tr.improvement,
+                  "Future Outlook",
                 ];
                 // Template-specific chip + card styling so switching the
                 // template in the dialog visibly changes the layout.
@@ -775,6 +782,12 @@ export function AcademicFeedback() {
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
                               {tr.previous}{prevTerm ? ` (${truncate(prevTerm.name, 10)})` : ""}
                             </div>
+                            <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
+                              <span>{meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}</span>
+                              {r.prevAvgDisplay && !meta.prevLetters[r.course.id] && (
+                                <span className="text-xs font-normal text-muted-foreground">({r.prevAvgDisplay})</span>
+                              )}
+                            </div>
                             {prevTermOptions.length > 1 && (
                               <select
                                 aria-label="Select previous term to compare"
@@ -789,12 +802,6 @@ export function AcademicFeedback() {
                                 ))}
                               </select>
                             )}
-                            <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
-                              <span>{meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}</span>
-                              {r.prevAvgDisplay && !meta.prevLetters[r.course.id] && (
-                                <span className="text-xs font-normal text-muted-foreground">({r.prevAvgDisplay})</span>
-                              )}
-                            </div>
                           </div>
                         )}
                         <div className="space-y-1">
@@ -802,11 +809,9 @@ export function AcademicFeedback() {
                             {/* Term Grade */}
                             {tr.termGrade}{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
                           </div>
-                          <div className="flex items-center gap-1.5 flex-wrap min-w-0 w-full">
-                            <div className={`inline-flex items-center justify-center gap-2 h-8 px-3 rounded-md border text-sm font-bold ${chipCls}`}>
-                              <span>{r.letter}</span>
-                              <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
-                            </div>
+                          <div className={`inline-flex items-center justify-center gap-2 h-8 px-3 rounded-md border text-sm font-bold ${chipCls}`}>
+                            <span>{r.letter}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
                           </div>
                         </div>
                       </div>

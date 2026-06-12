@@ -28,10 +28,9 @@ describe("Report card — combined Letter (xx.x%) display", () => {
     expect(block).toMatch(/\{r\.avgDisplay\}/);
   });
 
-  it("term grade chip uses full-width inline-flex with tabular-nums (prevents overlap on narrow screens)", () => {
+  it("term grade chip uses compact inline-flex with tabular-nums (reverted to original bar size)", () => {
     const block = getBlock("Term Grade", 10);
     expect(block).toMatch(/inline-flex/);
-    expect(block).toMatch(/w-full/);
     expect(block).toMatch(/items-center/);
     expect(block).toMatch(/tabular-nums/);
   });
