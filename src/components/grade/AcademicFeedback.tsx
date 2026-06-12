@@ -17,6 +17,7 @@ import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./
 import { addonBulletsFor } from "./feedback-addons";
 import { bullet7For, formatVelocity } from "./feedback-bullet7";
 import { computeVelocity } from "@/lib/grade-velocity";
+import { projectGrade, HORIZON_OPTIONS } from "@/lib/grade-projection";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
 import { saveReport } from "@/lib/saved-reports";
