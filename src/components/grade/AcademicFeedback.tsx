@@ -356,10 +356,13 @@ export function AcademicFeedback() {
   // Persisted to localStorage so the choice survives reloads.
   const HORIZON_KEY = "gradecalc-report-horizon-weeks";
   const [horizonWeeks, setHorizonWeeks] = useState<number>(() => {
-    if (typeof window === "undefined") return 4.345;
+    if (typeof window === "undefined") return 4;
     const raw = localStorage.getItem(HORIZON_KEY);
     const n = raw ? Number(raw) : NaN;
-    return Number.isFinite(n) && n > 0 ? n : 4.345;
+    if (!Number.isFinite(n) || n <= 0) return 4;
+    // Normalize legacy 1-month default (4.345) to the new 4-week option.
+    if (Math.abs(n - 4.345) < 0.01) return 4;
+    return n;
   });
   useEffect(() => {
     try { localStorage.setItem(HORIZON_KEY, String(horizonWeeks)); } catch {}
