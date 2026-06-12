@@ -17,6 +17,7 @@ import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./
 import { addonBulletsFor } from "./feedback-addons";
 import { bullet7For, formatVelocity } from "./feedback-bullet7";
 import { computeVelocity } from "@/lib/grade-velocity";
+import { projectGrade, HORIZON_OPTIONS } from "@/lib/grade-projection";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
 import { saveReport } from "@/lib/saved-reports";
@@ -351,6 +352,22 @@ export function AcademicFeedback() {
   const [tpl] = useReportTemplate();
   const tr = I18N[tpl.lang];
 
+  // User-selectable projection horizon for Bullet 6 (Future Outlook).
+  // Persisted to localStorage so the choice survives reloads.
+  const HORIZON_KEY = "gradecalc-report-horizon-weeks";
+  const [horizonWeeks, setHorizonWeeks] = useState<number>(() => {
+    if (typeof window === "undefined") return 4.345;
+    const raw = localStorage.getItem(HORIZON_KEY);
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : 4.345;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(HORIZON_KEY, String(horizonWeeks)); } catch {}
+  }, [horizonWeeks]);
+  const horizonLabel =
+    HORIZON_OPTIONS.find((o) => Math.abs(o.weeks - horizonWeeks) < 0.01)?.label ??
+    `${horizonWeeks.toFixed(1)} wk`;
+
   const [meta, setMeta] = useState<Meta>(defaultMeta);
   useEffect(() => {
     try {
@@ -494,34 +511,54 @@ export function AcademicFeedback() {
       letter: r.letter,
       velocityLabel: formatVelocity(velocity.slopePerWeek, velocity.sample),
     });
-    // B6 — Future Outlook. Project the term average 1 month (≈4.345 weeks)
-    // forward using the rolling velocity slope, clamp to 0–100, and derive
-    // the projected letter via the same REPORT_SCALE + A* override.
-    const WEEKS_PER_MONTH = 4.345;
-    const projected1mo = Math.max(
-      0,
-      Math.min(100, r.avg + velocity.slopePerWeek * WEEKS_PER_MONTH),
-    );
-    const projRawLetter = getLetter(projected1mo, scale)?.letter ?? "—";
-    const projLetter = applyAStarOverride(projected1mo, projRawLetter);
-    const delta1mo = projected1mo - r.avg;
+    // B6 — Future Outlook. Uses projectGrade(), which falls back to ALL
+    // graded tasks if the rolling 30-day window has <2 points, caps the
+    // total shift at ±20pp, and emits a confidence interval.
+    const proj = projectGrade(r.done, r.avg, horizonWeeks);
+    const projRawLetter = getLetter(proj.projected, scale)?.letter ?? "—";
+    const projLetter = applyAStarOverride(proj.projected, projRawLetter);
+    const slopeLabel = formatVelocity(proj.slopePerWeek, proj.sample);
+    const sourceLabel =
+      proj.source === "rolling-30d"
+        ? "rolling 30-day task window"
+        : proj.source === "all-tasks"
+          ? `this term's full task history (${proj.sample} graded tasks)`
+          : "insufficient task history";
     const trendWord =
-      velocity.sample < 2
+      proj.source === "insufficient"
         ? "insufficient trend data"
-        : Math.abs(velocity.slopePerWeek) < 0.3
+        : Math.abs(proj.slopePerWeek) < 0.3
           ? "a flat trajectory"
-          : velocity.slopePerWeek > 0
+          : proj.slopePerWeek > 0
             ? "an upward trajectory"
             : "a downward trajectory";
+    const cappedNote = proj.capped
+      ? ` The raw slope projected a swing beyond ±20pp, so the move was capped to keep the forecast realistic.`
+      : "";
+    const confidenceNote =
+      proj.source === "insufficient"
+        ? ` Confidence: very low — once 2+ graded tasks exist, the projection model activates.`
+        : ` Confidence: ${proj.confidence} (±${proj.marginPp.toFixed(1)}pp band → ${proj.low.toFixed(1)}%–${proj.high.toFixed(1)}%).`;
+    // Goal comparison vs the user's numeric target from Goal Tracker.
+    const goalPct = Number.isFinite(settings.goal) ? settings.goal : null;
+    const goalDelta = goalPct != null ? proj.projected - goalPct : null;
+    const goalClause =
+      goalDelta == null
+        ? ""
+        : goalDelta >= 0
+          ? ` Versus your ${goalPct}% goal, the projection is +${goalDelta.toFixed(1)}pp ahead — on track.`
+          : Math.abs(goalDelta) <= 3
+            ? ` Versus your ${goalPct}% goal, the projection is ${goalDelta.toFixed(1)}pp short — close, but at risk without sustained execution.`
+            : ` Versus your ${goalPct}% goal, the projection is ${goalDelta.toFixed(1)}pp short — at risk; intervention recommended to close the gap.`;
     const directionPhrase =
-      velocity.sample < 2
-        ? `Once 2+ graded tasks are logged, a 30-day projection will model where ${r.course.name} is heading; for now the model holds the average steady at ${r.avg.toFixed(1)}% (${r.letter}).`
-        : Math.abs(delta1mo) < 0.5
-          ? `Current momentum is essentially flat, so the projection holds near ${projected1mo.toFixed(1)}% (${projLetter}) — sustained execution keeps that band locked in.`
-          : delta1mo > 0
-            ? `If this pace holds, the projected average in ~1 month is ${projected1mo.toFixed(1)}% (${projLetter}) — a gain of +${delta1mo.toFixed(1)} pts from today's ${r.avg.toFixed(1)}%.`
-            : `If this pace holds, the projected average in ~1 month is ${projected1mo.toFixed(1)}% (${projLetter}) — a drop of ${delta1mo.toFixed(1)} pts from today's ${r.avg.toFixed(1)}%, so an intervention is needed to reverse the slope.`;
-    const b6Dynamic = `Future Outlook: Based on ${trendWord} (${formatVelocity(velocity.slopePerWeek, velocity.sample)}) computed from the rolling 30-day task window, ${directionPhrase} ${addons.b6}`;
+      proj.source === "insufficient"
+        ? `Once 2+ graded tasks are logged, a ${horizonLabel} projection will model where ${r.course.name} is heading; for now the model holds the average steady at ${r.avg.toFixed(1)}% (${r.letter}).`
+        : Math.abs(proj.delta) < 0.5
+          ? `Current momentum is essentially flat, so the ${horizonLabel} projection holds near ${proj.projected.toFixed(1)}% (${projLetter}) — sustained execution keeps that band locked in.`
+          : proj.delta > 0
+            ? `If this pace holds, the projected average in ~${horizonLabel} is ${proj.projected.toFixed(1)}% (${projLetter}) — a gain of +${proj.delta.toFixed(1)} pts from today's ${r.avg.toFixed(1)}%.`
+            : `If this pace holds, the projected average in ~${horizonLabel} is ${proj.projected.toFixed(1)}% (${projLetter}) — a drop of ${proj.delta.toFixed(1)} pts from today's ${r.avg.toFixed(1)}%, so an intervention is needed to reverse the slope.`;
+    const b6Dynamic = `Future Outlook (${horizonLabel}): Based on ${trendWord} (${slopeLabel}) computed from the ${sourceLabel}, ${directionPhrase}${cappedNote}${confidenceNote}${goalClause} ${addons.b6}`;
     return [
       `${shiftedMain.bullets[0]} ${addons.b1}`,
       `${b2 + sdClause} ${addons.b2}`,
@@ -709,6 +746,21 @@ export function AcademicFeedback() {
 
           <div className="flex gap-2 mt-4 no-print">
             <ReportTemplateDialog />
+            <label className="inline-flex items-center gap-2 px-2 h-9 rounded-md border bg-background text-xs font-medium">
+              <span className="text-muted-foreground">Bullet 6 horizon:</span>
+              <select
+                aria-label="Bullet 6 projection horizon"
+                value={String(horizonWeeks)}
+                onChange={(e) => setHorizonWeeks(Number(e.target.value))}
+                className="bg-transparent outline-none text-foreground"
+              >
+                {HORIZON_OPTIONS.map((o) => (
+                  <option key={o.label} value={o.weeks}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <Button variant="outline" onClick={handlePrint} className="gap-2">
               <Printer className="h-4 w-4" /> PDF Export
             </Button>
