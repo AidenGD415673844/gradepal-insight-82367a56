@@ -610,7 +610,18 @@ export function AcademicFeedback() {
       `}</style>
 
       <div className="space-y-5">
-        <Card className="p-5" id="academic-report">
+        <Card
+          className={`p-5 ${tpl.template === "modern" ? "bg-gradient-to-br from-background to-primary/5" : ""}`}
+          id="academic-report"
+          style={{
+            fontFamily:
+              tpl.font === "serif"
+                ? "Georgia, serif"
+                : tpl.font === "mono"
+                  ? "ui-monospace, monospace"
+                  : undefined,
+          }}
+        >
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <div className="flex items-center gap-2">
               {tpl.logoDataUrl && (
