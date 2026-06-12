@@ -189,15 +189,19 @@ export function CoursesSidebar() {
                       <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
                     )}
                   </span>
-                  <span className="text-xs opacity-70 ml-2 shrink-0">
-                    {avg !== null ? `${avg.toFixed(0)}%` : count}
-                    {goal !== undefined && <span className="ml-1">/{goal}</span>}
+                  <span className="ml-2 shrink-0 inline-flex items-center gap-1 flex-wrap justify-end">
+                    <span className="text-[11px] tabular-nums opacity-70 leading-none whitespace-nowrap">
+                      {avg !== null ? `${avg.toFixed(0)}%` : count}
+                      {goal !== undefined && (
+                        <span className="opacity-80">/{goal}</span>
+                      )}
+                    </span>
+                    <VelocityBadge
+                      compact
+                      className="shrink-0"
+                      tasks={tasks.filter((t) => t.courseId === c.id && !t.pending)}
+                    />
                   </span>
-                  <VelocityBadge
-                    compact
-                    className="ml-1.5 shrink-0"
-                    tasks={tasks.filter((t) => t.courseId === c.id && !t.pending)}
-                  />
                 </button>
                 {!readOnly && (
                   <>

@@ -109,9 +109,16 @@ export function ProjectionChart() {
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <ReferenceLine
               y={settings.goal}
-              stroke="hsl(var(--primary))"
+              stroke="hsl(142 71% 45%)"
+              strokeWidth={2}
               strokeDasharray="4 4"
-              label={{ value: `Goal ${settings.goal}%`, position: "right", fontSize: 10 }}
+              label={{
+                value: `Goal ${settings.goal}%`,
+                position: "insideTopRight",
+                fontSize: 10,
+                fill: "hsl(142 71% 35%)",
+                fontWeight: 700,
+              }}
             />
             <Bar dataKey="Current" radius={[4, 4, 0, 0]}>
               {data.map((d, i) => (

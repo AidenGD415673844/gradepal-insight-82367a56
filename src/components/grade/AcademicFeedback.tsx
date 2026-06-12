@@ -336,7 +336,7 @@ function csvEscape(s: string): string {
 }
 
 export function AcademicFeedback() {
-  const { courses, tasks, terms, activeTermId, settings } = useGrades();
+  const { courses, tasks, terms, activeTermId, settings, subjectGoals } = useGrades();
   // Report card always uses the fixed REPORT_SCALE — not the user's scale.
   const scale = REPORT_SCALE;
   const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
@@ -901,16 +901,9 @@ export function AcademicFeedback() {
                   "Scoring Consistency",
                   "Optimization Strategy",
                 ];
-                // Template-specific chip + card styling so switching the
-                // template in the dialog visibly changes the layout.
-                const chipCls =
-                  tpl.template === "modern"
-                    ? "ring-2 ring-primary/60 bg-primary/15"
-                    : tpl.template === "k12"
-                      ? "bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
-                      : tpl.template === "international"
-                        ? "bg-background border-2 border-primary text-primary"
-                        : "bg-primary/10 border-primary/30";
+                // Template-specific card styling so switching the template
+                // in the dialog visibly changes the layout. (Term-grade chip
+                // is intentionally template-neutral — old version.)
                 const cardCls =
                   tpl.template === "simple"
                     ? "p-3 md:p-4 border-l-2"
@@ -948,15 +941,25 @@ export function AcademicFeedback() {
                         </div>
                         <div className="space-y-1">
                           <div className="text-[10px] uppercase tracking-wider text-primary font-semibold">{tr.aspirational}</div>
-                          <Input
-                            className="h-8 no-print border-primary/40"
-                            value={meta.goals[r.course.id] ?? ""}
-                            onChange={(e) => update("goals", r.course.id, e.target.value)}
-                            placeholder="A*"
-                          />
-                          <div className="hidden print:block text-sm font-medium text-primary">
-                            {meta.goals[r.course.id] || "—"}
-                          </div>
+                          {(() => {
+                            const goalPct = subjectGoals[r.course.id] ?? settings.goal;
+                            const goalLetter = applyAStarOverride(
+                              goalPct,
+                              getLetter(goalPct, scale)?.letter ?? "—",
+                            );
+                            return (
+                              <div
+                                title="Locked to this subject's goal — change it in the Subjects sidebar"
+                                aria-readonly="true"
+                                className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border border-primary/40 bg-primary/5 text-sm font-semibold text-primary tabular-nums"
+                              >
+                                <span>{goalLetter}</span>
+                                <span className="text-xs font-normal text-primary/80">
+                                  ({goalPct}%)
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                         {hasPrevTerm && (
                           <div className="space-y-1 min-w-0">
@@ -990,9 +993,11 @@ export function AcademicFeedback() {
                             {/* Term Grade */}
                             {tr.termGrade}{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
                           </div>
-                          <div className={`inline-flex items-center justify-center gap-2 h-8 px-3 rounded-md border text-sm font-bold ${chipCls}`}>
+                          <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
                             <span>{r.letter}</span>
-                            <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
+                            <span className="text-xs font-normal text-muted-foreground">
+                              {r.avgDisplay}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1086,9 +1091,69 @@ export function AcademicFeedback() {
                         </div>
                       </div>
                       {hideComments[r.course.id] ? (
-                        <p className="text-xs text-muted-foreground italic">
-                          Comments hidden for {r.course.name}. Click "Show comments" to re-render.
-                        </p>
+                        (() => {
+                          if (!r.hasData) {
+                            return (
+                              <p className="text-xs text-muted-foreground italic">
+                                No graded tasks yet for {r.course.name}. Add a task to generate a feedback summary.
+                              </p>
+                            );
+                          }
+                          const trend = computeTrendInfo({
+                            hasData: r.hasData,
+                            hasPrevData: r.hasPrevData,
+                            avg: r.avg,
+                            prevAvg: r.prevAvg,
+                            done: r.done,
+                            allDone: r.allDone,
+                            isAllTerms: activeTerm == null,
+                            weighted: settings.weighted,
+                          });
+                          const proj = projectGrade(r.done, r.avg, horizonWeeks);
+                          const projTier = projectedTierLabel(proj.projected);
+                          const goalPct = subjectGoals[r.course.id] ?? settings.goal;
+                          const goalDelta = proj.projected - goalPct;
+                          const trendPhrase =
+                            trend.delta == null
+                              ? "trend data is still building"
+                              : trend.delta >= 1
+                                ? `trending upward (+${trend.delta.toFixed(1)} pts)`
+                                : trend.delta <= -1
+                                  ? `trending downward (${trend.delta.toFixed(1)} pts)`
+                                  : "holding roughly steady";
+                          const completionPhrase =
+                            r.completion >= 95
+                              ? "near-perfect task completion"
+                              : r.completion >= 80
+                                ? `${r.completion}% completion`
+                                : `only ${r.completion}% completion — outstanding work is dragging the average`;
+                          const goalPhrase =
+                            goalDelta >= 0
+                              ? `on track to clear the ${goalPct}% goal by ${goalDelta.toFixed(1)}pp`
+                              : Math.abs(goalDelta) <= 3
+                                ? `${Math.abs(goalDelta).toFixed(1)}pp short of the ${goalPct}% goal — close, but at risk`
+                                : `${Math.abs(goalDelta).toFixed(1)}pp below the ${goalPct}% goal — a focused push is needed`;
+                          const para1 =
+                            `${r.course.name} sits at ${r.avg.toFixed(1)}% (${r.letter}, ${currentBandPhrase(r.avg)}) with ${completionPhrase}. ` +
+                            `Recent performance is ${trendPhrase} ${trend.mode === "all-history" ? "across this subject's full history" : trend.mode === "prev-term" ? "versus the previous term" : "across this term's tasks"}. ` +
+                            `(Bullets 1–3: Strengths, Trends, Commendations.)`;
+                          const para2 =
+                            `Looking ahead over the next ${horizonLabel}, the projection lands near ${proj.projected.toFixed(1)}% (${projTier}) at ${proj.confidencePct}% confidence — ${goalPhrase}. ` +
+                            `Improvement focus should target the next sub-band: ${nextTierGoal(r.avg).replace(/^You are currently[^.]*\.\s*/, "")} ` +
+                            `(Bullets 4–10: Responsibility, Improvement, Future Outlook, Diagnosis, Task Profile, Consistency, Optimization.)`;
+                          return (
+                            <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
+                              <p>
+                                <span className="font-semibold text-foreground">Quick summary — </span>
+                                {para1}
+                              </p>
+                              <p>{para2}</p>
+                              <p className="text-[11px] italic">
+                                Full 10-bullet feedback is hidden for {r.course.name} to reduce lag. Click "Show comments" to expand.
+                              </p>
+                            </div>
+                          );
+                        })()
                       ) : manualOn ? (
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
                           <Textarea
