@@ -327,6 +327,16 @@ export function AcademicFeedback() {
     const idx = sorted.findIndex((t) => t.id === activeTerm.id);
     return idx > 0 ? sorted[idx - 1] : null;
   }, [terms, activeTerm]);
+  // Up to 3 most recent previous terms for the multi-term comparison strip.
+  const prevTerms = useMemo(() => {
+    if (!activeTerm) return [];
+    const sorted = [...terms].sort((a, b) => a.start.localeCompare(b.start));
+    const idx = sorted.findIndex((t) => t.id === activeTerm.id);
+    if (idx <= 0) return [];
+    return sorted.slice(Math.max(0, idx - 3), idx).reverse();
+  }, [terms, activeTerm]);
+  const [tpl] = useReportTemplate();
+  const tr = I18N[tpl.lang];
 
   const [meta, setMeta] = useState<Meta>(defaultMeta);
   useEffect(() => {
