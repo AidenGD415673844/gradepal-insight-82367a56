@@ -32,7 +32,14 @@ export function GPAFireAlarm() {
     : 0;
 
   const distance = overall - floor;
-  const alarm = withData.length > 0 && distance <= 2;
+  // Two distinct alarm states:
+  // - "near"  : overall is within 2pp ABOVE floor (about to dip below)
+  // - "below" : overall has already dropped under floor
+  // Previously both used the same "within 2% of your floor" copy, so
+  // a 92% overall with a 96% floor was mis-described as "within 2%".
+  const near = withData.length > 0 && distance >= 0 && distance <= 2;
+  const below = withData.length > 0 && distance < 0;
+  const alarm = near || below;
   const draggers = withData
     .flatMap((p) =>
       p.done
@@ -74,7 +81,9 @@ export function GPAFireAlarm() {
       {alarm ? (
         <div className="text-xs">
           <p className="text-red-600 font-medium mb-1">
-            ⚠ Overall is within 2% of your floor ({distance.toFixed(1)}pt margin). Tasks dragging the average:
+            {below
+              ? `⚠ Overall is ${Math.abs(distance).toFixed(1)}pt BELOW your floor of ${floor}%. Tasks dragging the average:`
+              : `⚠ Overall is within 2% of your floor (${distance.toFixed(1)}pt margin above ${floor}%). Tasks dragging the average:`}
           </p>
           {draggers.length ? (
             <ul className="space-y-0.5">

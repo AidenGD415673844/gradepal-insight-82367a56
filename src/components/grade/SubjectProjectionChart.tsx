@@ -75,13 +75,15 @@ export function SubjectProjectionChart(props: {
           {props.goalPct != null && (
             <ReferenceLine
               y={props.goalPct}
-              stroke="hsl(var(--primary))"
+              stroke="hsl(142 71% 45%)"
+              strokeWidth={2}
               strokeDasharray="4 4"
               label={{
                 value: `Goal ${letterTickFormatter(props.goalPct)}`,
                 position: "insideTopRight",
                 fontSize: 9,
-                fill: "hsl(var(--primary))",
+                fill: "hsl(142 71% 35%)",
+                fontWeight: 700,
               }}
             />
           )}
