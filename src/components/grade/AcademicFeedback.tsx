@@ -1065,16 +1065,31 @@ export function AcademicFeedback() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between no-print">
                         <h4 className="text-sm font-semibold">{tr.comments}</h4>
-                        <label className="text-xs flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={manualOn}
-                            onChange={(e) => update("manualOn", r.course.id, e.target.checked)}
-                          />
-                          Manual mode
-                        </label>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setHideComments((m) => ({ ...m, [r.course.id]: !m[r.course.id] }))
+                            }
+                            className="text-xs px-2 h-7 rounded-md border bg-background hover:bg-muted font-medium"
+                          >
+                            {hideComments[r.course.id] ? "Show comments" : "Hide comments"}
+                          </button>
+                          <label className="text-xs flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={manualOn}
+                              onChange={(e) => update("manualOn", r.course.id, e.target.checked)}
+                            />
+                            Manual mode
+                          </label>
+                        </div>
                       </div>
-                      {manualOn ? (
+                      {hideComments[r.course.id] ? (
+                        <p className="text-xs text-muted-foreground italic">
+                          Comments hidden for {r.course.name}. Click "Show comments" to re-render.
+                        </p>
+                      ) : manualOn ? (
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
                           <Textarea
                             rows={8}
