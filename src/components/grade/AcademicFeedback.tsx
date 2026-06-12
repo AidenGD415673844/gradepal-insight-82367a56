@@ -93,6 +93,19 @@ export const NEXT_TIER_LADDER: Array<{ letter: string; tier: string; min: number
 const LETTER_MINS = [41, 51, 61, 71, 81, 91];
 
 /**
+ * Renders the projected percentage as a sub-band label like "low A*",
+ * "mid B" etc. — mirrors the NEXT_TIER_LADDER decoration used by the
+ * forward-looking goal copy so the snapshot reads naturally.
+ */
+export function projectedTierLabel(pct: number): string {
+  if (pct >= 91) return "A*";
+  const sorted = [...NEXT_TIER_LADDER].sort((a, b) => a.min - b.min);
+  const below = [...sorted].reverse().find((b) => b.min <= pct);
+  if (!below) return "NA";
+  return below.tier ? `${below.tier} ${below.letter}` : below.letter;
+}
+
+/**
  * Returns a human-readable description of the student's current band.
  * When the score is within ±1.5% of a real LETTER boundary (e.g. 70.5 is
  * very close to B's 71 cutoff) it returns a "between higher X and lower Y"
