@@ -10,6 +10,7 @@ import {
 // useRouter is kept above only because ErrorComponent still uses it.
 import { GradeProvider } from "@/lib/grade-store";
 import { Toaster } from "@/components/ui/sonner";
+import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
 
 import appCss from "../styles.css?url";
 
@@ -102,8 +103,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <GradeProvider>
-        <Outlet />
-        <Toaster richColors position="top-right" />
+        <GlobalErrorBoundary>
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </GlobalErrorBoundary>
       </GradeProvider>
     </QueryClientProvider>
   );
