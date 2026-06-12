@@ -7,6 +7,7 @@ import { CoursesSidebar } from "@/components/grade/CoursesSidebar";
 import { StatsRow } from "@/components/grade/StatsRow";
 import { GradesTable, TaskDialog } from "@/components/grade/GradesTable";
 import { PredictiveAnalysis, GoalTracker } from "@/components/grade/Predictive";
+import { ProjectionChart } from "@/components/grade/ProjectionChart";
 import { GradesBarChart, GradeDistributionPie, PerformanceOverTime } from "@/components/grade/Charts";
 import { TermManager } from "@/components/grade/TermManager";
 import { GradeScaleDialog } from "@/components/grade/GradeScaleDialog";
@@ -83,6 +84,7 @@ function GradesPage() {
           <SyllabusMastery />
           <PredictiveAnalysis />
           <GoalTracker />
+          <ProjectionChart />
           <GradeHorizonMap />
           <StressTestSimulator />
           {!prefs.hideCharts && (
