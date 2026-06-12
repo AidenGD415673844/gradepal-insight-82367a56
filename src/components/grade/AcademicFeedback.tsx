@@ -1026,6 +1026,30 @@ export function AcademicFeedback() {
                                 {b.label}
                               </span>
                             ))}
+                            {r.course.id === highestJumpId && (
+                              <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">
+                                <span aria-hidden>🚀</span>
+                                Highest Jump · +{(projDeltas.get(r.course.id) ?? 0).toFixed(1)}pp
+                              </span>
+                            )}
+                            {r.course.id === biggestDropId && (
+                              <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900">
+                                <span aria-hidden>📉</span>
+                                Biggest Drop · {(projDeltas.get(r.course.id) ?? 0).toFixed(1)}pp
+                              </span>
+                            )}
+                            {(projConfidence.get(r.course.id) ?? 0) >= 75 && (
+                              <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-sky-300 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900">
+                                <span aria-hidden>🎯</span>
+                                High Confidence · {projConfidence.get(r.course.id)}%
+                              </span>
+                            )}
+                            {r.hasData && r.done.length >= 3 && stddev(r.done.map((t) => (t.score / t.maxScore) * 100)) >= 15 && (
+                              <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">
+                                <span aria-hidden>🌊</span>
+                                Volatile Scores
+                              </span>
+                            )}
                           </div>
                         </div>
                       )}
