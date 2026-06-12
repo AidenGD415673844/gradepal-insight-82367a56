@@ -746,6 +746,21 @@ export function AcademicFeedback() {
 
           <div className="flex gap-2 mt-4 no-print">
             <ReportTemplateDialog />
+            <label className="inline-flex items-center gap-2 px-2 h-9 rounded-md border bg-background text-xs font-medium">
+              <span className="text-muted-foreground">Bullet 6 horizon:</span>
+              <select
+                aria-label="Bullet 6 projection horizon"
+                value={String(horizonWeeks)}
+                onChange={(e) => setHorizonWeeks(Number(e.target.value))}
+                className="bg-transparent outline-none text-foreground"
+              >
+                {HORIZON_OPTIONS.map((o) => (
+                  <option key={o.label} value={o.weeks}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <Button variant="outline" onClick={handlePrint} className="gap-2">
               <Printer className="h-4 w-4" /> PDF Export
             </Button>
