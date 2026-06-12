@@ -595,8 +595,32 @@ export function AcademicFeedback() {
         <Card className="p-5" id="academic-report">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <div className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-bold">Academic Report Card</h2>
+              {tpl.logoDataUrl && (
+                <img
+                  src={tpl.logoDataUrl}
+                  alt="School logo"
+                  className="h-9 w-9 object-contain rounded border"
+                />
+              )}
+              <GraduationCap className="h-5 w-5" style={{ color: tpl.accent }} />
+              <div className="leading-tight">
+                <h2
+                  className="text-lg font-bold"
+                  style={{
+                    fontFamily:
+                      tpl.font === "serif"
+                        ? "Georgia, serif"
+                        : tpl.font === "mono"
+                          ? "monospace"
+                          : undefined,
+                  }}
+                >
+                  {tr.reportCard}
+                </h2>
+                {tpl.schoolName && (
+                  <div className="text-[11px] text-muted-foreground">{tpl.schoolName}</div>
+                )}
+              </div>
             </div>
             <div className="text-xs text-muted-foreground">
               {activeTerm
