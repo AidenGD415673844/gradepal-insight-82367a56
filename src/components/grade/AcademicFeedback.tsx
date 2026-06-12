@@ -16,6 +16,8 @@ import { useReportTemplate, I18N, computeBadges } from "@/lib/report-template";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { addonBulletsFor } from "./feedback-addons";
 import { bullet7For, formatVelocity } from "./feedback-bullet7";
+import { bullets8910For } from "./feedback-bullets8910";
+import { SubjectProjectionChart } from "./SubjectProjectionChart";
 import { computeVelocity } from "@/lib/grade-velocity";
 import { projectGrade, HORIZON_OPTIONS } from "@/lib/grade-projection";
 import { applyAStarOverride } from "./a-star-override";
