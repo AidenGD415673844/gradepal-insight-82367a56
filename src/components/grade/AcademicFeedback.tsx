@@ -494,13 +494,41 @@ export function AcademicFeedback() {
       letter: r.letter,
       velocityLabel: formatVelocity(velocity.slopePerWeek, velocity.sample),
     });
+    // B6 — Future Outlook. Project the term average 1 month (≈4.345 weeks)
+    // forward using the rolling velocity slope, clamp to 0–100, and derive
+    // the projected letter via the same REPORT_SCALE + A* override.
+    const WEEKS_PER_MONTH = 4.345;
+    const projected1mo = Math.max(
+      0,
+      Math.min(100, r.avg + velocity.slopePerWeek * WEEKS_PER_MONTH),
+    );
+    const projRawLetter = getLetter(projected1mo, scale)?.letter ?? "—";
+    const projLetter = applyAStarOverride(projected1mo, projRawLetter);
+    const delta1mo = projected1mo - r.avg;
+    const trendWord =
+      velocity.sample < 2
+        ? "insufficient trend data"
+        : Math.abs(velocity.slopePerWeek) < 0.3
+          ? "a flat trajectory"
+          : velocity.slopePerWeek > 0
+            ? "an upward trajectory"
+            : "a downward trajectory";
+    const directionPhrase =
+      velocity.sample < 2
+        ? `Once 2+ graded tasks are logged, a 30-day projection will model where ${r.course.name} is heading; for now the model holds the average steady at ${r.avg.toFixed(1)}% (${r.letter}).`
+        : Math.abs(delta1mo) < 0.5
+          ? `Current momentum is essentially flat, so the projection holds near ${projected1mo.toFixed(1)}% (${projLetter}) — sustained execution keeps that band locked in.`
+          : delta1mo > 0
+            ? `If this pace holds, the projected average in ~1 month is ${projected1mo.toFixed(1)}% (${projLetter}) — a gain of +${delta1mo.toFixed(1)} pts from today's ${r.avg.toFixed(1)}%.`
+            : `If this pace holds, the projected average in ~1 month is ${projected1mo.toFixed(1)}% (${projLetter}) — a drop of ${delta1mo.toFixed(1)} pts from today's ${r.avg.toFixed(1)}%, so an intervention is needed to reverse the slope.`;
+    const b6Dynamic = `Future Outlook: Based on ${trendWord} (${formatVelocity(velocity.slopePerWeek, velocity.sample)}) computed from the rolling 30-day task window, ${directionPhrase} ${addons.b6}`;
     return [
       `${shiftedMain.bullets[0]} ${addons.b1}`,
       `${b2 + sdClause} ${addons.b2}`,
       `${b3 + respClause} ${addons.b3}`,
       `${shiftedMain.bullets[3] + sdClause} ${addons.b4}`,
       `${b5} ${addons.b5}`,
-      addons.b6,
+      b6Dynamic,
       b7,
     ];
   };
