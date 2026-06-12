@@ -352,6 +352,22 @@ export function AcademicFeedback() {
   const [tpl] = useReportTemplate();
   const tr = I18N[tpl.lang];
 
+  // User-selectable projection horizon for Bullet 6 (Future Outlook).
+  // Persisted to localStorage so the choice survives reloads.
+  const HORIZON_KEY = "gradecalc-report-horizon-weeks";
+  const [horizonWeeks, setHorizonWeeks] = useState<number>(() => {
+    if (typeof window === "undefined") return 4.345;
+    const raw = localStorage.getItem(HORIZON_KEY);
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : 4.345;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(HORIZON_KEY, String(horizonWeeks)); } catch {}
+  }, [horizonWeeks]);
+  const horizonLabel =
+    HORIZON_OPTIONS.find((o) => Math.abs(o.weeks - horizonWeeks) < 0.01)?.label ??
+    `${horizonWeeks.toFixed(1)} wk`;
+
   const [meta, setMeta] = useState<Meta>(defaultMeta);
   useEffect(() => {
     try {
