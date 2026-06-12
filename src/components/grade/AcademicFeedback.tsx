@@ -1000,9 +1000,11 @@ export function AcademicFeedback() {
                             {/* Term Grade */}
                             {tr.termGrade}{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
                           </div>
-                          <div className={`inline-flex items-center justify-center gap-2 h-8 px-3 rounded-md border text-sm font-bold ${chipCls}`}>
+                          <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
                             <span>{r.letter}</span>
-                            <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
+                            <span className="text-xs font-normal text-muted-foreground">
+                              {r.avgDisplay}
+                            </span>
                           </div>
                         </div>
                       </div>
