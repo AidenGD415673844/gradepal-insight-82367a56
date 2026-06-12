@@ -652,6 +652,9 @@ export function AcademicFeedback() {
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center px-1.5 h-5 mr-2 rounded border bg-muted/50 font-semibold uppercase tracking-wider text-[10px]">
+                {tpl.template}
+              </span>
               {activeTerm
                 ? `${truncate(activeTerm.name, 10)} · ${activeTerm.start} → ${activeTerm.end}`
                 : "All terms"}
