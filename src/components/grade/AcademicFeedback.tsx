@@ -828,7 +828,7 @@ export function AcademicFeedback() {
             </div>
           </div>
 
-          <div className="flex gap-2 mt-4 no-print">
+          <div className="flex flex-wrap gap-2 mt-4 no-print">
             <ReportTemplateDialog />
             <label className="inline-flex items-center gap-2 px-2 h-9 rounded-md border bg-background text-xs font-medium">
               <span className="text-muted-foreground">Bullet 6 horizon:</span>
