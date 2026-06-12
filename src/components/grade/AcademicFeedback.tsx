@@ -1091,9 +1091,69 @@ export function AcademicFeedback() {
                         </div>
                       </div>
                       {hideComments[r.course.id] ? (
-                        <p className="text-xs text-muted-foreground italic">
-                          Comments hidden for {r.course.name}. Click "Show comments" to re-render.
-                        </p>
+                        (() => {
+                          if (!r.hasData) {
+                            return (
+                              <p className="text-xs text-muted-foreground italic">
+                                No graded tasks yet for {r.course.name}. Add a task to generate a feedback summary.
+                              </p>
+                            );
+                          }
+                          const trend = computeTrendInfo({
+                            hasData: r.hasData,
+                            hasPrevData: r.hasPrevData,
+                            avg: r.avg,
+                            prevAvg: r.prevAvg,
+                            done: r.done,
+                            allDone: r.allDone,
+                            isAllTerms: activeTerm == null,
+                            weighted: settings.weighted,
+                          });
+                          const proj = projectGrade(r.done, r.avg, horizonWeeks);
+                          const projTier = projectedTierLabel(proj.projected);
+                          const goalPct = subjectGoals[r.course.id] ?? settings.goal;
+                          const goalDelta = proj.projected - goalPct;
+                          const trendPhrase =
+                            trend.delta == null
+                              ? "trend data is still building"
+                              : trend.delta >= 1
+                                ? `trending upward (+${trend.delta.toFixed(1)} pts)`
+                                : trend.delta <= -1
+                                  ? `trending downward (${trend.delta.toFixed(1)} pts)`
+                                  : "holding roughly steady";
+                          const completionPhrase =
+                            r.completion >= 95
+                              ? "near-perfect task completion"
+                              : r.completion >= 80
+                                ? `${r.completion}% completion`
+                                : `only ${r.completion}% completion — outstanding work is dragging the average`;
+                          const goalPhrase =
+                            goalDelta >= 0
+                              ? `on track to clear the ${goalPct}% goal by ${goalDelta.toFixed(1)}pp`
+                              : Math.abs(goalDelta) <= 3
+                                ? `${Math.abs(goalDelta).toFixed(1)}pp short of the ${goalPct}% goal — close, but at risk`
+                                : `${Math.abs(goalDelta).toFixed(1)}pp below the ${goalPct}% goal — a focused push is needed`;
+                          const para1 =
+                            `${r.course.name} sits at ${r.avg.toFixed(1)}% (${r.letter}, ${currentBandPhrase(r.avg)}) with ${completionPhrase}. ` +
+                            `Recent performance is ${trendPhrase} ${trend.mode === "all-history" ? "across this subject's full history" : trend.mode === "prev-term" ? "versus the previous term" : "across this term's tasks"}. ` +
+                            `(Bullets 1–3: Strengths, Trends, Commendations.)`;
+                          const para2 =
+                            `Looking ahead over the next ${horizonLabel}, the projection lands near ${proj.projected.toFixed(1)}% (${projTier}) at ${proj.confidencePct}% confidence — ${goalPhrase}. ` +
+                            `Improvement focus should target the next sub-band: ${nextTierGoal(r.avg).replace(/^You are currently[^.]*\.\s*/, "")} ` +
+                            `(Bullets 4–10: Responsibility, Improvement, Future Outlook, Diagnosis, Task Profile, Consistency, Optimization.)`;
+                          return (
+                            <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
+                              <p>
+                                <span className="font-semibold text-foreground">Quick summary — </span>
+                                {para1}
+                              </p>
+                              <p>{para2}</p>
+                              <p className="text-[11px] italic">
+                                Full 10-bullet feedback is hidden for {r.course.name} to reduce lag. Click "Show comments" to expand.
+                              </p>
+                            </div>
+                          );
+                        })()
                       ) : manualOn ? (
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
                           <Textarea
