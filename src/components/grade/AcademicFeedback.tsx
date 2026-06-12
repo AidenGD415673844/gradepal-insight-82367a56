@@ -718,6 +718,7 @@ export function AcademicFeedback() {
                   tr.commendations,
                   tr.responsibility,
                   tr.improvement,
+                  "Future Outlook",
                 ];
                 // Template-specific chip + card styling so switching the
                 // template in the dialog visibly changes the layout.
@@ -781,6 +782,12 @@ export function AcademicFeedback() {
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
                               {tr.previous}{prevTerm ? ` (${truncate(prevTerm.name, 10)})` : ""}
                             </div>
+                            <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
+                              <span>{meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}</span>
+                              {r.prevAvgDisplay && !meta.prevLetters[r.course.id] && (
+                                <span className="text-xs font-normal text-muted-foreground">({r.prevAvgDisplay})</span>
+                              )}
+                            </div>
                             {prevTermOptions.length > 1 && (
                               <select
                                 aria-label="Select previous term to compare"
@@ -795,12 +802,6 @@ export function AcademicFeedback() {
                                 ))}
                               </select>
                             )}
-                            <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
-                              <span>{meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}</span>
-                              {r.prevAvgDisplay && !meta.prevLetters[r.course.id] && (
-                                <span className="text-xs font-normal text-muted-foreground">({r.prevAvgDisplay})</span>
-                              )}
-                            </div>
                           </div>
                         )}
                         <div className="space-y-1">
@@ -808,11 +809,9 @@ export function AcademicFeedback() {
                             {/* Term Grade */}
                             {tr.termGrade}{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
                           </div>
-                          <div className="flex items-center gap-1.5 flex-wrap min-w-0 w-full">
-                            <div className={`inline-flex items-center justify-center gap-2 h-8 px-3 rounded-md border text-sm font-bold ${chipCls}`}>
-                              <span>{r.letter}</span>
-                              <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
-                            </div>
+                          <div className={`inline-flex items-center justify-center gap-2 h-8 px-3 rounded-md border text-sm font-bold ${chipCls}`}>
+                            <span>{r.letter}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
                           </div>
                         </div>
                       </div>
