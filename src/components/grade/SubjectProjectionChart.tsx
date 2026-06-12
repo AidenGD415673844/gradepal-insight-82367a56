@@ -55,7 +55,35 @@ export function SubjectProjectionChart(props: {
     },
   ];
   return (
-    <div className="h-44 w-full mt-2 mb-1">
+    <div className="h-48 w-full mt-2 mb-1">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground mb-1">
+        <span className="inline-flex items-center gap-1">
+          <span
+            aria-hidden
+            className="inline-block w-3 h-2 rounded-sm"
+            style={{ background: props.color ?? "hsl(var(--muted-foreground))", opacity: 0.55 }}
+          />
+          Current
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span
+            aria-hidden
+            className="inline-block w-3 h-2 rounded-sm"
+            style={{ background: props.onTrack ? "hsl(142 71% 45%)" : "hsl(var(--destructive))" }}
+          />
+          Projected
+        </span>
+        {props.goalPct != null && (
+          <span className="inline-flex items-center gap-1 font-semibold" style={{ color: "hsl(142 71% 35%)" }}>
+            <span
+              aria-hidden
+              className="inline-block w-4 border-t-2 border-dashed"
+              style={{ borderColor: "hsl(142 71% 45%)" }}
+            />
+            Goal {letterTickFormatter(props.goalPct)} ({props.goalPct}%)
+          </span>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 6, right: 16, bottom: 4, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
