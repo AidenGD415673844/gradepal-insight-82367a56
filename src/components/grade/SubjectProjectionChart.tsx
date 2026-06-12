@@ -12,6 +12,25 @@ import {
 } from "recharts";
 
 /**
+ * Y-axis ticks aligned with the report card's letter-grade scale so the
+ * chart reads as "B / A / A*" instead of arbitrary 30/60/90 numbers.
+ */
+const LETTER_TICKS: Array<{ y: number; label: string }> = [
+  { y: 0, label: "NA" },
+  { y: 41, label: "E" },
+  { y: 51, label: "D" },
+  { y: 61, label: "C" },
+  { y: 71, label: "B" },
+  { y: 81, label: "A" },
+  { y: 91, label: "A*" },
+];
+
+function letterTickFormatter(v: number): string {
+  const hit = [...LETTER_TICKS].reverse().find((t) => v >= t.y);
+  return hit ? hit.label : "NA";
+}
+
+/**
  * Compact per-subject projection chart shown inside Bullet 6 of the
  * Report Card. Renders Current vs Projected with the goal reference
  * line and a ±margin error bar. Lives inside the printable
@@ -38,17 +57,28 @@ export function SubjectProjectionChart(props: {
   return (
     <div className="h-44 w-full mt-2 mb-1">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 6, right: 12, bottom: 4, left: -8 }}>
+        <BarChart data={data} margin={{ top: 6, right: 16, bottom: 4, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
           <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-          <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} width={32} />
-          <Tooltip formatter={(v, key) => [`${Number(v).toFixed(1)}%`, String(key)]} />
+          <YAxis
+            domain={[0, 100]}
+            ticks={LETTER_TICKS.map((t) => t.y)}
+            tickFormatter={letterTickFormatter}
+            tick={{ fontSize: 10 }}
+            width={32}
+          />
+          <Tooltip formatter={(v, key) => [`${Number(v).toFixed(1)}% (${letterTickFormatter(Number(v))})`, String(key)]} />
           {props.goalPct != null && (
             <ReferenceLine
               y={props.goalPct}
               stroke="hsl(var(--primary))"
               strokeDasharray="4 4"
-              label={{ value: `Goal ${props.goalPct}%`, position: "right", fontSize: 9 }}
+              label={{
+                value: `Goal ${letterTickFormatter(props.goalPct)}`,
+                position: "insideTopRight",
+                fontSize: 9,
+                fill: "hsl(var(--primary))",
+              }}
             />
           )}
           <Bar dataKey="Current" radius={[3, 3, 0, 0]}>
