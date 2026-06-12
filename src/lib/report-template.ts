@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 export type TemplateId = "preset" | "simple" | "modern" | "k12" | "college" | "international";
 export type LangId = "en" | "es" | "fr" | "zh";
@@ -37,19 +37,53 @@ export function saveTemplate(t: ReportTemplate) {
   localStorage.setItem(KEY, JSON.stringify(t));
 }
 
-export function useReportTemplate(): [ReportTemplate, (t: Partial<ReportTemplate>) => void] {
-  const [t, setT] = useState<ReportTemplate>(DEFAULT_TEMPLATE);
-  useEffect(() => {
-    setT(loadTemplate());
-  }, []);
-  const update = (p: Partial<ReportTemplate>) => {
-    setT((prev) => {
-      const next = { ...prev, ...p };
-      saveTemplate(next);
-      return next;
+/* ------------------------------------------------------------------ */
+/*  Shared module-level store so every useReportTemplate() consumer    */
+/*  re-renders when any one of them calls update(...).                 */
+/* ------------------------------------------------------------------ */
+
+let current: ReportTemplate = DEFAULT_TEMPLATE;
+let hydrated = false;
+const listeners = new Set<() => void>();
+
+function ensureHydrated() {
+  if (hydrated || typeof window === "undefined") return;
+  current = loadTemplate();
+  hydrated = true;
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", (e) => {
+      if (e.key !== KEY) return;
+      current = loadTemplate();
+      listeners.forEach((l) => l());
     });
-  };
-  return [t, update];
+  }
+}
+
+function subscribe(listener: () => void): () => void {
+  ensureHydrated();
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function getSnapshot(): ReportTemplate {
+  ensureHydrated();
+  return current;
+}
+
+function getServerSnapshot(): ReportTemplate {
+  return DEFAULT_TEMPLATE;
+}
+
+export function updateTemplate(patch: Partial<ReportTemplate>) {
+  ensureHydrated();
+  current = { ...current, ...patch };
+  saveTemplate(current);
+  listeners.forEach((l) => l());
+}
+
+export function useReportTemplate(): [ReportTemplate, (t: Partial<ReportTemplate>) => void] {
+  const t = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return [t, updateTemplate];
 }
 
 /** Translation dictionary — no AI/network, pure static map. */
