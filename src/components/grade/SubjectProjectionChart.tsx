@@ -65,7 +65,11 @@ export function SubjectProjectionChart(props: {
             ticks={LETTER_TICKS.map((t) => t.y)}
             tickFormatter={letterTickFormatter}
             tick={{ fontSize: 10 }}
-            width={32}
+            width={36}
+            interval={0}
+            allowDecimals={false}
+            type="number"
+            scale="linear"
           />
           <Tooltip formatter={(v, key) => [`${Number(v).toFixed(1)}% (${letterTickFormatter(Number(v))})`, String(key)]} />
           {props.goalPct != null && (
