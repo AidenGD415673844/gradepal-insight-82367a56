@@ -16,6 +16,8 @@ import { useReportTemplate, I18N, computeBadges } from "@/lib/report-template";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { addonBulletsFor } from "./feedback-addons";
 import { bullet7For, formatVelocity } from "./feedback-bullet7";
+import { bullets8910For } from "./feedback-bullets8910";
+import { SubjectProjectionChart } from "./SubjectProjectionChart";
 import { computeVelocity } from "@/lib/grade-velocity";
 import { projectGrade, HORIZON_OPTIONS } from "@/lib/grade-projection";
 import { applyAStarOverride } from "./a-star-override";
@@ -89,6 +91,19 @@ export const NEXT_TIER_LADDER: Array<{ letter: string; tier: string; min: number
 ];
 
 const LETTER_MINS = [41, 51, 61, 71, 81, 91];
+
+/**
+ * Renders the projected percentage as a sub-band label like "low A*",
+ * "mid B" etc. — mirrors the NEXT_TIER_LADDER decoration used by the
+ * forward-looking goal copy so the snapshot reads naturally.
+ */
+export function projectedTierLabel(pct: number): string {
+  if (pct >= 91) return "A*";
+  const sorted = [...NEXT_TIER_LADDER].sort((a, b) => a.min - b.min);
+  const below = [...sorted].reverse().find((b) => b.min <= pct);
+  if (!below) return "NA";
+  return below.tier ? `${below.tier} ${below.letter}` : below.letter;
+}
 
 /**
  * Returns a human-readable description of the student's current band.
@@ -445,6 +460,33 @@ export function AcademicFeedback() {
     return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
   })();
 
+  // Per-subject projection deltas, used to award the "Highest Jump" and
+  // "Biggest Drop" badges so only ONE subject per report ever wears them.
+  const projDeltas = new Map<string, number>();
+  const projConfidence = new Map<string, number>();
+  rows.forEach((r) => {
+    if (!r.hasData) return;
+    const p = projectGrade(r.done, r.avg, horizonWeeks);
+    projDeltas.set(r.course.id, p.delta);
+    projConfidence.set(r.course.id, p.confidencePct);
+  });
+  const highestJumpId: string | null = (() => {
+    let bestId: string | null = null;
+    let bestD = 0.5;
+    projDeltas.forEach((d, id) => {
+      if (d > bestD) { bestD = d; bestId = id; }
+    });
+    return bestId;
+  })();
+  const biggestDropId: string | null = (() => {
+    let worstId: string | null = null;
+    let worstD = -0.5;
+    projDeltas.forEach((d, id) => {
+      if (d < worstD) { worstD = d; worstId = id; }
+    });
+    return worstId;
+  })();
+
   const buildComment = (r: (typeof rows)[number]): string[] => {
     if (!r.hasData) {
       const msg =
@@ -520,48 +562,78 @@ export function AcademicFeedback() {
     const proj = projectGrade(r.done, r.avg, horizonWeeks);
     const projRawLetter = getLetter(proj.projected, scale)?.letter ?? "—";
     const projLetter = applyAStarOverride(proj.projected, projRawLetter);
-    const slopeLabel = formatVelocity(proj.slopePerWeek, proj.sample);
-    const sourceLabel =
-      proj.source === "rolling-30d"
-        ? "rolling 30-day task window"
-        : proj.source === "all-tasks"
-          ? `this term's full task history (${proj.sample} graded tasks)`
-          : "insufficient task history";
-    const trendWord =
-      proj.source === "insufficient"
-        ? "insufficient trend data"
-        : Math.abs(proj.slopePerWeek) < 0.3
-          ? "a flat trajectory"
-          : proj.slopePerWeek > 0
-            ? "an upward trajectory"
-            : "a downward trajectory";
-    const cappedNote = proj.capped
-      ? ` The raw slope projected a swing beyond ±20pp, so the move was capped to keep the forecast realistic.`
-      : "";
-    const confidenceNote =
-      proj.source === "insufficient"
-        ? ` Confidence: very low — once 2+ graded tasks exist, the projection model activates.`
-        : ` Confidence: ${proj.confidence} (±${proj.marginPp.toFixed(1)}pp band → ${proj.low.toFixed(1)}%–${proj.high.toFixed(1)}%).`;
-    // Goal comparison vs the user's numeric target from Goal Tracker.
+    const projTier = projectedTierLabel(proj.projected);
     const goalPct = Number.isFinite(settings.goal) ? settings.goal : null;
     const goalDelta = goalPct != null ? proj.projected - goalPct : null;
-    const goalClause =
+    // Clean narrative: a single, plain-English sentence followed by the
+    // tier-aware addon. The hard numbers (current/projected/confidence/
+    // goal delta) live in the snapshot card embedded inside this bullet.
+    const b6Narrative =
+      proj.source === "insufficient"
+        ? `Once two or more graded tasks land, the model will forecast where ${r.course.name} is heading over the next ${horizonLabel}. For now the outlook holds steady at the current ${r.letter} band.`
+        : Math.abs(proj.delta) < 0.5
+          ? `Momentum in ${r.course.name} is essentially flat, so the ${horizonLabel} outlook keeps the average locked near today's ${projTier} band.`
+          : proj.delta > 0
+            ? `If this pace holds, ${r.course.name} is on a quiet climb toward the ${projTier} band over the next ${horizonLabel} — keep the current execution steady to bank the gain.`
+            : `Recent results are pulling ${r.course.name} toward the ${projTier} band over the next ${horizonLabel}. A small intervention now is enough to flatten or reverse the slope before it locks in.`;
+    const goalLine =
       goalDelta == null
         ? ""
         : goalDelta >= 0
-          ? ` Versus your ${goalPct}% goal, the projection is +${goalDelta.toFixed(1)}pp ahead — on track.`
+          ? ` On the goal front, the projection sits +${goalDelta.toFixed(1)}pp above your ${goalPct}% target — on track.`
           : Math.abs(goalDelta) <= 3
-            ? ` Versus your ${goalPct}% goal, the projection is ${goalDelta.toFixed(1)}pp short — close, but at risk without sustained execution.`
-            : ` Versus your ${goalPct}% goal, the projection is ${goalDelta.toFixed(1)}pp short — at risk; intervention recommended to close the gap.`;
-    const directionPhrase =
-      proj.source === "insufficient"
-        ? `Once 2+ graded tasks are logged, a ${horizonLabel} projection will model where ${r.course.name} is heading; for now the model holds the average steady at ${r.avg.toFixed(1)}% (${r.letter}).`
-        : Math.abs(proj.delta) < 0.5
-          ? `Current momentum is essentially flat, so the ${horizonLabel} projection holds near ${proj.projected.toFixed(1)}% (${projLetter}) — sustained execution keeps that band locked in.`
-          : proj.delta > 0
-            ? `If this pace holds, the projected average in ~${horizonLabel} is ${proj.projected.toFixed(1)}% (${projLetter}) — a gain of +${proj.delta.toFixed(1)} pts from today's ${r.avg.toFixed(1)}%.`
-            : `If this pace holds, the projected average in ~${horizonLabel} is ${proj.projected.toFixed(1)}% (${projLetter}) — a drop of ${proj.delta.toFixed(1)} pts from today's ${r.avg.toFixed(1)}%, so an intervention is needed to reverse the slope.`;
-    const b6Dynamic = `Future Outlook (${horizonLabel}): Based on ${trendWord} (${slopeLabel}) computed from the ${sourceLabel}, ${directionPhrase}${cappedNote}${confidenceNote}${goalClause} ${addons.b6}`;
+            ? ` Versus your ${goalPct}% goal the projection is ${goalDelta.toFixed(1)}pp short — close, but at risk without sustained effort.`
+            : ` Versus your ${goalPct}% goal the projection is ${goalDelta.toFixed(1)}pp short — at risk; a focused push is needed to close the gap.`;
+    const b6Dynamic = `Future Outlook (${horizonLabel}): ${b6Narrative}${goalLine} ${addons.b6}`;
+
+    // ---- Bullets 8 / 9 / 10 ----
+    // Summative Weight Strain Index: share of the term's maximum points
+    // that come from above-median-weighted tasks. A balanced load lands
+    // near 50%; heavy summative loading pushes it toward 100%.
+    const maxScoresSorted = [...r.done].map((t) => t.maxScore).sort((a, b) => a - b);
+    const medianMax = maxScoresSorted.length
+      ? maxScoresSorted[Math.floor(maxScoresSorted.length / 2)]
+      : 0;
+    const totalMax = r.done.reduce((s, t) => s + (t.maxScore || 0), 0);
+    const summativeMax = r.done
+      .filter((t) => t.maxScore >= medianMax && t.maxScore > 0)
+      .reduce((s, t) => s + t.maxScore, 0);
+    const strainIndex = totalMax > 0 ? (summativeMax / totalMax) * 100 : 0;
+    // Max ceiling: hypothetical average if every still-pending task is
+    // scored 100%. Falls back to the current average when nothing is
+    // pending so the copy never references an impossible ceiling.
+    const pending = r.current.filter((t) => t.pending);
+    const hypoTasks = [
+      ...r.done,
+      ...pending.map((t) => ({ ...t, score: t.maxScore, pending: false })),
+    ];
+    const maxCeiling = hypoTasks.length
+      ? calcAverage(hypoTasks, settings.weighted)
+      : r.avg;
+    // Syllabus red-unit count for this course (independent local store).
+    let syllabusRedCount = 0;
+    try {
+      const raw =
+        typeof window !== "undefined"
+          ? localStorage.getItem("syllabus-mastery-v1")
+          : null;
+      if (raw) {
+        const store = JSON.parse(raw) as Record<string, Array<{ level: string }>>;
+        syllabusRedCount = (store[r.course.id] ?? []).filter(
+          (u) => u.level === "red",
+        ).length;
+      }
+    } catch {
+      syllabusRedCount = 0;
+    }
+    const stats8910 = bullets8910For({
+      pct: r.avg,
+      strainIndex,
+      stdDev: sdSubject,
+      maxCeiling,
+      syllabusRedCount,
+    });
+
     return [
       `${shiftedMain.bullets[0]} ${addons.b1}`,
       `${b2 + sdClause} ${addons.b2}`,
@@ -570,6 +642,9 @@ export function AcademicFeedback() {
       `${b5} ${addons.b5}`,
       b6Dynamic,
       b7,
+      stats8910.b8,
+      stats8910.b9,
+      stats8910.b10,
     ];
   };
 
@@ -816,6 +891,9 @@ export function AcademicFeedback() {
                   tr.improvement,
                   "Future Outlook",
                   "Statistical Diagnosis",
+                  "Task Type Profile",
+                  "Scoring Consistency",
+                  "Optimization Strategy",
                 ];
                 // Template-specific chip + card styling so switching the
                 // template in the dialog visibly changes the layout.
@@ -948,6 +1026,30 @@ export function AcademicFeedback() {
                                 {b.label}
                               </span>
                             ))}
+                            {r.course.id === highestJumpId && (
+                              <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">
+                                <span aria-hidden>🚀</span>
+                                Highest Jump · +{(projDeltas.get(r.course.id) ?? 0).toFixed(1)}pp
+                              </span>
+                            )}
+                            {r.course.id === biggestDropId && (
+                              <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900">
+                                <span aria-hidden>📉</span>
+                                Biggest Drop · {(projDeltas.get(r.course.id) ?? 0).toFixed(1)}pp
+                              </span>
+                            )}
+                            {(projConfidence.get(r.course.id) ?? 0) >= 75 && (
+                              <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-sky-300 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900">
+                                <span aria-hidden>🎯</span>
+                                High Confidence · {projConfidence.get(r.course.id)}%
+                              </span>
+                            )}
+                            {r.hasData && r.done.length >= 3 && stddev(r.done.map((t) => (t.score / t.maxScore) * 100)) >= 15 && (
+                              <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">
+                                <span aria-hidden>🌊</span>
+                                Volatile Scores
+                              </span>
+                            )}
                           </div>
                         </div>
                       )}
@@ -981,75 +1083,6 @@ export function AcademicFeedback() {
                         </div>
                       ) : (
                         <>
-                          {r.hasData && (() => {
-                            const proj = projectGrade(r.done, r.avg, horizonWeeks);
-                            const projRawLetter = getLetter(proj.projected, scale)?.letter ?? "—";
-                            const projLetter = applyAStarOverride(proj.projected, projRawLetter);
-                            const goalPct = Number.isFinite(settings.goal) ? settings.goal : null;
-                            const goalDelta = goalPct != null ? proj.projected - goalPct : null;
-                            const onTrack = goalDelta != null && goalDelta >= 0;
-                            const confTone =
-                              proj.confidence === "high"
-                                ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900"
-                                : proj.confidence === "medium"
-                                  ? "border-sky-300 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:border-sky-900"
-                                  : proj.confidence === "low"
-                                    ? "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900"
-                                    : "border-muted bg-muted/40 text-muted-foreground";
-                            const goalTone =
-                              goalDelta == null
-                                ? "border-muted bg-muted/40 text-muted-foreground"
-                                : onTrack
-                                  ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900"
-                                  : "border-rose-300 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-900";
-                            return (
-                              <div
-                                aria-label="Future Outlook snapshot"
-                                className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 p-2.5 rounded-md border bg-muted/30"
-                              >
-                                <div className="space-y-0.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                                    Current
-                                  </div>
-                                  <div className="text-sm font-bold tabular-nums">
-                                    {r.avg.toFixed(1)}% <span className="text-muted-foreground font-medium">({r.letter})</span>
-                                  </div>
-                                </div>
-                                <div className="space-y-0.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                                    Projected · {horizonLabel}
-                                  </div>
-                                  <div className="text-sm font-bold tabular-nums">
-                                    {proj.projected.toFixed(1)}% <span className="text-muted-foreground font-medium">({projLetter})</span>
-                                    {proj.source !== "insufficient" && (
-                                      <span className={`ml-1 text-[10px] font-semibold ${proj.delta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                                        {proj.delta >= 0 ? "+" : ""}{proj.delta.toFixed(1)}pp
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="space-y-0.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                                    Confidence
-                                  </div>
-                                  <span className={`inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums ${confTone}`}>
-                                    {proj.confidence}
-                                    {proj.source !== "insufficient" && ` · ±${proj.marginPp.toFixed(1)}pp`}
-                                  </span>
-                                </div>
-                                <div className="space-y-0.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                                    Goal {goalPct != null ? `${goalPct}%` : "—"}
-                                  </div>
-                                  <span className={`inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums ${goalTone}`}>
-                                    {goalDelta == null
-                                      ? "No goal set"
-                                      : `${onTrack ? "On track" : "At risk"} · ${goalDelta >= 0 ? "+" : ""}${goalDelta.toFixed(1)}pp`}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })()}
                           <ul className="space-y-1.5 text-sm">
                             {bullets.map((b, i) => (
                               <li
@@ -1064,6 +1097,80 @@ export function AcademicFeedback() {
                                   B{i + 1} ({labels[i]}):
                                 </span>{" "}
                                 {b}
+                                {i === 5 && r.hasData && (() => {
+                                  const proj = projectGrade(r.done, r.avg, horizonWeeks);
+                                  const projTier = projectedTierLabel(proj.projected);
+                                  const goalPct = Number.isFinite(settings.goal) ? settings.goal : null;
+                                  const goalDelta = goalPct != null ? proj.projected - goalPct : null;
+                                  const onTrack = goalDelta != null && goalDelta >= 0;
+                                  const confTone =
+                                    proj.confidencePct >= 70
+                                      ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900"
+                                      : proj.confidencePct >= 45
+                                        ? "border-sky-300 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:border-sky-900"
+                                        : proj.confidencePct >= 20
+                                          ? "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900"
+                                          : "border-muted bg-muted/40 text-muted-foreground";
+                                  const goalTone =
+                                    goalDelta == null
+                                      ? "border-muted bg-muted/40 text-muted-foreground"
+                                      : onTrack
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900"
+                                        : "border-rose-300 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-900";
+                                  return (
+                                    <div
+                                      aria-label="Future Outlook snapshot"
+                                      className="mt-2 p-2.5 rounded-md border bg-muted/30"
+                                    >
+                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <div className="space-y-0.5">
+                                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Current</div>
+                                          <div className="text-sm font-bold tabular-nums text-foreground">
+                                            {r.avg.toFixed(1)}% <span className="text-muted-foreground font-medium">({projectedTierLabel(r.avg)})</span>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                                            Projected · {horizonLabel}
+                                          </div>
+                                          <div className="text-sm font-bold tabular-nums text-foreground">
+                                            {proj.projected.toFixed(1)}% <span className="text-muted-foreground font-medium">({projTier})</span>
+                                            {proj.source !== "insufficient" && (
+                                              <span className={`ml-1 text-[10px] font-semibold ${proj.delta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                                {proj.delta >= 0 ? "+" : ""}{proj.delta.toFixed(1)}pp
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Confidence</div>
+                                          <span className={`inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums ${confTone}`}>
+                                            {proj.source === "insufficient" ? "n/a" : `${proj.confidencePct}%`}
+                                          </span>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                                            Goal {goalPct != null ? `${goalPct}%` : "—"}
+                                          </div>
+                                          <span className={`inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums ${goalTone}`}>
+                                            {goalDelta == null
+                                              ? "No goal set"
+                                              : `${onTrack ? "On track" : "At risk"} · ${goalDelta >= 0 ? "+" : ""}${goalDelta.toFixed(1)}pp`}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <SubjectProjectionChart
+                                        subjectName={r.course.name}
+                                        current={r.avg}
+                                        projected={proj.projected}
+                                        marginPp={proj.marginPp}
+                                        goalPct={goalPct}
+                                        color={r.course.color}
+                                        onTrack={onTrack}
+                                      />
+                                    </div>
+                                  );
+                                })()}
                               </li>
                             ))}
                           </ul>

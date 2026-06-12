@@ -7,8 +7,22 @@ import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./
 import { useGrades } from "@/lib/grade-store";
 import { getLetter } from "@/lib/grade-utils";
 import { A_STAR_MIN, applyAStarOverride } from "./a-star-override";
+import { addonBulletsFor } from "./feedback-addons";
+import { bullet7For, formatVelocity } from "./feedback-bullet7";
+import { bullets8910For } from "./feedback-bullets8910";
 
-const LABELS = ["Strengths", "Trends", "Commendations", "Responsibility", "Improvement"] as const;
+const LABELS = [
+  "Strengths",
+  "Trends",
+  "Commendations",
+  "Responsibility",
+  "Improvement",
+  "Future Outlook",
+  "Statistical Diagnosis",
+  "Task Type Profile",
+  "Scoring Consistency",
+  "Optimization Strategy",
+] as const;
 
 /**
  * Sub-band ladder mirrored from AcademicFeedback for forward-looking
@@ -66,7 +80,35 @@ export function GradeScaleTester() {
   // B5 appends the dynamic next-tier goal so the tester surfaces the
   // same forward-looking copy users see in the live report card.
   const b5 = `${main.bullets[4]} ${nextTierGoal(score)}`;
-  const bullets = [main.bullets[0], b2, comp.bullets[2], main.bullets[3], b5];
+  const addons = addonBulletsFor(score);
+  const b6 = `Future Outlook: ${addons.b6}`;
+  const b7 = bullet7For({
+    subjectName: "this subject",
+    pct: score,
+    letter: applyAStarOverride(score, getLetter(score, scale)?.letter ?? "—"),
+    velocityLabel: formatVelocity(deltaNum / 4, noPrev ? 1 : 4),
+  });
+  // Synthesized stats so the tester surfaces concrete copy for B8–B10
+  // without requiring a real subject task ledger.
+  const synth = bullets8910For({
+    pct: score,
+    strainIndex: Math.max(0, Math.min(100, 50 + (score - 70) * 0.4)),
+    stdDev: Math.max(0, Math.min(40, 18 - score * 0.12)),
+    maxCeiling: Math.max(score, Math.min(100, score + (100 - compNum) * 0.6)),
+    syllabusRedCount: Math.max(0, Math.round((100 - score) / 10)),
+  });
+  const bullets = [
+    `${main.bullets[0]} ${addons.b1}`,
+    `${b2} ${addons.b2}`,
+    `${comp.bullets[2]} ${addons.b3}`,
+    `${main.bullets[3]} ${addons.b4}`,
+    `${b5} ${addons.b5}`,
+    b6,
+    b7,
+    synth.b8,
+    synth.b9,
+    synth.b10,
+  ];
   // Letter uses the user's configured grade scale (with the same A*
   // override the report card applies at ≥91%).
   const rawLetter = getLetter(score, scale)?.letter ?? "—";

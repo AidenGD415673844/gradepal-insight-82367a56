@@ -26,7 +26,7 @@ import {
 export function ProjectionChart() {
   const { courses, tasks, settings, terms, activeTermId } = useGrades();
   const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
-  const [weeks, setWeeks] = useState<number>(4.345);
+  const [weeks, setWeeks] = useState<number>(4);
 
   const rows = useMemo(() => {
     return courses
