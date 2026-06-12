@@ -787,38 +787,27 @@ export function AcademicFeedback() {
                             {/* Term Grade */}
                             {tr.termGrade}{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
                           </div>
-                          <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-primary/10 border-primary/30 text-sm font-bold">
-                            <span>{r.letter}</span>
-                            <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <div className={`inline-flex items-center justify-center gap-2 h-8 px-3 rounded-md border text-sm font-bold ${chipCls}`}>
+                              <span>{r.letter}</span>
+                              <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
+                            </div>
+                            {prev3.map(({ term, avg }) => (
+                              <div
+                                key={term.id}
+                                className="inline-flex items-center gap-1 h-8 px-2 rounded-md border bg-muted/40 text-[11px] tabular-nums"
+                                title={`${term.name}: ${avg == null ? "—" : avg.toFixed(1) + "%"}`}
+                              >
+                                <span className="text-[9px] uppercase font-semibold text-muted-foreground">{truncate(term.name, 6)}</span>
+                                <span className="font-semibold">{avg == null ? "—" : `${avg.toFixed(0)}%`}</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </div>
-                      {/* Multi-term comparison strip (up to 3 previous terms) + badges + class compare.
-                          Hidden in 'simple' template to keep that layout minimal. */}
+                      {/* Badges + class-avg comparison. Hidden in 'simple' to keep that layout minimal. */}
                       {tpl.template !== "simple" && (
                         <div className="mt-3 flex flex-col gap-2">
-                          {prevTerms.length > 0 && (
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mr-1">
-                                {tr.previous}:
-                              </span>
-                              {prevTermAverages(r.course.id).map(({ term, avg }) => {
-                                const pct = avg ?? 0;
-                                const w = Math.max(8, Math.min(48, pct / 2));
-                                return (
-                                  <div
-                                    key={term.id}
-                                    className="inline-flex items-center gap-1 px-1.5 h-6 rounded border bg-muted/40 text-[11px] tabular-nums"
-                                    title={`${term.name}: ${avg == null ? "—" : avg.toFixed(1) + "%"}`}
-                                  >
-                                    <span className="font-medium">{truncate(term.name, 8)}</span>
-                                    <span className="h-1.5 rounded-full bg-primary/60" style={{ width: `${w}px` }} />
-                                    <span>{avg == null ? "—" : `${avg.toFixed(0)}%`}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
                           <div className="flex flex-wrap items-center gap-1.5">
                             {r.hasData && classAvg > 0 && (
                               <span
