@@ -11,6 +11,8 @@ import { GradeScaleTester } from "./GradeScaleTester";
 import { GradeDistribution } from "./GradeDistribution";
 import { AIDeepGenerate } from "./AIDeepGenerate";
 import { CommentBankPalette } from "./CommentBankPalette";
+import { ReportTemplateDialog } from "./ReportTemplateDialog";
+import { useReportTemplate, I18N, computeBadges } from "@/lib/report-template";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
@@ -325,6 +327,16 @@ export function AcademicFeedback() {
     const idx = sorted.findIndex((t) => t.id === activeTerm.id);
     return idx > 0 ? sorted[idx - 1] : null;
   }, [terms, activeTerm]);
+  // Up to 3 most recent previous terms for the multi-term comparison strip.
+  const prevTerms = useMemo(() => {
+    if (!activeTerm) return [];
+    const sorted = [...terms].sort((a, b) => a.start.localeCompare(b.start));
+    const idx = sorted.findIndex((t) => t.id === activeTerm.id);
+    if (idx <= 0) return [];
+    return sorted.slice(Math.max(0, idx - 3), idx).reverse();
+  }, [terms, activeTerm]);
+  const [tpl] = useReportTemplate();
+  const tr = I18N[tpl.lang];
 
   const [meta, setMeta] = useState<Meta>(defaultMeta);
   useEffect(() => {
@@ -392,6 +404,24 @@ export function AcademicFeedback() {
       allDone: allCourseTasks.filter((t) => !t.pending),
     };
   });
+
+  // Class average across all subjects (this student's own subjects act as
+  // the comparison cohort — purely local computation).
+  const classAvg = (() => {
+    const xs = rows.filter((r) => r.hasData).map((r) => r.avg);
+    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
+  })();
+
+  // Per-row previous-term averages (up to 3) for the multi-term strip.
+  const prevTermAverages = (courseId: string) =>
+    prevTerms.map((pt) => {
+      const ts = filterByTerm(
+        tasks.filter((t) => t.courseId === courseId && !t.pending),
+        pt,
+      );
+      const avg = ts.length ? calcAverage(ts, settings.weighted) : null;
+      return { term: pt, avg };
+    });
 
   const buildComment = (r: (typeof rows)[number]): string[] => {
     if (!r.hasData) {
@@ -580,11 +610,46 @@ export function AcademicFeedback() {
       `}</style>
 
       <div className="space-y-5">
-        <Card className="p-5" id="academic-report">
+        <Card
+          className={`p-5 ${tpl.template === "modern" ? "bg-gradient-to-br from-background to-primary/5" : ""}`}
+          id="academic-report"
+          style={{
+            fontFamily:
+              tpl.font === "serif"
+                ? "Georgia, serif"
+                : tpl.font === "mono"
+                  ? "ui-monospace, monospace"
+                  : undefined,
+          }}
+        >
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <div className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-bold">Academic Report Card</h2>
+              {tpl.logoDataUrl && (
+                <img
+                  src={tpl.logoDataUrl}
+                  alt="School logo"
+                  className="h-9 w-9 object-contain rounded border"
+                />
+              )}
+              <GraduationCap className="h-5 w-5" style={{ color: tpl.accent }} />
+              <div className="leading-tight">
+                <h2
+                  className="text-lg font-bold"
+                  style={{
+                    fontFamily:
+                      tpl.font === "serif"
+                        ? "Georgia, serif"
+                        : tpl.font === "mono"
+                          ? "monospace"
+                          : undefined,
+                  }}
+                >
+                  {tr.reportCard}
+                </h2>
+                {tpl.schoolName && (
+                  <div className="text-[11px] text-muted-foreground">{tpl.schoolName}</div>
+                )}
+              </div>
             </div>
             <div className="text-xs text-muted-foreground">
               {activeTerm
@@ -594,6 +659,7 @@ export function AcademicFeedback() {
           </div>
 
           <div className="flex gap-2 mt-4 no-print">
+            <ReportTemplateDialog />
             <Button variant="outline" onClick={handlePrint} className="gap-2">
               <Printer className="h-4 w-4" /> PDF Export
             </Button>
@@ -639,11 +705,11 @@ export function AcademicFeedback() {
                 const manualOn = !!meta.manualOn[r.course.id];
                 const urgent = r.avg < 50;
                 const labels = [
-                  "Strengths",
-                  "Trends",
-                  "Commendations",
-                  "Responsibility",
-                  "Improvement",
+                  tr.strengths,
+                  tr.trends,
+                  tr.commendations,
+                  tr.responsibility,
+                  tr.improvement,
                 ];
                 return (
                   <Card
@@ -663,7 +729,7 @@ export function AcademicFeedback() {
                       </div>
                       <div className={`grid grid-cols-1 sm:grid-cols-2 ${hasPrevTerm ? "md:grid-cols-4" : "md:grid-cols-3"} gap-3`}>
                         <div className="space-y-1">
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Teacher</div>
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{tr.teacher}</div>
                           <Input
                             className="h-8 no-print"
                             value={meta.teachers[r.course.id] ?? ""}
@@ -675,7 +741,7 @@ export function AcademicFeedback() {
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-[10px] uppercase tracking-wider text-primary font-semibold">Aspirational Goal</div>
+                          <div className="text-[10px] uppercase tracking-wider text-primary font-semibold">{tr.aspirational}</div>
                           <Input
                             className="h-8 no-print border-primary/40"
                             value={meta.goals[r.course.id] ?? ""}
@@ -689,7 +755,7 @@ export function AcademicFeedback() {
                         {hasPrevTerm && (
                           <div className="space-y-1 min-w-0">
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
-                              Previous{prevTerm ? ` (${truncate(prevTerm.name, 10)})` : ""}
+                              {tr.previous}{prevTerm ? ` (${truncate(prevTerm.name, 10)})` : ""}
                             </div>
                             <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
                               <span>{meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}</span>
@@ -701,7 +767,8 @@ export function AcademicFeedback() {
                         )}
                         <div className="space-y-1">
                           <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
-                            Term Grade{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
+                            {/* Term Grade */}
+                            {tr.termGrade}{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
                           </div>
                           <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-primary/10 border-primary/30 text-sm font-bold">
                             <span>{r.letter}</span>
@@ -709,12 +776,74 @@ export function AcademicFeedback() {
                           </div>
                         </div>
                       </div>
+                      {/* Multi-term comparison strip (up to 3 previous terms) + badges + class compare.
+                          Hidden in 'simple' template to keep that layout minimal. */}
+                      {tpl.template !== "simple" && (
+                        <div className="mt-3 flex flex-col gap-2">
+                          {prevTerms.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mr-1">
+                                {tr.previous}:
+                              </span>
+                              {prevTermAverages(r.course.id).map(({ term, avg }) => {
+                                const pct = avg ?? 0;
+                                const w = Math.max(8, Math.min(48, pct / 2));
+                                return (
+                                  <div
+                                    key={term.id}
+                                    className="inline-flex items-center gap-1 px-1.5 h-6 rounded border bg-muted/40 text-[11px] tabular-nums"
+                                    title={`${term.name}: ${avg == null ? "—" : avg.toFixed(1) + "%"}`}
+                                  >
+                                    <span className="font-medium">{truncate(term.name, 8)}</span>
+                                    <span className="h-1.5 rounded-full bg-primary/60" style={{ width: `${w}px` }} />
+                                    <span>{avg == null ? "—" : `${avg.toFixed(0)}%`}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {r.hasData && classAvg > 0 && (
+                              <span
+                                className={`px-1.5 h-5 inline-flex items-center rounded border text-[10px] font-semibold tabular-nums ${
+                                  r.avg - classAvg >= 0
+                                    ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
+                                    : "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
+                                }`}
+                              >
+                                {r.avg - classAvg >= 0 ? "+" : ""}
+                                {(r.avg - classAvg).toFixed(1)}% {tr.vsClass}
+                              </span>
+                            )}
+                            {computeBadges({
+                              avg: r.avg,
+                              prevAvg: r.hasPrevData ? r.prevAvg : null,
+                              completion: r.completion,
+                              hasData: r.hasData,
+                            }).map((b) => (
+                              <span
+                                key={b.label}
+                                className={`px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold ${
+                                  b.tone === "good"
+                                    ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
+                                    : b.tone === "warn"
+                                      ? "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
+                                      : "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
+                                }`}
+                              >
+                                <span aria-hidden>{b.emoji}</span>
+                                {b.label}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* 5-bullet feedback compiler — sits directly UNDERNEATH the header */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between no-print">
-                        <h4 className="text-sm font-semibold">Teacher Comments</h4>
+                        <h4 className="text-sm font-semibold">{tr.comments}</h4>
                         <label className="text-xs flex items-center gap-2">
                           <input
                             type="checkbox"
