@@ -104,16 +104,7 @@ export function ProjectionChart() {
             <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
             <Tooltip
-              formatter={(v: number, key) => [`${v}%`, String(key)]}
-              labelFormatter={(label, payload) => {
-                const p = payload?.[0]?.payload as
-                  | { slope: number; margin: number; goalDelta: number; onTrack: boolean }
-                  | undefined;
-                if (!p) return label;
-                const slopeStr = `${p.slope >= 0 ? "+" : ""}${p.slope.toFixed(2)} pp/wk`;
-                const goalStr = `${p.goalDelta >= 0 ? "+" : ""}${p.goalDelta.toFixed(1)}pp vs goal · ${p.onTrack ? "on track" : "at risk"}`;
-                return `${label} — velocity ${slopeStr} · ±${p.margin.toFixed(1)}pp\n${goalStr}`;
-              }}
+              formatter={(v, key) => [`${Number(v).toFixed(1)}%`, String(key)]}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <ReferenceLine
