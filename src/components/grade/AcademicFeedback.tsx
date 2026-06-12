@@ -422,17 +422,6 @@ export function AcademicFeedback() {
     return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
   })();
 
-  // Per-row previous-term averages (up to 3) for the multi-term strip.
-  const prevTermAverages = (courseId: string) =>
-    prevTerms.map((pt) => {
-      const ts = filterByTerm(
-        tasks.filter((t) => t.courseId === courseId && !t.pending),
-        pt,
-      );
-      const avg = ts.length ? calcAverage(ts, settings.weighted) : null;
-      return { term: pt, avg };
-    });
-
   const buildComment = (r: (typeof rows)[number]): string[] => {
     if (!r.hasData) {
       const msg =
