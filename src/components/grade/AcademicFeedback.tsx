@@ -663,6 +663,9 @@ export function AcademicFeedback() {
   // Per-subject toggle for the "Compare with previous terms" panel
   // rendered beneath the Bullet-6 projection chart.
   const [compareOpen, setCompareOpen] = useState<Record<string, boolean>>({});
+  // Per-subject toggle to hide the bullet feedback list. Helps avoid
+  // jank when many heavy comment blocks render simultaneously.
+  const [hideComments, setHideComments] = useState<Record<string, boolean>>({});
 
   const handleSaveReport = () => {
     const labels: [string, string, string, string, string] = [
