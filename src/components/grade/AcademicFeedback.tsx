@@ -901,16 +901,9 @@ export function AcademicFeedback() {
                   "Scoring Consistency",
                   "Optimization Strategy",
                 ];
-                // Template-specific chip + card styling so switching the
-                // template in the dialog visibly changes the layout.
-                const chipCls =
-                  tpl.template === "modern"
-                    ? "ring-2 ring-primary/60 bg-primary/15"
-                    : tpl.template === "k12"
-                      ? "bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
-                      : tpl.template === "international"
-                        ? "bg-background border-2 border-primary text-primary"
-                        : "bg-primary/10 border-primary/30";
+                // Template-specific card styling so switching the template
+                // in the dialog visibly changes the layout. (Term-grade chip
+                // is intentionally template-neutral — old version.)
                 const cardCls =
                   tpl.template === "simple"
                     ? "p-3 md:p-4 border-l-2"
