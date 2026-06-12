@@ -1171,6 +1171,103 @@ export function AcademicFeedback() {
                                         color={r.course.color}
                                         onTrack={onTrack}
                                       />
+                                      {prevTermOptions.length > 0 && (
+                                        <div className="mt-2 no-print">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 text-[11px]"
+                                            onClick={() =>
+                                              setCompareOpen((s) => ({
+                                                ...s,
+                                                [r.course.id]: !s[r.course.id],
+                                              }))
+                                            }
+                                          >
+                                            {compareOpen[r.course.id] ? "Hide" : "Compare with previous terms"}
+                                          </Button>
+                                        </div>
+                                      )}
+                                      {compareOpen[r.course.id] && prevTermOptions.length > 0 && (
+                                        <div className="mt-3 space-y-3 border-t pt-3">
+                                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                                            Previous Term Projections · {r.course.name}
+                                          </div>
+                                          {prevTermOptions.map((pt) => {
+                                            const courseTasksAll = tasks.filter((t) => t.courseId === r.course.id);
+                                            const ptTasks = filterByTerm(courseTasksAll, pt).filter((t) => !t.pending);
+                                            if (ptTasks.length === 0) {
+                                              return (
+                                                <div key={pt.id} className="p-2.5 rounded-md border bg-muted/20">
+                                                  <div className="text-[11px] font-semibold mb-1">{pt.name}</div>
+                                                  <div className="text-[11px] text-muted-foreground">No graded tasks in this term.</div>
+                                                </div>
+                                              );
+                                            }
+                                            const ptAvg = calcAverage(ptTasks, settings.weighted);
+                                            const ptProj = projectGrade(ptTasks, ptAvg, horizonWeeks);
+                                            const ptGoalDelta = goalPct != null ? ptProj.projected - goalPct : null;
+                                            const ptOnTrack = ptGoalDelta != null && ptGoalDelta >= 0;
+                                            return (
+                                              <div key={pt.id} className="p-2.5 rounded-md border bg-muted/20">
+                                                <div className="text-[11px] font-semibold mb-2">
+                                                  {pt.name} <span className="text-muted-foreground font-normal">({pt.start} → {pt.end})</span>
+                                                </div>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Current</div>
+                                                    <div className="text-sm font-bold tabular-nums text-foreground">
+                                                      {ptAvg.toFixed(1)}% <span className="text-muted-foreground font-medium">({projectedTierLabel(ptAvg)})</span>
+                                                    </div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Projected · {horizonLabel}</div>
+                                                    <div className="text-sm font-bold tabular-nums text-foreground">
+                                                      {ptProj.projected.toFixed(1)}% <span className="text-muted-foreground font-medium">({projectedTierLabel(ptProj.projected)})</span>
+                                                      {ptProj.source !== "insufficient" && (
+                                                        <span className={`ml-1 text-[10px] font-semibold ${ptProj.delta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                                          {ptProj.delta >= 0 ? "+" : ""}{ptProj.delta.toFixed(1)}pp
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Confidence</div>
+                                                    <span className="inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums border-muted bg-muted/40 text-foreground">
+                                                      {ptProj.source === "insufficient" ? "n/a" : `${ptProj.confidencePct}%`}
+                                                    </span>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                                                      Goal {goalPct != null ? `${goalPct}%` : "—"}
+                                                    </div>
+                                                    <span className={`inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums ${
+                                                      ptGoalDelta == null
+                                                        ? "border-muted bg-muted/40 text-muted-foreground"
+                                                        : ptOnTrack
+                                                          ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900"
+                                                          : "border-rose-300 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-900"
+                                                    }`}>
+                                                      {ptGoalDelta == null
+                                                        ? "No goal set"
+                                                        : `${ptOnTrack ? "On track" : "At risk"} · ${ptGoalDelta >= 0 ? "+" : ""}${ptGoalDelta.toFixed(1)}pp`}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                <SubjectProjectionChart
+                                                  subjectName={pt.name}
+                                                  current={ptAvg}
+                                                  projected={ptProj.projected}
+                                                  marginPp={ptProj.marginPp}
+                                                  goalPct={goalPct}
+                                                  color={r.course.color}
+                                                  onTrack={ptOnTrack}
+                                                />
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })()}
