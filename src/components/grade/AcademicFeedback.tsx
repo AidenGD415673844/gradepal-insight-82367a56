@@ -606,6 +606,7 @@ export function AcademicFeedback() {
           </div>
 
           <div className="flex gap-2 mt-4 no-print">
+            <ReportTemplateDialog />
             <Button variant="outline" onClick={handlePrint} className="gap-2">
               <Printer className="h-4 w-4" /> PDF Export
             </Button>
