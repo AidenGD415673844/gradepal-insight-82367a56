@@ -694,11 +694,11 @@ export function AcademicFeedback() {
                 const manualOn = !!meta.manualOn[r.course.id];
                 const urgent = r.avg < 50;
                 const labels = [
-                  "Strengths",
-                  "Trends",
-                  "Commendations",
-                  "Responsibility",
-                  "Improvement",
+                  tr.strengths,
+                  tr.trends,
+                  tr.commendations,
+                  tr.responsibility,
+                  tr.improvement,
                 ];
                 return (
                   <Card
