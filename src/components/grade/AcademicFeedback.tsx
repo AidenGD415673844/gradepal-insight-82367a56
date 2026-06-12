@@ -321,20 +321,30 @@ export function AcademicFeedback() {
   // Report card always uses the fixed REPORT_SCALE — not the user's scale.
   const scale = REPORT_SCALE;
   const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
-  const prevTerm = useMemo(() => {
-    if (!activeTerm) return null;
-    const sorted = [...terms].sort((a, b) => a.start.localeCompare(b.start));
-    const idx = sorted.findIndex((t) => t.id === activeTerm.id);
-    return idx > 0 ? sorted[idx - 1] : null;
-  }, [terms, activeTerm]);
-  // Up to 3 most recent previous terms for the multi-term comparison strip.
-  const prevTerms = useMemo(() => {
+  // All terms preceding the active term, most recent first — used to
+  // populate the "previous term" selector above the previous-grade box.
+  const prevTermOptions = useMemo(() => {
     if (!activeTerm) return [];
     const sorted = [...terms].sort((a, b) => a.start.localeCompare(b.start));
     const idx = sorted.findIndex((t) => t.id === activeTerm.id);
     if (idx <= 0) return [];
-    return sorted.slice(Math.max(0, idx - 3), idx).reverse();
+    return sorted.slice(0, idx).reverse();
   }, [terms, activeTerm]);
+  const [selectedPrevTermId, setSelectedPrevTermId] = useState<string | null>(null);
+  // Keep selection valid as active term / available prior terms change.
+  useEffect(() => {
+    if (prevTermOptions.length === 0) {
+      if (selectedPrevTermId !== null) setSelectedPrevTermId(null);
+      return;
+    }
+    if (!selectedPrevTermId || !prevTermOptions.some((t) => t.id === selectedPrevTermId)) {
+      setSelectedPrevTermId(prevTermOptions[0].id);
+    }
+  }, [prevTermOptions, selectedPrevTermId]);
+  const prevTerm = useMemo(
+    () => prevTermOptions.find((t) => t.id === selectedPrevTermId) ?? null,
+    [prevTermOptions, selectedPrevTermId],
+  );
   const [tpl] = useReportTemplate();
   const tr = I18N[tpl.lang];
 
