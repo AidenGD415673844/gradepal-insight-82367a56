@@ -470,19 +470,21 @@ export function AcademicFeedback() {
     projDeltas.set(r.course.id, p.delta);
     projConfidence.set(r.course.id, p.confidencePct);
   });
-  const highestJumpId = (() => {
-    let best: { id: string; d: number } | null = null;
+  const highestJumpId: string | null = (() => {
+    let bestId: string | null = null;
+    let bestD = 0.5;
     projDeltas.forEach((d, id) => {
-      if (d > 0.5 && (!best || d > best.d)) best = { id, d };
+      if (d > bestD) { bestD = d; bestId = id; }
     });
-    return best?.id ?? null;
+    return bestId;
   })();
-  const biggestDropId = (() => {
-    let worst: { id: string; d: number } | null = null;
+  const biggestDropId: string | null = (() => {
+    let worstId: string | null = null;
+    let worstD = -0.5;
     projDeltas.forEach((d, id) => {
-      if (d < -0.5 && (!worst || d < worst.d)) worst = { id, d };
+      if (d < worstD) { worstD = d; worstId = id; }
     });
-    return worst?.id ?? null;
+    return worstId;
   })();
 
   const buildComment = (r: (typeof rows)[number]): string[] => {
