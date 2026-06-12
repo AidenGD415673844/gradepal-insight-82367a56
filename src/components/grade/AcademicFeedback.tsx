@@ -711,11 +711,28 @@ export function AcademicFeedback() {
                   tr.responsibility,
                   tr.improvement,
                 ];
+                const prev3 = prevTermAverages(r.course.id);
+                // Template-specific chip + card styling so switching the
+                // template in the dialog visibly changes the layout.
+                const chipCls =
+                  tpl.template === "modern"
+                    ? "ring-2 ring-primary/60 bg-primary/15"
+                    : tpl.template === "k12"
+                      ? "bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+                      : tpl.template === "international"
+                        ? "bg-background border-2 border-primary text-primary"
+                        : "bg-primary/10 border-primary/30";
+                const cardCls =
+                  tpl.template === "simple"
+                    ? "p-3 md:p-4 border-l-2"
+                    : tpl.template === "modern"
+                      ? "p-5 md:p-6 border-l-8 shadow-md"
+                      : "p-4 md:p-5 border-l-4";
                 return (
                   <Card
                     key={r.course.id}
-                    className="p-4 md:p-5 border-l-4 animate-fade-in"
-                    style={{ borderLeftColor: r.course.color }}
+                    className={`${cardCls} animate-fade-in`}
+                    style={{ borderLeftColor: tpl.template === "modern" ? tpl.accent : r.course.color }}
                   >
                     {/* Unified metrics header — sits ENTIRELY on top of the comment block */}
                     <div className="border-b pb-3 mb-4">
