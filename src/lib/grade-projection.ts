@@ -17,6 +17,8 @@ export type GradeProjection = {
   marginPp: number;
   /** Confidence label derived from sample size + horizon. */
   confidence: "high" | "medium" | "low" | "very-low";
+  /** Confidence as a 0–100% scalar derived from sample size + margin. */
+  confidencePct: number;
   low: number;
   high: number;
 };
@@ -61,6 +63,7 @@ export function projectGrade(
       capped: false,
       marginPp: 0,
       confidence: "very-low",
+      confidencePct: 0,
       low: currentAvg,
       high: currentAvg,
     };
@@ -98,6 +101,11 @@ export function projectGrade(
   const cappedDelta = Math.max(-MAX_DELTA_PP, Math.min(MAX_DELTA_PP, rawDelta));
   const capped = Math.abs(rawDelta) > MAX_DELTA_PP;
   const projected = Math.max(0, Math.min(100, currentAvg + cappedDelta));
+  // True visual delta = projected − current. Using the raw capped slope
+  // shift here is wrong when projected hits the 0/100 clamp (e.g. 96.3
+  // current + 16.8 raw shift would show "+16.8pp" while projected is
+  // pinned to 100, a real move of only +3.7pp).
+  const visualDelta = projected - currentAvg;
 
   // Margin widens with small samples and longer horizons.
   const smallNBoost = n < 3 ? 6 : n < 5 ? 3 : 0;
@@ -115,16 +123,23 @@ export function projectGrade(
           ? "low"
           : "very-low";
 
+  // Map sample size + margin onto a 0–100 confidence scalar so the UI
+  // can show a single "% confidence" number instead of a raw ±pp band.
+  const nFactor = Math.min(1, n / 8); // saturates at 8 graded tasks
+  const marginFactor = Math.max(0, 1 - marginPp / 20);
+  const confidencePct = Math.round(Math.max(0, Math.min(100, 100 * (0.35 * nFactor + 0.65 * marginFactor))));
+
   return {
     slopePerWeek,
     sample: n,
     source,
     weeks,
     projected,
-    delta: cappedDelta,
+    delta: visualDelta,
     capped,
     marginPp,
     confidence,
+    confidencePct,
     low: Math.max(0, projected - marginPp),
     high: Math.min(100, projected + marginPp),
   };
