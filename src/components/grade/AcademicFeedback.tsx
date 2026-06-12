@@ -775,6 +775,20 @@ export function AcademicFeedback() {
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
                               {tr.previous}{prevTerm ? ` (${truncate(prevTerm.name, 10)})` : ""}
                             </div>
+                            {prevTermOptions.length > 1 && (
+                              <select
+                                aria-label="Select previous term to compare"
+                                value={selectedPrevTermId ?? ""}
+                                onChange={(e) => setSelectedPrevTermId(e.target.value)}
+                                className="no-print h-7 w-full rounded-md border bg-background px-2 text-xs font-medium"
+                              >
+                                {prevTermOptions.map((pt) => (
+                                  <option key={pt.id} value={pt.id}>
+                                    {pt.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                             <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
                               <span>{meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}</span>
                               {r.prevAvgDisplay && !meta.prevLetters[r.course.id] && (
@@ -793,16 +807,6 @@ export function AcademicFeedback() {
                               <span>{r.letter}</span>
                               <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
                             </div>
-                            {prev3.map(({ term, avg }) => (
-                              <div
-                                key={term.id}
-                                className="inline-flex items-center gap-1 h-8 px-2 rounded-md border bg-muted/40 text-[11px] tabular-nums"
-                                title={`${term.name}: ${avg == null ? "—" : avg.toFixed(1) + "%"}`}
-                              >
-                                <span className="text-[9px] uppercase font-semibold text-muted-foreground">{truncate(term.name, 6)}</span>
-                                <span className="font-semibold">{avg == null ? "—" : `${avg.toFixed(0)}%`}</span>
-                              </div>
-                            ))}
                           </div>
                         </div>
                       </div>
