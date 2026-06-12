@@ -790,7 +790,7 @@ export function AcademicFeedback() {
                             {/* Term Grade */}
                             {tr.termGrade}{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
                           </div>
-                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0 w-full">
                             <div className={`inline-flex items-center justify-center gap-2 h-8 px-3 rounded-md border text-sm font-bold ${chipCls}`}>
                               <span>{r.letter}</span>
                               <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
