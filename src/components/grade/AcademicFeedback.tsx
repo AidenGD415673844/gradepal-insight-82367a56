@@ -767,6 +767,7 @@ export function AcademicFeedback() {
                         )}
                         <div className="space-y-1">
                           <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
+                            {/* Term Grade */}
                             {tr.termGrade}{activeTerm ? ` (${truncate(activeTerm.name, 10)})` : ""}
                           </div>
                           <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-primary/10 border-primary/30 text-sm font-bold">
