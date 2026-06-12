@@ -15,6 +15,8 @@ import { ReportTemplateDialog } from "./ReportTemplateDialog";
 import { useReportTemplate, I18N, computeBadges } from "@/lib/report-template";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { addonBulletsFor } from "./feedback-addons";
+import { bullet7For, formatVelocity } from "./feedback-bullet7";
+import { computeVelocity } from "@/lib/grade-velocity";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
 import { saveReport } from "@/lib/saved-reports";
