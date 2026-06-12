@@ -948,15 +948,25 @@ export function AcademicFeedback() {
                         </div>
                         <div className="space-y-1">
                           <div className="text-[10px] uppercase tracking-wider text-primary font-semibold">{tr.aspirational}</div>
-                          <Input
-                            className="h-8 no-print border-primary/40"
-                            value={meta.goals[r.course.id] ?? ""}
-                            onChange={(e) => update("goals", r.course.id, e.target.value)}
-                            placeholder="A*"
-                          />
-                          <div className="hidden print:block text-sm font-medium text-primary">
-                            {meta.goals[r.course.id] || "—"}
-                          </div>
+                          {(() => {
+                            const goalPct = subjectGoals[r.course.id] ?? settings.goal;
+                            const goalLetter = applyAStarOverride(
+                              goalPct,
+                              getLetter(goalPct, scale)?.letter ?? "—",
+                            );
+                            return (
+                              <div
+                                title="Locked to this subject's goal — change it in the Subjects sidebar"
+                                aria-readonly="true"
+                                className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border border-primary/40 bg-primary/5 text-sm font-semibold text-primary tabular-nums"
+                              >
+                                <span>{goalLetter}</span>
+                                <span className="text-xs font-normal text-primary/80">
+                                  ({goalPct}%)
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                         {hasPrevTerm && (
                           <div className="space-y-1 min-w-0">
