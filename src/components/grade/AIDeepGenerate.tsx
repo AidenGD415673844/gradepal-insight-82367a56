@@ -192,7 +192,9 @@ export function AIDeepGenerate({
 
   const [banned, setBanned] = useState<boolean>(false);
   const [violationMsg, setViolationMsg] = useState<string>("");
-  const [now, setNow] = useState<number>(Date.now());
+  // Initialize to 0 so the SSR-rendered countdown matches the very first
+  // client render. The real time is filled in by the effect below.
+  const [now, setNow] = useState<number>(0);
   const [target, setTarget] = useState<string>(subjects[0]?.id ?? "");
   const [teacher, setTeacher] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -201,6 +203,7 @@ export function AIDeepGenerate({
   useEffect(() => {
     setBanned(isAIBanned());
     reconstructIfPartial();
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);
   }, []);
