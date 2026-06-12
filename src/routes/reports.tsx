@@ -7,7 +7,7 @@ export const Route = createFileRoute("/reports")({
   head: () => ({
     meta: [
       { title: "Report Card — GradeCalc" },
-      { name: "description", content: "multi-term filter & 7 term feedback" },
+      { name: "description", content: "Multi-term filter & 10 bullet feedback" },
     ],
   }),
   component: ReportsPage,
