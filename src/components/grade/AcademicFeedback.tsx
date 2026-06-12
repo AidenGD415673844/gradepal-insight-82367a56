@@ -15,6 +15,8 @@ import { ReportTemplateDialog } from "./ReportTemplateDialog";
 import { useReportTemplate, I18N, computeBadges } from "@/lib/report-template";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { addonBulletsFor } from "./feedback-addons";
+import { bullet7For, formatVelocity } from "./feedback-bullet7";
+import { computeVelocity } from "@/lib/grade-velocity";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
 import { saveReport } from "@/lib/saved-reports";
@@ -482,6 +484,16 @@ export function AcademicFeedback() {
     // prior text) plus a brand-new 6th bullet (Future Outlook). Continuous
     // 5% increment lookup keyed by the subject's term average.
     const addons = addonBulletsFor(r.avg);
+    // B7 — Statistical Diagnosis. Dynamic template interpolation using the
+    // subject's live name, current percentage, letter grade, and a rolling
+    // 30-day velocity vector. Pure client-side, no network calls.
+    const velocity = computeVelocity(r.done);
+    const b7 = bullet7For({
+      subjectName: r.course.name,
+      pct: r.avg,
+      letter: r.letter,
+      velocityLabel: formatVelocity(velocity.slopePerWeek, velocity.sample),
+    });
     return [
       `${shiftedMain.bullets[0]} ${addons.b1}`,
       `${b2 + sdClause} ${addons.b2}`,
@@ -489,6 +501,7 @@ export function AcademicFeedback() {
       `${shiftedMain.bullets[3] + sdClause} ${addons.b4}`,
       `${b5} ${addons.b5}`,
       addons.b6,
+      b7,
     ];
   };
 
@@ -719,6 +732,7 @@ export function AcademicFeedback() {
                   tr.responsibility,
                   tr.improvement,
                   "Future Outlook",
+                  "Statistical Diagnosis",
                 ];
                 // Template-specific chip + card styling so switching the
                 // template in the dialog visibly changes the layout.

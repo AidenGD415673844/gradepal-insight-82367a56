@@ -38,7 +38,7 @@ const CARDS = [
   { to: "/grades", title: "Grade Calculator Engine", desc: "Subjects, weights, charts & predictions", Icon: Calculator, accent: "from-indigo-500/20 to-blue-500/10" },
   { to: "/utilities", title: "School Companion Utilities", desc: "Pomodoro, planners & bottlenecks", Icon: Wrench, accent: "from-emerald-500/20 to-teal-500/10" },
   { to: "/timetable", title: "Attendance & Timetable", desc: "Weekly schedule & attendance counters", Icon: CalendarRange, accent: "from-amber-500/20 to-orange-500/10" },
-  { to: "/reports", title: "Official Report Card", desc: "Multi-term filter & 5-bullet feedback", Icon: ClipboardCheck, accent: "from-rose-500/20 to-pink-500/10" },
+  { to: "/reports", title: "Official Report Card", desc: "multi-term filter & 7 term feedback", Icon: ClipboardCheck, accent: "from-rose-500/20 to-pink-500/10" },
   { to: "/saved-reports", title: "Saved Reports", desc: "Local 15-slot history hub of archived report cards", Icon: Archive, accent: "from-cyan-500/20 to-sky-500/10" },
   { to: "/teacher", title: "Teacher Gradebook View", desc: "Password-gated A*-G criteria gradebook", Icon: Lock, accent: "from-violet-500/20 to-fuchsia-500/10" },
   { to: "/criteria", title: "Assessment Criteria", desc: "Browse criteria & grades; teachers can edit", Icon: ListChecks, accent: "from-lime-500/20 to-green-500/10" },
