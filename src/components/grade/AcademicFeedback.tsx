@@ -321,20 +321,30 @@ export function AcademicFeedback() {
   // Report card always uses the fixed REPORT_SCALE — not the user's scale.
   const scale = REPORT_SCALE;
   const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
-  const prevTerm = useMemo(() => {
-    if (!activeTerm) return null;
-    const sorted = [...terms].sort((a, b) => a.start.localeCompare(b.start));
-    const idx = sorted.findIndex((t) => t.id === activeTerm.id);
-    return idx > 0 ? sorted[idx - 1] : null;
-  }, [terms, activeTerm]);
-  // Up to 3 most recent previous terms for the multi-term comparison strip.
-  const prevTerms = useMemo(() => {
+  // All terms preceding the active term, most recent first — used to
+  // populate the "previous term" selector above the previous-grade box.
+  const prevTermOptions = useMemo(() => {
     if (!activeTerm) return [];
     const sorted = [...terms].sort((a, b) => a.start.localeCompare(b.start));
     const idx = sorted.findIndex((t) => t.id === activeTerm.id);
     if (idx <= 0) return [];
-    return sorted.slice(Math.max(0, idx - 3), idx).reverse();
+    return sorted.slice(0, idx).reverse();
   }, [terms, activeTerm]);
+  const [selectedPrevTermId, setSelectedPrevTermId] = useState<string | null>(null);
+  // Keep selection valid as active term / available prior terms change.
+  useEffect(() => {
+    if (prevTermOptions.length === 0) {
+      if (selectedPrevTermId !== null) setSelectedPrevTermId(null);
+      return;
+    }
+    if (!selectedPrevTermId || !prevTermOptions.some((t) => t.id === selectedPrevTermId)) {
+      setSelectedPrevTermId(prevTermOptions[0].id);
+    }
+  }, [prevTermOptions, selectedPrevTermId]);
+  const prevTerm = useMemo(
+    () => prevTermOptions.find((t) => t.id === selectedPrevTermId) ?? null,
+    [prevTermOptions, selectedPrevTermId],
+  );
   const [tpl] = useReportTemplate();
   const tr = I18N[tpl.lang];
 
@@ -411,17 +421,6 @@ export function AcademicFeedback() {
     const xs = rows.filter((r) => r.hasData).map((r) => r.avg);
     return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
   })();
-
-  // Per-row previous-term averages (up to 3) for the multi-term strip.
-  const prevTermAverages = (courseId: string) =>
-    prevTerms.map((pt) => {
-      const ts = filterByTerm(
-        tasks.filter((t) => t.courseId === courseId && !t.pending),
-        pt,
-      );
-      const avg = ts.length ? calcAverage(ts, settings.weighted) : null;
-      return { term: pt, avg };
-    });
 
   const buildComment = (r: (typeof rows)[number]): string[] => {
     if (!r.hasData) {
@@ -714,7 +713,6 @@ export function AcademicFeedback() {
                   tr.responsibility,
                   tr.improvement,
                 ];
-                const prev3 = prevTermAverages(r.course.id);
                 // Template-specific chip + card styling so switching the
                 // template in the dialog visibly changes the layout.
                 const chipCls =
@@ -777,6 +775,20 @@ export function AcademicFeedback() {
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold truncate">
                               {tr.previous}{prevTerm ? ` (${truncate(prevTerm.name, 10)})` : ""}
                             </div>
+                            {prevTermOptions.length > 1 && (
+                              <select
+                                aria-label="Select previous term to compare"
+                                value={selectedPrevTermId ?? ""}
+                                onChange={(e) => setSelectedPrevTermId(e.target.value)}
+                                className="no-print h-7 w-full rounded-md border bg-background px-2 text-xs font-medium"
+                              >
+                                {prevTermOptions.map((pt) => (
+                                  <option key={pt.id} value={pt.id}>
+                                    {pt.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                             <div className="inline-flex items-center justify-center gap-2 h-8 w-full rounded-md border bg-muted/40 text-sm font-semibold tabular-nums">
                               <span>{meta.prevLetters[r.course.id] || r.prevLetterAuto || "—"}</span>
                               {r.prevAvgDisplay && !meta.prevLetters[r.course.id] && (
@@ -795,16 +807,6 @@ export function AcademicFeedback() {
                               <span>{r.letter}</span>
                               <span className="text-xs text-muted-foreground tabular-nums">{r.avgDisplay}</span>
                             </div>
-                            {prev3.map(({ term, avg }) => (
-                              <div
-                                key={term.id}
-                                className="inline-flex items-center gap-1 h-8 px-2 rounded-md border bg-muted/40 text-[11px] tabular-nums"
-                                title={`${term.name}: ${avg == null ? "—" : avg.toFixed(1) + "%"}`}
-                              >
-                                <span className="text-[9px] uppercase font-semibold text-muted-foreground">{truncate(term.name, 6)}</span>
-                                <span className="font-semibold">{avg == null ? "—" : `${avg.toFixed(0)}%`}</span>
-                              </div>
-                            ))}
                           </div>
                         </div>
                       </div>
