@@ -864,6 +864,9 @@ export function AcademicFeedback() {
                   tr.improvement,
                   "Future Outlook",
                   "Statistical Diagnosis",
+                  "Task Type Profile",
+                  "Scoring Consistency",
+                  "Optimization Strategy",
                 ];
                 // Template-specific chip + card styling so switching the
                 // template in the dialog visibly changes the layout.
