@@ -1032,75 +1032,6 @@ export function AcademicFeedback() {
                         </div>
                       ) : (
                         <>
-                          {r.hasData && (() => {
-                            const proj = projectGrade(r.done, r.avg, horizonWeeks);
-                            const projRawLetter = getLetter(proj.projected, scale)?.letter ?? "—";
-                            const projLetter = applyAStarOverride(proj.projected, projRawLetter);
-                            const goalPct = Number.isFinite(settings.goal) ? settings.goal : null;
-                            const goalDelta = goalPct != null ? proj.projected - goalPct : null;
-                            const onTrack = goalDelta != null && goalDelta >= 0;
-                            const confTone =
-                              proj.confidence === "high"
-                                ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900"
-                                : proj.confidence === "medium"
-                                  ? "border-sky-300 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:border-sky-900"
-                                  : proj.confidence === "low"
-                                    ? "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900"
-                                    : "border-muted bg-muted/40 text-muted-foreground";
-                            const goalTone =
-                              goalDelta == null
-                                ? "border-muted bg-muted/40 text-muted-foreground"
-                                : onTrack
-                                  ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900"
-                                  : "border-rose-300 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-900";
-                            return (
-                              <div
-                                aria-label="Future Outlook snapshot"
-                                className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 p-2.5 rounded-md border bg-muted/30"
-                              >
-                                <div className="space-y-0.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                                    Current
-                                  </div>
-                                  <div className="text-sm font-bold tabular-nums">
-                                    {r.avg.toFixed(1)}% <span className="text-muted-foreground font-medium">({r.letter})</span>
-                                  </div>
-                                </div>
-                                <div className="space-y-0.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                                    Projected · {horizonLabel}
-                                  </div>
-                                  <div className="text-sm font-bold tabular-nums">
-                                    {proj.projected.toFixed(1)}% <span className="text-muted-foreground font-medium">({projLetter})</span>
-                                    {proj.source !== "insufficient" && (
-                                      <span className={`ml-1 text-[10px] font-semibold ${proj.delta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                                        {proj.delta >= 0 ? "+" : ""}{proj.delta.toFixed(1)}pp
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="space-y-0.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                                    Confidence
-                                  </div>
-                                  <span className={`inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums ${confTone}`}>
-                                    {proj.confidence}
-                                    {proj.source !== "insufficient" && ` · ±${proj.marginPp.toFixed(1)}pp`}
-                                  </span>
-                                </div>
-                                <div className="space-y-0.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                                    Goal {goalPct != null ? `${goalPct}%` : "—"}
-                                  </div>
-                                  <span className={`inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums ${goalTone}`}>
-                                    {goalDelta == null
-                                      ? "No goal set"
-                                      : `${onTrack ? "On track" : "At risk"} · ${goalDelta >= 0 ? "+" : ""}${goalDelta.toFixed(1)}pp`}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })()}
                           <ul className="space-y-1.5 text-sm">
                             {bullets.map((b, i) => (
                               <li
@@ -1115,6 +1046,80 @@ export function AcademicFeedback() {
                                   B{i + 1} ({labels[i]}):
                                 </span>{" "}
                                 {b}
+                                {i === 5 && r.hasData && (() => {
+                                  const proj = projectGrade(r.done, r.avg, horizonWeeks);
+                                  const projTier = projectedTierLabel(proj.projected);
+                                  const goalPct = Number.isFinite(settings.goal) ? settings.goal : null;
+                                  const goalDelta = goalPct != null ? proj.projected - goalPct : null;
+                                  const onTrack = goalDelta != null && goalDelta >= 0;
+                                  const confTone =
+                                    proj.confidencePct >= 70
+                                      ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900"
+                                      : proj.confidencePct >= 45
+                                        ? "border-sky-300 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:border-sky-900"
+                                        : proj.confidencePct >= 20
+                                          ? "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900"
+                                          : "border-muted bg-muted/40 text-muted-foreground";
+                                  const goalTone =
+                                    goalDelta == null
+                                      ? "border-muted bg-muted/40 text-muted-foreground"
+                                      : onTrack
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900"
+                                        : "border-rose-300 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-900";
+                                  return (
+                                    <div
+                                      aria-label="Future Outlook snapshot"
+                                      className="mt-2 p-2.5 rounded-md border bg-muted/30"
+                                    >
+                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <div className="space-y-0.5">
+                                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Current</div>
+                                          <div className="text-sm font-bold tabular-nums text-foreground">
+                                            {r.avg.toFixed(1)}% <span className="text-muted-foreground font-medium">({projectedTierLabel(r.avg)})</span>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                                            Projected · {horizonLabel}
+                                          </div>
+                                          <div className="text-sm font-bold tabular-nums text-foreground">
+                                            {proj.projected.toFixed(1)}% <span className="text-muted-foreground font-medium">({projTier})</span>
+                                            {proj.source !== "insufficient" && (
+                                              <span className={`ml-1 text-[10px] font-semibold ${proj.delta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                                {proj.delta >= 0 ? "+" : ""}{proj.delta.toFixed(1)}pp
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Confidence</div>
+                                          <span className={`inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums ${confTone}`}>
+                                            {proj.source === "insufficient" ? "n/a" : `${proj.confidencePct}%`}
+                                          </span>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                                            Goal {goalPct != null ? `${goalPct}%` : "—"}
+                                          </div>
+                                          <span className={`inline-flex items-center px-1.5 h-5 rounded border text-[10px] font-semibold tabular-nums ${goalTone}`}>
+                                            {goalDelta == null
+                                              ? "No goal set"
+                                              : `${onTrack ? "On track" : "At risk"} · ${goalDelta >= 0 ? "+" : ""}${goalDelta.toFixed(1)}pp`}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <SubjectProjectionChart
+                                        subjectName={r.course.name}
+                                        current={r.avg}
+                                        projected={proj.projected}
+                                        marginPp={proj.marginPp}
+                                        goalPct={goalPct}
+                                        color={r.course.color}
+                                        onTrack={onTrack}
+                                      />
+                                    </div>
+                                  );
+                                })()}
                               </li>
                             ))}
                           </ul>
