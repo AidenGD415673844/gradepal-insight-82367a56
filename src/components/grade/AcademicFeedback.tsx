@@ -460,6 +460,31 @@ export function AcademicFeedback() {
     return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
   })();
 
+  // Per-subject projection deltas, used to award the "Highest Jump" and
+  // "Biggest Drop" badges so only ONE subject per report ever wears them.
+  const projDeltas = new Map<string, number>();
+  const projConfidence = new Map<string, number>();
+  rows.forEach((r) => {
+    if (!r.hasData) return;
+    const p = projectGrade(r.done, r.avg, horizonWeeks);
+    projDeltas.set(r.course.id, p.delta);
+    projConfidence.set(r.course.id, p.confidencePct);
+  });
+  const highestJumpId = (() => {
+    let best: { id: string; d: number } | null = null;
+    projDeltas.forEach((d, id) => {
+      if (d > 0.5 && (!best || d > best.d)) best = { id, d };
+    });
+    return best?.id ?? null;
+  })();
+  const biggestDropId = (() => {
+    let worst: { id: string; d: number } | null = null;
+    projDeltas.forEach((d, id) => {
+      if (d < -0.5 && (!worst || d < worst.d)) worst = { id, d };
+    });
+    return worst?.id ?? null;
+  })();
+
   const buildComment = (r: (typeof rows)[number]): string[] => {
     if (!r.hasData) {
       const msg =
