@@ -713,7 +713,6 @@ export function AcademicFeedback() {
                   tr.responsibility,
                   tr.improvement,
                 ];
-                const prev3 = prevTermAverages(r.course.id);
                 // Template-specific chip + card styling so switching the
                 // template in the dialog visibly changes the layout.
                 const chipCls =
