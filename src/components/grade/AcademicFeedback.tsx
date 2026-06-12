@@ -660,6 +660,9 @@ export function AcademicFeedback() {
   };
 
   const [capOpen, setCapOpen] = useState(false);
+  // Per-subject toggle for the "Compare with previous terms" panel
+  // rendered beneath the Bullet-6 projection chart.
+  const [compareOpen, setCompareOpen] = useState<Record<string, boolean>>({});
 
   const handleSaveReport = () => {
     const labels: [string, string, string, string, string] = [
