@@ -5,6 +5,7 @@ export type UIPrefs = {
   hideCharts: boolean;
   quickAdd: boolean;
   welcomeDismissed: boolean;
+  aspirationalAuto: boolean;
 };
 
 const KEY = "gradecalc-ui-prefs-v1";
@@ -15,6 +16,7 @@ const DEFAULTS: UIPrefs = {
   hideCharts: false,
   quickAdd: false,
   welcomeDismissed: false,
+  aspirationalAuto: false,
 };
 
 function read(): UIPrefs {

@@ -34,58 +34,41 @@ describe("currentBandPhrase — aligned with REPORT_SCALE letter mins", () => {
       "between the higher high C band and the lower low B band",
     );
   });
-  it("95 maps to the A* band", () => {
-    expect(currentBandPhrase(95)).toBe("the A* band");
+  it("95 maps to the Mid A* band", () => {
+    expect(currentBandPhrase(95)).toBe("the Mid A* band");
+  });
+  it("98 maps to the High A* band", () => {
+    expect(currentBandPhrase(98)).toBe("the High A* band");
   });
 });
 
 describe("nextTierGoal — realistic, attainable ranges", () => {
-  it("81% (low A) targets mid A, never the band already occupied", () => {
+  it("81% (low A) formally targets the next sub-band, never the band already occupied", () => {
     const out = nextTierGoal(81, 6.7);
-    expect(out).toMatch(/mid A band/);
-    expect(out).not.toMatch(/into the low A band/);
-    expect(out).not.toMatch(/high B band/);
+    expect(out).toMatch(/Strategic focus should be directed/);
+    expect(out).not.toMatch(/into the low A band threshold/);
   });
 
-  it("55% with high variance still caps the upper bound (no 19% suggestions)", () => {
-    const out = nextTierGoal(55, 30);
-    // Range pattern: "roughly N% to M% away" with M ≤ 8
-    const m = out.match(/roughly (\d+)% to (\d+)% away/);
-    expect(m).toBeTruthy();
-    const high = Number(m![2]);
-    expect(high).toBeLessThanOrEqual(8);
-    expect(out).toMatch(/high D band/);
-  });
-
-  it("80.6% (cusp of low A) uses cusp wording, not a multi-percent range", () => {
-    const out = nextTierGoal(80.6, 5);
-    expect(out).toMatch(/cusp of the low A band/);
-    expect(out).not.toMatch(/roughly \d+% to \d+% away/);
-  });
-
-  it("70.5% (cusp of low B) uses cusp wording", () => {
-    const out = nextTierGoal(70.5, 5);
-    expect(out).toMatch(/cusp of the low B band/);
-  });
-
-  it("89.5% targets A* with a small gap", () => {
+  it("89.5% targets A* with formal wording", () => {
     const out = nextTierGoal(89.5, 3);
     expect(out).toMatch(/A\*/);
   });
 
-  it("95% (already A*) returns the maintenance fallback", () => {
-    expect(nextTierGoal(95)).toMatch(/Continue to maintain your A\* standing/);
+  it("95% (Mid A*) targets High A* threshold", () => {
+    expect(nextTierGoal(95)).toMatch(/High A\* \(97–100%\) threshold/);
   });
 
-  it("appends a 'highest task' line when best task exceeds the average", () => {
-    const done = [t(60), t(72), t(95)];
-    const out = nextTierGoal(75, 8, done);
-    expect(out).toMatch(/highest task this term was 95\.0%/);
+  it("98% (High A*) emits a sustain-baseline directive", () => {
+    expect(nextTierGoal(98)).toMatch(/sustaining this elite baseline/);
   });
 
-  it("flags a recent dip rather than promising a jump", () => {
-    const done = [t(76), t(75), t(70), t(68), t(66)];
-    const out = nextTierGoal(75, 8, done);
-    expect(out).toMatch(/recent task average has dipped/);
+  it("never uses casual 'work hard' or 'try to' phrasing", () => {
+    for (const pct of [45, 55, 70, 85, 92]) {
+      const out = nextTierGoal(pct);
+      expect(out).not.toMatch(/work hard/i);
+      expect(out).not.toMatch(/try to/i);
+    }
   });
+  // Reference unused helper to keep import surface stable for future tests.
+  void t;
 });

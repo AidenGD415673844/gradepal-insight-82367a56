@@ -73,9 +73,9 @@ describe("Report card — Bullet 5 visibility", () => {
   });
 
   it("nextTierGoal always returns a non-empty string for any percentage 0–100", () => {
-    // Import-free check: scan the helper for the maintenance fallback + ladder return.
-    expect(SOURCE).toMatch(/Continue to maintain your A\* standing/);
-    expect(SOURCE).toMatch(/Try to aim and work hard to bring your grade up/);
+    // Import-free check: scan the helper for the formal directive copy.
+    expect(SOURCE).toMatch(/sustaining this elite baseline/);
+    expect(SOURCE).toMatch(/Strategic focus should be directed/);
   });
 
   it("renders the B5 (Improvement) label so the bullet is never silently dropped", () => {

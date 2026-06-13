@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useUIPrefs, setUIPrefs, resetAllLocalData } from "@/lib/ui-prefs";
-import { Moon, BarChart3, Zap, RotateCcw, Trash2, BookOpen } from "lucide-react";
+import { Moon, BarChart3, Zap, RotateCcw, Trash2, BookOpen, Target } from "lucide-react";
 import { toast } from "sonner";
 import { SnapshotManager } from "@/components/grade/SnapshotManager";
 import { BackupRestore } from "@/components/grade/BackupRestore";
@@ -89,6 +89,17 @@ function SettingsPage() {
           <Switch
             checked={prefs.hideCharts}
             onCheckedChange={(v) => setUIPrefs({ hideCharts: v })}
+          />
+        </Row>
+
+        <Row
+          icon={Target}
+          title="Set aspirational grade using data"
+          desc="Automatically derive each subject's aspirational goal from live velocity trends. Bounded between E (41%) and Mid A* (95%)."
+        >
+          <Switch
+            checked={prefs.aspirationalAuto}
+            onCheckedChange={(v) => setUIPrefs({ aspirationalAuto: v })}
           />
         </Row>
 

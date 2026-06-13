@@ -16,9 +16,12 @@ import { useReportTemplate, I18N, computeBadges } from "@/lib/report-template";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { addonBulletsFor } from "./feedback-addons";
 import { bullet7For, formatVelocity } from "./feedback-bullet7";
-import { bullets8910For } from "./feedback-bullets8910";
+import { bullets8910For, reportBracketFloor } from "./feedback-bullets8910";
 import { SubjectProjectionChart } from "./SubjectProjectionChart";
 import { computeVelocity } from "@/lib/grade-velocity";
+import { useUIPrefs } from "@/lib/ui-prefs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Info } from "lucide-react";
 import { projectGrade, HORIZON_OPTIONS } from "@/lib/grade-projection";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
@@ -98,7 +101,8 @@ const LETTER_MINS = [41, 51, 61, 71, 81, 91];
  * forward-looking goal copy so the snapshot reads naturally.
  */
 export function projectedTierLabel(pct: number): string {
-  if (pct >= 91) return "A*";
+  if (pct >= 97) return "High A*";
+  if (pct >= 91) return "Mid A*";
   const sorted = [...NEXT_TIER_LADDER].sort((a, b) => a.min - b.min);
   const below = [...sorted].reverse().find((b) => b.min <= pct);
   if (!below) return "NA";
@@ -116,7 +120,8 @@ const fmtTier = (b: { letter: string; tier: string }) =>
   b.tier ? `${b.tier} ${b.letter}` : b.letter;
 
 export function currentBandPhrase(pct: number): string {
-  if (pct >= 91) return "the A* band";
+  if (pct >= 97) return "the High A* band";
+  if (pct >= 91) return "the Mid A* band";
   const sorted = [...NEXT_TIER_LADDER].sort((a, b) => a.min - b.min);
   const below = [...sorted].reverse().find((b) => b.min <= pct);
   // Detect proximity to a real letter boundary (not a sub-tier one).
@@ -132,52 +137,24 @@ export function currentBandPhrase(pct: number): string {
 }
 
 export function nextTierGoal(pct: number, sdSubject = 0, done: Task[] = []): string {
-  if (pct >= 91) {
-    return "Continue to maintain your A* standing by tackling stretch challenges and competition-level questions.";
+  // Formal, diagnostic phrasing — no casual "try to" or "work hard"
+  // language. The student's CURRENT band is always named first so the
+  // copy frames the recommendation around their proven baseline.
+  void sdSubject;
+  void done;
+  const current = currentBandPhrase(pct);
+  if (pct >= 97) {
+    return `Performance is currently anchored within ${current}. Strategic focus should be directed toward sustaining this elite baseline through stretch tasks and competition-level problem sets.`;
   }
-  // Strictly above current — never recommend the band you're already in.
+  if (pct >= 91) {
+    return `Performance is currently anchored within ${current}. Strategic focus should be directed toward elevating performance metrics cleanly into the High A* (97–100%) threshold.`;
+  }
   const next = NEXT_TIER_LADDER.find((b) => b.min > pct);
   if (!next) {
-    const gap = Math.max(1, Math.ceil(91 - pct));
-    return `You are currently in ${currentBandPhrase(pct)}. You're roughly ${gap}% from clearing the A* threshold — sustained top-band performance on remaining tasks will get you there.`;
+    return `Performance is currently anchored within ${current}. Strategic focus should be directed toward elevating performance metrics cleanly into the Mid A* (91–96.99%) threshold.`;
   }
-  const label = fmtTier(next);
-  const rawGap = next.min - pct;
-  // On the cusp — skip the "X% away" range, give a micro-goal instead.
-  if (rawGap <= 1) {
-    return `You are currently in ${currentBandPhrase(pct)}. You're on the cusp of the ${label} band — one strong task pushes you over.`;
-  }
-  const gap = Math.max(1, Math.ceil(rawGap));
-  // Capped cushion (never wider than 4 pts regardless of volatility).
-  const cushion = Math.max(1, Math.min(4, Math.ceil(sdSubject / 3)));
-  // Don't quote a range that overshoots the tier *after* the goal tier.
-  const tierAfter = NEXT_TIER_LADDER.find((b) => b.min > next.min);
-  const ceiling = tierAfter
-    ? Math.max(gap + 1, Math.ceil(tierAfter.min - pct) - 1)
-    : gap + cushion;
-  const high = Math.min(gap + cushion, ceiling);
-
-  // Personalised colour from the student's own task history.
-  let extra = "";
-  if (done.length >= 2) {
-    const pcts = done
-      .map((t) => (t.score / t.maxScore) * 100)
-      .filter((n) => Number.isFinite(n));
-    if (pcts.length >= 2) {
-      const best = Math.max(...pcts);
-      const recent = pcts.slice(-3);
-      const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
-      if (best > pct + 2) {
-        extra = ` Your highest task this term was ${best.toFixed(1)}% — repeating that level on remaining work would lift your average toward the ${label} band.`;
-      } else if (recentAvg > pct + 1) {
-        extra = ` Your recent task average (${recentAvg.toFixed(1)}%) is trending above your overall average — keep that momentum.`;
-      } else if (recentAvg < pct - 1) {
-        extra = ` Your recent task average has dipped to ${recentAvg.toFixed(1)}% — stabilising at your prior level is the first step before reaching for ${label}.`;
-      }
-    }
-  }
-
-  return `You are currently in ${currentBandPhrase(pct)}. Try to aim and work hard to bring your grade up into the ${label} band — roughly ${gap}% to ${high}% away.${extra}`;
+  const targetLabel = fmtTier(next);
+  return `Performance is currently anchored within ${current}. Strategic focus should be directed toward elevating performance metrics cleanly into the ${targetLabel} band threshold.`;
 }
 
 /**
@@ -335,8 +312,29 @@ function csvEscape(s: string): string {
   return s;
 }
 
+function badgeExplanation(label: string): string {
+  const l = label.toLowerCase();
+  if (l.includes("most improved"))
+    return "This badge indicates your final average has jumped significantly compared against your past term baseline records.";
+  if (l.includes("top performer"))
+    return "Awarded when this subject sits comfortably inside the top performance band of your active subject set.";
+  if (l.includes("perfect completion"))
+    return "Every graded task in this term has been submitted on time, with nothing left pending.";
+  if (l.includes("highest jump"))
+    return "This subject has the strongest positive projected swing across all your subjects this term.";
+  if (l.includes("biggest drop"))
+    return "This subject has the largest negative projected swing — review recent tasks to identify the cause.";
+  if (l.includes("high confidence"))
+    return "The projection model has enough recent graded tasks to forecast with high statistical confidence.";
+  if (l.includes("volatile"))
+    return "Score variance is wide (σ ≥ 15%), meaning task results are swinging notably between assessments.";
+  return "Local achievement marker derived from this subject's task ledger.";
+}
+
 export function AcademicFeedback() {
-  const { courses, tasks, terms, activeTermId, settings, subjectGoals } = useGrades();
+  const { courses, tasks, terms, activeTermId, settings, subjectGoals, setSubjectGoal } = useGrades();
+  const [prefs] = useUIPrefs();
+  const [gradeRefOpen, setGradeRefOpen] = useState(false);
   // Report card always uses the fixed REPORT_SCALE — not the user's scale.
   const scale = REPORT_SCALE;
   const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
@@ -568,14 +566,15 @@ export function AcademicFeedback() {
     // Clean narrative: a single, plain-English sentence followed by the
     // tier-aware addon. The hard numbers (current/projected/confidence/
     // goal delta) live in the snapshot card embedded inside this bullet.
+    const currentTier = projectedTierLabel(r.avg);
     const b6Narrative =
       proj.source === "insufficient"
-        ? `Once two or more graded tasks land, the model will forecast where ${r.course.name} is heading over the next ${horizonLabel}. For now the outlook holds steady at the current ${r.letter} band.`
-        : Math.abs(proj.delta) < 0.5
-          ? `Momentum in ${r.course.name} is essentially flat, so the ${horizonLabel} outlook keeps the average locked near today's ${projTier} band.`
-          : proj.delta > 0
-            ? `If this pace holds, ${r.course.name} is on a quiet climb toward the ${projTier} band over the next ${horizonLabel} — keep the current execution steady to bank the gain.`
-            : `Recent results are pulling ${r.course.name} toward the ${projTier} band over the next ${horizonLabel}. A small intervention now is enough to flatten or reverse the slope before it locks in.`;
+        ? `With limited graded data to forecast from, ${r.course.name} is securely holding its position within the ${currentTier} band over the next ${horizonLabel}.`
+        : proj.projected > r.avg + 0.5 && projTier !== currentTier
+          ? `If this pace holds, ${r.course.name} is on a quiet climb toward the ${projTier} band over the next ${horizonLabel} — keep the current execution steady to bank the gain.`
+          : proj.projected < r.avg - 0.5
+            ? `${r.course.name} is showing a mild deceleration toward the lower ${projTier} threshold over the next ${horizonLabel}. A small intervention now is enough to flatten the slope before it locks in.`
+            : `${r.course.name} is securely holding its position within the ${currentTier} band over the next ${horizonLabel}.`;
     const goalLine =
       goalDelta == null
         ? ""
@@ -587,29 +586,6 @@ export function AcademicFeedback() {
     const b6Dynamic = `Future Outlook (${horizonLabel}): ${b6Narrative}${goalLine} ${addons.b6}`;
 
     // ---- Bullets 8 / 9 / 10 ----
-    // Summative Weight Strain Index: share of the term's maximum points
-    // that come from above-median-weighted tasks. A balanced load lands
-    // near 50%; heavy summative loading pushes it toward 100%.
-    const maxScoresSorted = [...r.done].map((t) => t.maxScore).sort((a, b) => a - b);
-    const medianMax = maxScoresSorted.length
-      ? maxScoresSorted[Math.floor(maxScoresSorted.length / 2)]
-      : 0;
-    const totalMax = r.done.reduce((s, t) => s + (t.maxScore || 0), 0);
-    const summativeMax = r.done
-      .filter((t) => t.maxScore >= medianMax && t.maxScore > 0)
-      .reduce((s, t) => s + t.maxScore, 0);
-    const strainIndex = totalMax > 0 ? (summativeMax / totalMax) * 100 : 0;
-    // Max ceiling: hypothetical average if every still-pending task is
-    // scored 100%. Falls back to the current average when nothing is
-    // pending so the copy never references an impossible ceiling.
-    const pending = r.current.filter((t) => t.pending);
-    const hypoTasks = [
-      ...r.done,
-      ...pending.map((t) => ({ ...t, score: t.maxScore, pending: false })),
-    ];
-    const maxCeiling = hypoTasks.length
-      ? calcAverage(hypoTasks, settings.weighted)
-      : r.avg;
     // Syllabus red-unit count for this course (independent local store).
     let syllabusRedCount = 0;
     try {
@@ -628,11 +604,22 @@ export function AcademicFeedback() {
     }
     const stats8910 = bullets8910For({
       pct: r.avg,
-      strainIndex,
+      bracketFloor: reportBracketFloor(r.avg),
       stdDev: sdSubject,
-      maxCeiling,
       syllabusRedCount,
     });
+    // Aspirational realism evaluation — compare manual/auto goal vs.
+    // projected horizon score and append a critique to B10.
+    const goalForEval = (subjectGoals[r.course.id] ?? settings.goal);
+    let b10Final = stats8910.b10;
+    if (Number.isFinite(goalForEval) && Number.isFinite(proj.projected)) {
+      const gap = goalForEval - proj.projected;
+      if (gap > 15) {
+        b10Final = `${b10Final} Target Evaluation: Your active aspirational benchmark reflects a steep upward projection that significantly outpaces current work trends, suggesting an overestimation of immediate velocity parameters without a critical reallocation of study blocks.`;
+      } else if (gap < 0) {
+        b10Final = `${b10Final} Target Evaluation: Your baseline goal parameters mathematically underestimate your proven operational velocity, indicating that your current performance baseline is fully prepared to absorb an immediate upward target boundary adjustment.`;
+      }
+    }
 
     return [
       `${shiftedMain.bullets[0]} ${addons.b1}`,
@@ -644,7 +631,7 @@ export function AcademicFeedback() {
       b7,
       stats8910.b8,
       stats8910.b9,
-      stats8910.b10,
+      b10Final,
     ];
   };
 
@@ -760,6 +747,28 @@ export function AcademicFeedback() {
     return () => clearTimeout(id);
   }, [activeTermId]);
 
+  // ---- Aspirational auto-targeting (settings toggle) ----
+  // When the user enables "Set aspirational grade using data", recompute
+  // each subject's goal from the live velocity vector. Bounded [41, 95].
+  useEffect(() => {
+    if (!prefs.aspirationalAuto) return;
+    courses.forEach((c) => {
+      const done = tasks
+        .filter((t) => t.courseId === c.id && !t.pending)
+        .filter((t) => t.maxScore > 0 && Number.isFinite(t.score));
+      if (done.length === 0) return;
+      const avg = calcAverage(done, settings.weighted);
+      const vel = computeVelocity(done);
+      const bump = vel.slopePerWeek < -0.2 ? 12 : 7.5;
+      const raw = avg + bump;
+      const clamped = Math.max(41, Math.min(95, Math.round(raw)));
+      if (subjectGoals[c.id] !== clamped) setSubjectGoal(c.id, clamped);
+    });
+    // Intentionally exclude subjectGoals from deps to avoid loops; the
+    // pref + task set fully determines the auto-target.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs.aspirationalAuto, courses, tasks, settings.weighted]);
+
   return (
     <>
       <style>{`
@@ -856,6 +865,14 @@ export function AcademicFeedback() {
             </Button>
             <Button variant="outline" onClick={handleTranscript} className="gap-2">
               <FileText className="h-4 w-4" /> Generate Official Transcript Document
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setGradeRefOpen(true)}
+              className="gap-2"
+              aria-label="View Grade Scale Reference"
+            >
+              <Info className="h-4 w-4" /> View Grade Scale Reference
             </Button>
           </div>
 
@@ -1006,16 +1023,25 @@ export function AcademicFeedback() {
                         <div className="mt-3 flex flex-col gap-2">
                           <div className="flex flex-wrap items-center gap-1.5">
                             {r.hasData && classAvg > 0 && (
-                              <span
-                                className={`px-1.5 h-5 inline-flex items-center rounded border text-[10px] font-semibold tabular-nums ${
-                                  r.avg - classAvg >= 0
-                                    ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
-                                    : "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
-                                }`}
-                              >
-                                {r.avg - classAvg >= 0 ? "+" : ""}
-                                {(r.avg - classAvg).toFixed(1)}% {tr.vsClass}
-                              </span>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className={`px-1.5 h-5 inline-flex items-center rounded border text-[10px] font-semibold tabular-nums cursor-pointer ${
+                                      r.avg - classAvg >= 0
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
+                                        : "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
+                                    }`}
+                                  >
+                                    {r.avg - classAvg >= 0 ? "+" : ""}
+                                    {(r.avg - classAvg).toFixed(1)}% {tr.vsClass}
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64 text-xs">
+                                  Difference between this subject's current average
+                                  and the across-subject class average for this term.
+                                </PopoverContent>
+                              </Popover>
                             )}
                             {computeBadges({
                               avg: r.avg,
@@ -1023,19 +1049,26 @@ export function AcademicFeedback() {
                               completion: r.completion,
                               hasData: r.hasData,
                             }).map((b) => (
-                              <span
-                                key={b.label}
-                                className={`px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold ${
-                                  b.tone === "good"
-                                    ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
-                                    : b.tone === "warn"
-                                      ? "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
-                                      : "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
-                                }`}
-                              >
-                                <span aria-hidden>{b.emoji}</span>
-                                {b.label}
-                              </span>
+                              <Popover key={b.label}>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className={`px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold cursor-pointer ${
+                                      b.tone === "good"
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
+                                        : b.tone === "warn"
+                                          ? "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
+                                          : "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
+                                    }`}
+                                  >
+                                    <span aria-hidden>{b.emoji}</span>
+                                    {b.label}
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64 text-xs">
+                                  {badgeExplanation(b.label)}
+                                </PopoverContent>
+                              </Popover>
                             ))}
                             {r.course.id === highestJumpId && (
                               <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">
@@ -1414,6 +1447,49 @@ export function AcademicFeedback() {
           </p>
           <DialogFooter>
             <Button onClick={() => setCapOpen(false)}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={gradeRefOpen} onOpenChange={setGradeRefOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Grade Scale Reference</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Read-only reference for the Report Card's internal letter-grade
+            boundary scale. This grid cannot be edited.
+          </p>
+          <div className="border rounded-md overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-xs uppercase tracking-wider">
+                <tr>
+                  <th className="text-left px-3 py-2 font-semibold">Tier</th>
+                  <th className="text-left px-3 py-2 font-semibold">Range</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {[
+                  { tier: "High A*", range: "97 – 100%" },
+                  { tier: "Mid A*", range: "91 – 96.99%" },
+                  { tier: "A", range: "81 – 90.99%" },
+                  { tier: "B", range: "71 – 80.99%" },
+                  { tier: "C", range: "61 – 70.99%" },
+                  { tier: "D", range: "51 – 60.99%" },
+                  { tier: "E", range: "41 – 50.99%" },
+                  { tier: "F", range: "31 – 40.99%" },
+                  { tier: "G", range: "1 – 30.99%" },
+                  { tier: "NA", range: "0 – 0.99%" },
+                ].map((row) => (
+                  <tr key={row.tier}>
+                    <td className="px-3 py-2 font-semibold tabular-nums">{row.tier}</td>
+                    <td className="px-3 py-2 text-muted-foreground tabular-nums">{row.range}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setGradeRefOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

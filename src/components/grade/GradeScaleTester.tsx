@@ -9,7 +9,7 @@ import { getLetter } from "@/lib/grade-utils";
 import { A_STAR_MIN, applyAStarOverride } from "./a-star-override";
 import { addonBulletsFor } from "./feedback-addons";
 import { bullet7For, formatVelocity } from "./feedback-bullet7";
-import { bullets8910For } from "./feedback-bullets8910";
+import { bullets8910For, reportBracketFloor } from "./feedback-bullets8910";
 
 const LABELS = [
   "Strengths",
@@ -92,9 +92,8 @@ export function GradeScaleTester() {
   // without requiring a real subject task ledger.
   const synth = bullets8910For({
     pct: score,
-    strainIndex: Math.max(0, Math.min(100, 50 + (score - 70) * 0.4)),
+    bracketFloor: reportBracketFloor(score),
     stdDev: Math.max(0, Math.min(40, 18 - score * 0.12)),
-    maxCeiling: Math.max(score, Math.min(100, score + (100 - compNum) * 0.6)),
     syllabusRedCount: Math.max(0, Math.round((100 - score) / 10)),
   });
   const bullets = [
