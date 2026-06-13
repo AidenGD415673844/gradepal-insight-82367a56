@@ -137,52 +137,24 @@ export function currentBandPhrase(pct: number): string {
 }
 
 export function nextTierGoal(pct: number, sdSubject = 0, done: Task[] = []): string {
-  if (pct >= 91) {
-    return "Continue to maintain your A* standing by tackling stretch challenges and competition-level questions.";
+  // Formal, diagnostic phrasing — no casual "try to" or "work hard"
+  // language. The student's CURRENT band is always named first so the
+  // copy frames the recommendation around their proven baseline.
+  void sdSubject;
+  void done;
+  const current = currentBandPhrase(pct);
+  if (pct >= 97) {
+    return `Performance is currently anchored within ${current}. Strategic focus should be directed toward sustaining this elite baseline through stretch tasks and competition-level problem sets.`;
   }
-  // Strictly above current — never recommend the band you're already in.
+  if (pct >= 91) {
+    return `Performance is currently anchored within ${current}. Strategic focus should be directed toward elevating performance metrics cleanly into the High A* (97–100%) threshold.`;
+  }
   const next = NEXT_TIER_LADDER.find((b) => b.min > pct);
   if (!next) {
-    const gap = Math.max(1, Math.ceil(91 - pct));
-    return `You are currently in ${currentBandPhrase(pct)}. You're roughly ${gap}% from clearing the A* threshold — sustained top-band performance on remaining tasks will get you there.`;
+    return `Performance is currently anchored within ${current}. Strategic focus should be directed toward elevating performance metrics cleanly into the Mid A* (91–96.99%) threshold.`;
   }
-  const label = fmtTier(next);
-  const rawGap = next.min - pct;
-  // On the cusp — skip the "X% away" range, give a micro-goal instead.
-  if (rawGap <= 1) {
-    return `You are currently in ${currentBandPhrase(pct)}. You're on the cusp of the ${label} band — one strong task pushes you over.`;
-  }
-  const gap = Math.max(1, Math.ceil(rawGap));
-  // Capped cushion (never wider than 4 pts regardless of volatility).
-  const cushion = Math.max(1, Math.min(4, Math.ceil(sdSubject / 3)));
-  // Don't quote a range that overshoots the tier *after* the goal tier.
-  const tierAfter = NEXT_TIER_LADDER.find((b) => b.min > next.min);
-  const ceiling = tierAfter
-    ? Math.max(gap + 1, Math.ceil(tierAfter.min - pct) - 1)
-    : gap + cushion;
-  const high = Math.min(gap + cushion, ceiling);
-
-  // Personalised colour from the student's own task history.
-  let extra = "";
-  if (done.length >= 2) {
-    const pcts = done
-      .map((t) => (t.score / t.maxScore) * 100)
-      .filter((n) => Number.isFinite(n));
-    if (pcts.length >= 2) {
-      const best = Math.max(...pcts);
-      const recent = pcts.slice(-3);
-      const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
-      if (best > pct + 2) {
-        extra = ` Your highest task this term was ${best.toFixed(1)}% — repeating that level on remaining work would lift your average toward the ${label} band.`;
-      } else if (recentAvg > pct + 1) {
-        extra = ` Your recent task average (${recentAvg.toFixed(1)}%) is trending above your overall average — keep that momentum.`;
-      } else if (recentAvg < pct - 1) {
-        extra = ` Your recent task average has dipped to ${recentAvg.toFixed(1)}% — stabilising at your prior level is the first step before reaching for ${label}.`;
-      }
-    }
-  }
-
-  return `You are currently in ${currentBandPhrase(pct)}. Try to aim and work hard to bring your grade up into the ${label} band — roughly ${gap}% to ${high}% away.${extra}`;
+  const targetLabel = fmtTier(next);
+  return `Performance is currently anchored within ${current}. Strategic focus should be directed toward elevating performance metrics cleanly into the ${targetLabel} band threshold.`;
 }
 
 /**
