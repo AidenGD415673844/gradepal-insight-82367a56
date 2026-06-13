@@ -52,8 +52,7 @@ function buildTiers(): Bracket[] {
     const max = i === 19 ? 100 : min + 4.99;
     const t = tierFor(min);
     const base = POOL[t];
-    const tag = bandTag(min, Math.floor(max));
-    const bullets = base.map((line) => `${line} ${tag}`) as unknown as [
+    const bullets = base.map((line) => line) as unknown as [
       string, string, string, string, string,
     ];
     // Bracket type only declares 5 bullets; we stash the 6th via a parallel
@@ -73,7 +72,7 @@ export const ADDON_B6: { min: number; max: number; text: string }[] = (() => {
     const min = i * 5;
     const max = i === 19 ? 100 : min + 4.99;
     const t = tierFor(min);
-    out.push({ min, max, text: `${POOL[t][5]} ${bandTag(min, Math.floor(max))}` });
+    out.push({ min, max, text: POOL[t][5] });
   }
   return out;
 })();
