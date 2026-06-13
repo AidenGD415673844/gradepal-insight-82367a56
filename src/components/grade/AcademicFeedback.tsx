@@ -16,9 +16,12 @@ import { useReportTemplate, I18N, computeBadges } from "@/lib/report-template";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { addonBulletsFor } from "./feedback-addons";
 import { bullet7For, formatVelocity } from "./feedback-bullet7";
-import { bullets8910For } from "./feedback-bullets8910";
+import { bullets8910For, reportBracketFloor } from "./feedback-bullets8910";
 import { SubjectProjectionChart } from "./SubjectProjectionChart";
 import { computeVelocity } from "@/lib/grade-velocity";
+import { useUIPrefs } from "@/lib/ui-prefs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Info } from "lucide-react";
 import { projectGrade, HORIZON_OPTIONS } from "@/lib/grade-projection";
 import { applyAStarOverride } from "./a-star-override";
 import { TranscriptSheet } from "./TranscriptSheet";
@@ -98,7 +101,8 @@ const LETTER_MINS = [41, 51, 61, 71, 81, 91];
  * forward-looking goal copy so the snapshot reads naturally.
  */
 export function projectedTierLabel(pct: number): string {
-  if (pct >= 91) return "A*";
+  if (pct >= 97) return "High A*";
+  if (pct >= 91) return "Mid A*";
   const sorted = [...NEXT_TIER_LADDER].sort((a, b) => a.min - b.min);
   const below = [...sorted].reverse().find((b) => b.min <= pct);
   if (!below) return "NA";
@@ -116,7 +120,8 @@ const fmtTier = (b: { letter: string; tier: string }) =>
   b.tier ? `${b.tier} ${b.letter}` : b.letter;
 
 export function currentBandPhrase(pct: number): string {
-  if (pct >= 91) return "the A* band";
+  if (pct >= 97) return "the High A* band";
+  if (pct >= 91) return "the Mid A* band";
   const sorted = [...NEXT_TIER_LADDER].sort((a, b) => a.min - b.min);
   const below = [...sorted].reverse().find((b) => b.min <= pct);
   // Detect proximity to a real letter boundary (not a sub-tier one).
