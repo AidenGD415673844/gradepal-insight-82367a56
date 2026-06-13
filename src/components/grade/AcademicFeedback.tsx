@@ -1004,16 +1004,25 @@ export function AcademicFeedback() {
                         <div className="mt-3 flex flex-col gap-2">
                           <div className="flex flex-wrap items-center gap-1.5">
                             {r.hasData && classAvg > 0 && (
-                              <span
-                                className={`px-1.5 h-5 inline-flex items-center rounded border text-[10px] font-semibold tabular-nums ${
-                                  r.avg - classAvg >= 0
-                                    ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
-                                    : "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
-                                }`}
-                              >
-                                {r.avg - classAvg >= 0 ? "+" : ""}
-                                {(r.avg - classAvg).toFixed(1)}% {tr.vsClass}
-                              </span>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className={`px-1.5 h-5 inline-flex items-center rounded border text-[10px] font-semibold tabular-nums cursor-pointer ${
+                                      r.avg - classAvg >= 0
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
+                                        : "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
+                                    }`}
+                                  >
+                                    {r.avg - classAvg >= 0 ? "+" : ""}
+                                    {(r.avg - classAvg).toFixed(1)}% {tr.vsClass}
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64 text-xs">
+                                  Difference between this subject's current average
+                                  and the across-subject class average for this term.
+                                </PopoverContent>
+                              </Popover>
                             )}
                             {computeBadges({
                               avg: r.avg,
@@ -1021,19 +1030,26 @@ export function AcademicFeedback() {
                               completion: r.completion,
                               hasData: r.hasData,
                             }).map((b) => (
-                              <span
-                                key={b.label}
-                                className={`px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold ${
-                                  b.tone === "good"
-                                    ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
-                                    : b.tone === "warn"
-                                      ? "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
-                                      : "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
-                                }`}
-                              >
-                                <span aria-hidden>{b.emoji}</span>
-                                {b.label}
-                              </span>
+                              <Popover key={b.label}>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className={`px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold cursor-pointer ${
+                                      b.tone === "good"
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
+                                        : b.tone === "warn"
+                                          ? "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
+                                          : "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
+                                    }`}
+                                  >
+                                    <span aria-hidden>{b.emoji}</span>
+                                    {b.label}
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64 text-xs">
+                                  {badgeExplanation(b.label)}
+                                </PopoverContent>
+                              </Popover>
                             ))}
                             {r.course.id === highestJumpId && (
                               <span className="px-1.5 h-5 inline-flex items-center gap-1 rounded border text-[10px] font-semibold border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">
