@@ -48,10 +48,10 @@ export function lookupBullet7(pct: number): string {
 }
 
 export function formatVelocity(slopePerWeek: number, sample: number): string {
-  if (sample < 2) return "insufficient data";
+  if (sample < 2) return "stable current baseline performance";
   const sign = slopePerWeek > 0 ? "+" : "";
   const dir =
-    Math.abs(slopePerWeek) < 0.3 ? "flat" : slopePerWeek > 0 ? "upward" : "downward";
+    Math.abs(slopePerWeek) < 0.3 ? "steady operational momentum" : slopePerWeek > 0 ? "upward" : "downward";
   return `${sign}${slopePerWeek.toFixed(2)} pp/wk (${dir})`;
 }
 
