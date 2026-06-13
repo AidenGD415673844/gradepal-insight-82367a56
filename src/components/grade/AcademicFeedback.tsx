@@ -728,6 +728,28 @@ export function AcademicFeedback() {
     return () => clearTimeout(id);
   }, [activeTermId]);
 
+  // ---- Aspirational auto-targeting (settings toggle) ----
+  // When the user enables "Set aspirational grade using data", recompute
+  // each subject's goal from the live velocity vector. Bounded [41, 95].
+  useEffect(() => {
+    if (!prefs.aspirationalAuto) return;
+    courses.forEach((c) => {
+      const done = tasks
+        .filter((t) => t.courseId === c.id && !t.pending)
+        .filter((t) => t.maxScore > 0 && Number.isFinite(t.score));
+      if (done.length === 0) return;
+      const avg = calcAverage(done, settings.weighted);
+      const vel = computeVelocity(done);
+      const bump = vel.slopePerWeek < -0.2 ? 12 : 7.5;
+      const raw = avg + bump;
+      const clamped = Math.max(41, Math.min(95, Math.round(raw)));
+      if (subjectGoals[c.id] !== clamped) setSubjectGoal(c.id, clamped);
+    });
+    // Intentionally exclude subjectGoals from deps to avoid loops; the
+    // pref + task set fully determines the auto-target.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs.aspirationalAuto, courses, tasks, settings.weighted]);
+
   return (
     <>
       <style>{`
