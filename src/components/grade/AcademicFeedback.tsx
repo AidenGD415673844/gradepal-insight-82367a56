@@ -312,6 +312,25 @@ function csvEscape(s: string): string {
   return s;
 }
 
+function badgeExplanation(label: string): string {
+  const l = label.toLowerCase();
+  if (l.includes("most improved"))
+    return "This badge indicates your final average has jumped significantly compared against your past term baseline records.";
+  if (l.includes("top performer"))
+    return "Awarded when this subject sits comfortably inside the top performance band of your active subject set.";
+  if (l.includes("perfect completion"))
+    return "Every graded task in this term has been submitted on time, with nothing left pending.";
+  if (l.includes("highest jump"))
+    return "This subject has the strongest positive projected swing across all your subjects this term.";
+  if (l.includes("biggest drop"))
+    return "This subject has the largest negative projected swing — review recent tasks to identify the cause.";
+  if (l.includes("high confidence"))
+    return "The projection model has enough recent graded tasks to forecast with high statistical confidence.";
+  if (l.includes("volatile"))
+    return "Score variance is wide (σ ≥ 15%), meaning task results are swinging notably between assessments.";
+  return "Local achievement marker derived from this subject's task ledger.";
+}
+
 export function AcademicFeedback() {
   const { courses, tasks, terms, activeTermId, settings, subjectGoals, setSubjectGoal } = useGrades();
   const [prefs] = useUIPrefs();
