@@ -545,14 +545,15 @@ export function AcademicFeedback() {
     // Clean narrative: a single, plain-English sentence followed by the
     // tier-aware addon. The hard numbers (current/projected/confidence/
     // goal delta) live in the snapshot card embedded inside this bullet.
+    const currentTier = projectedTierLabel(r.avg);
     const b6Narrative =
       proj.source === "insufficient"
-        ? `Once two or more graded tasks land, the model will forecast where ${r.course.name} is heading over the next ${horizonLabel}. For now the outlook holds steady at the current ${r.letter} band.`
-        : Math.abs(proj.delta) < 0.5
-          ? `Momentum in ${r.course.name} is essentially flat, so the ${horizonLabel} outlook keeps the average locked near today's ${projTier} band.`
-          : proj.delta > 0
-            ? `If this pace holds, ${r.course.name} is on a quiet climb toward the ${projTier} band over the next ${horizonLabel} — keep the current execution steady to bank the gain.`
-            : `Recent results are pulling ${r.course.name} toward the ${projTier} band over the next ${horizonLabel}. A small intervention now is enough to flatten or reverse the slope before it locks in.`;
+        ? `With limited graded data to forecast from, ${r.course.name} is securely holding its position within the ${currentTier} band over the next ${horizonLabel}.`
+        : proj.projected > r.avg + 0.5 && projTier !== currentTier
+          ? `If this pace holds, ${r.course.name} is on a quiet climb toward the ${projTier} band over the next ${horizonLabel} — keep the current execution steady to bank the gain.`
+          : proj.projected < r.avg - 0.5
+            ? `${r.course.name} is showing a mild deceleration toward the lower ${projTier} threshold over the next ${horizonLabel}. A small intervention now is enough to flatten the slope before it locks in.`
+            : `${r.course.name} is securely holding its position within the ${currentTier} band over the next ${horizonLabel}.`;
     const goalLine =
       goalDelta == null
         ? ""
