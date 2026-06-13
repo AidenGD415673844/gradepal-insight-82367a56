@@ -847,6 +847,14 @@ export function AcademicFeedback() {
             <Button variant="outline" onClick={handleTranscript} className="gap-2">
               <FileText className="h-4 w-4" /> Generate Official Transcript Document
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => setGradeRefOpen(true)}
+              className="gap-2"
+              aria-label="View Grade Scale Reference"
+            >
+              <Info className="h-4 w-4" /> View Grade Scale Reference
+            </Button>
           </div>
 
           <div className="mt-3 text-xs text-muted-foreground italic no-print">
