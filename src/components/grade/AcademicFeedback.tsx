@@ -1415,6 +1415,49 @@ export function AcademicFeedback() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={gradeRefOpen} onOpenChange={setGradeRefOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Grade Scale Reference</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Read-only reference for the Report Card's internal letter-grade
+            boundary scale. This grid cannot be edited.
+          </p>
+          <div className="border rounded-md overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-xs uppercase tracking-wider">
+                <tr>
+                  <th className="text-left px-3 py-2 font-semibold">Tier</th>
+                  <th className="text-left px-3 py-2 font-semibold">Range</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {[
+                  { tier: "High A*", range: "97 – 100%" },
+                  { tier: "Mid A*", range: "91 – 96.99%" },
+                  { tier: "A", range: "81 – 90.99%" },
+                  { tier: "B", range: "71 – 80.99%" },
+                  { tier: "C", range: "61 – 70.99%" },
+                  { tier: "D", range: "51 – 60.99%" },
+                  { tier: "E", range: "41 – 50.99%" },
+                  { tier: "F", range: "31 – 40.99%" },
+                  { tier: "G", range: "1 – 30.99%" },
+                  { tier: "NA", range: "0 – 0.99%" },
+                ].map((row) => (
+                  <tr key={row.tier}>
+                    <td className="px-3 py-2 font-semibold tabular-nums">{row.tier}</td>
+                    <td className="px-3 py-2 text-muted-foreground tabular-nums">{row.range}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setGradeRefOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
