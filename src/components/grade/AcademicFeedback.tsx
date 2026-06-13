@@ -564,29 +564,6 @@ export function AcademicFeedback() {
     const b6Dynamic = `Future Outlook (${horizonLabel}): ${b6Narrative}${goalLine} ${addons.b6}`;
 
     // ---- Bullets 8 / 9 / 10 ----
-    // Summative Weight Strain Index: share of the term's maximum points
-    // that come from above-median-weighted tasks. A balanced load lands
-    // near 50%; heavy summative loading pushes it toward 100%.
-    const maxScoresSorted = [...r.done].map((t) => t.maxScore).sort((a, b) => a - b);
-    const medianMax = maxScoresSorted.length
-      ? maxScoresSorted[Math.floor(maxScoresSorted.length / 2)]
-      : 0;
-    const totalMax = r.done.reduce((s, t) => s + (t.maxScore || 0), 0);
-    const summativeMax = r.done
-      .filter((t) => t.maxScore >= medianMax && t.maxScore > 0)
-      .reduce((s, t) => s + t.maxScore, 0);
-    const strainIndex = totalMax > 0 ? (summativeMax / totalMax) * 100 : 0;
-    // Max ceiling: hypothetical average if every still-pending task is
-    // scored 100%. Falls back to the current average when nothing is
-    // pending so the copy never references an impossible ceiling.
-    const pending = r.current.filter((t) => t.pending);
-    const hypoTasks = [
-      ...r.done,
-      ...pending.map((t) => ({ ...t, score: t.maxScore, pending: false })),
-    ];
-    const maxCeiling = hypoTasks.length
-      ? calcAverage(hypoTasks, settings.weighted)
-      : r.avg;
     // Syllabus red-unit count for this course (independent local store).
     let syllabusRedCount = 0;
     try {
@@ -605,11 +582,22 @@ export function AcademicFeedback() {
     }
     const stats8910 = bullets8910For({
       pct: r.avg,
-      strainIndex,
+      bracketFloor: reportBracketFloor(r.avg),
       stdDev: sdSubject,
-      maxCeiling,
       syllabusRedCount,
     });
+    // Aspirational realism evaluation — compare manual/auto goal vs.
+    // projected horizon score and append a critique to B10.
+    const goalForEval = (subjectGoals[r.course.id] ?? settings.goal);
+    let b10Final = stats8910.b10;
+    if (Number.isFinite(goalForEval) && Number.isFinite(proj.projected)) {
+      const gap = goalForEval - proj.projected;
+      if (gap > 15) {
+        b10Final = `${b10Final} Target Evaluation: Your active aspirational benchmark reflects a steep upward projection that significantly outpaces current work trends, suggesting an overestimation of immediate velocity parameters without a critical reallocation of study blocks.`;
+      } else if (gap < 0) {
+        b10Final = `${b10Final} Target Evaluation: Your baseline goal parameters mathematically underestimate your proven operational velocity, indicating that your current performance baseline is fully prepared to absorb an immediate upward target boundary adjustment.`;
+      }
+    }
 
     return [
       `${shiftedMain.bullets[0]} ${addons.b1}`,
@@ -621,7 +609,7 @@ export function AcademicFeedback() {
       b7,
       stats8910.b8,
       stats8910.b9,
-      stats8910.b10,
+      b10Final,
     ];
   };
 
