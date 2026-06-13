@@ -313,7 +313,9 @@ function csvEscape(s: string): string {
 }
 
 export function AcademicFeedback() {
-  const { courses, tasks, terms, activeTermId, settings, subjectGoals } = useGrades();
+  const { courses, tasks, terms, activeTermId, settings, subjectGoals, setSubjectGoal } = useGrades();
+  const [prefs] = useUIPrefs();
+  const [gradeRefOpen, setGradeRefOpen] = useState(false);
   // Report card always uses the fixed REPORT_SCALE — not the user's scale.
   const scale = REPORT_SCALE;
   const activeTerm = terms.find((t) => t.id === activeTermId) ?? null;
