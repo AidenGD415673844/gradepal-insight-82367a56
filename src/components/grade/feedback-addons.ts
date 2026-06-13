@@ -40,10 +40,6 @@ function tierFor(min: number): Tier {
   return "urgent";
 }
 
-function bandTag(min: number, max: number): string {
-  return `(${min}–${max}% band)`;
-}
-
 // Build 20 continuous 5%-wide tiers (0–4.99, 5–9.99, ..., 95–100).
 function buildTiers(): Bracket[] {
   const out: Bracket[] = [];
