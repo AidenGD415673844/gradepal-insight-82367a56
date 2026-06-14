@@ -146,7 +146,7 @@ function ForecastingHub() {
     const goalSlope = (goal - avg) / WEEKS;
 
     const data = useMemo(() => {
-      const rows: Array<Record<string, number | string>> = [];
+      const rows: Array<Record<string, number | string | [number, number]>> = [];
       for (let w = 0; w <= WEEKS; w++) {
         const red = avg;
         const green = clamp(avg + slopePerWk * w, 0, 100);
