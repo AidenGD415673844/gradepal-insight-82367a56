@@ -16,6 +16,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedReportsRouteImport } from './routes/saved-reports'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as GradesRouteImport } from './routes/grades'
+import { Route as ForecastingRouteImport } from './routes/forecasting'
 import { Route as CriteriaRouteImport } from './routes/criteria'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -54,6 +55,11 @@ const GradesRoute = GradesRouteImport.update({
   path: '/grades',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForecastingRoute = ForecastingRouteImport.update({
+  id: '/forecasting',
+  path: '/forecasting',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CriteriaRoute = CriteriaRouteImport.update({
   id: '/criteria',
   path: '/criteria',
@@ -68,6 +74,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/criteria': typeof CriteriaRoute
+  '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/criteria': typeof CriteriaRoute
+  '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/criteria': typeof CriteriaRoute
+  '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/criteria'
+    | '/forecasting'
     | '/grades'
     | '/reports'
     | '/saved-reports'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/criteria'
+    | '/forecasting'
     | '/grades'
     | '/reports'
     | '/saved-reports'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/criteria'
+    | '/forecasting'
     | '/grades'
     | '/reports'
     | '/saved-reports'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CriteriaRoute: typeof CriteriaRoute
+  ForecastingRoute: typeof ForecastingRoute
   GradesRoute: typeof GradesRoute
   ReportsRoute: typeof ReportsRoute
   SavedReportsRoute: typeof SavedReportsRoute
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GradesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forecasting': {
+      id: '/forecasting'
+      path: '/forecasting'
+      fullPath: '/forecasting'
+      preLoaderRoute: typeof ForecastingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/criteria': {
       id: '/criteria'
       path: '/criteria'
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CriteriaRoute: CriteriaRoute,
+  ForecastingRoute: ForecastingRoute,
   GradesRoute: GradesRoute,
   ReportsRoute: ReportsRoute,
   SavedReportsRoute: SavedReportsRoute,
