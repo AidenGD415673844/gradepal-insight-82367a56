@@ -19,6 +19,7 @@ import {
   Archive,
   Lock,
   ListChecks,
+  LineChart,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -42,6 +43,7 @@ const CARDS = [
   { to: "/saved-reports", title: "Saved Reports", desc: "Local 15-slot history hub of archived report cards", Icon: Archive, accent: "from-cyan-500/20 to-sky-500/10" },
   { to: "/teacher", title: "Teacher Gradebook View", desc: "Password-gated A*-G criteria gradebook", Icon: Lock, accent: "from-violet-500/20 to-fuchsia-500/10" },
   { to: "/criteria", title: "Assessment Criteria", desc: "Browse criteria & grades; teachers can edit", Icon: ListChecks, accent: "from-lime-500/20 to-green-500/10" },
+  { to: "/forecasting", title: "Strategic Forecasting Hub", desc: "Cone of uncertainty, Monte Carlo, GPA velocity & burnout thermometer", Icon: LineChart, accent: "from-fuchsia-500/20 to-purple-500/10" },
   { to: "/settings", title: "Settings & Preferences", desc: "Dark mode, quick add, reset & tutorial", Icon: SettingsIcon, accent: "from-slate-500/20 to-zinc-500/10" },
 ] as const;
 
