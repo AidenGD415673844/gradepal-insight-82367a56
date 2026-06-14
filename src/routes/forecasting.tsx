@@ -204,7 +204,7 @@ function ForecastingHub() {
               />
               <Area
                 type="monotone"
-                dataKey="band"
+                dataKey={"band" as never}
                 stroke="none"
                 fill="url(#coneGrad)"
                 isAnimationActive={false}
