@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -598,8 +598,8 @@ function ForecastingHub() {
             <div />
             {cats.map((c) => <div key={c} className="text-[11px] font-semibold text-center truncate">{c}</div>)}
             {cats.map((row, i) => (
-              <>
-                <div key={`l-${row}`} className="text-[11px] font-semibold truncate self-center">{row}</div>
+              <Fragment key={`row-${row}`}>
+                <div className="text-[11px] font-semibold truncate self-center">{row}</div>
                 {cats.map((_, j) => {
                   const r = matrix[i][j];
                   const color = r > 0
@@ -618,7 +618,7 @@ function ForecastingHub() {
                     </div>
                   );
                 })}
-              </>
+              </Fragment>
             ))}
           </div>
         </div>
