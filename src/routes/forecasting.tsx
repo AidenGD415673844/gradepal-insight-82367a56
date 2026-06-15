@@ -450,8 +450,9 @@ function ForecastingHub() {
       return { vel, accel, currentGPA };
     }, []);
 
-    // Needle angles (gauge from -90deg = 0 to +90deg = 4)
-    const needleAngle = (v: number) => -90 + clamp(v / 4, 0, 1) * 180;
+    // Gauge arc sweeps from left (v=0) over the top to right (v=4).
+    // In SVG coords that is 180° → 360°.
+    const needleAngle = (v: number) => 180 + clamp(v / 4, 0, 1) * 180;
     const projected = clamp(currentGPA + vel * 4, 0, 4); // 4-week forward
 
     return (
