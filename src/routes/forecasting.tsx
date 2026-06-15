@@ -473,7 +473,7 @@ function ForecastingHub() {
             <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeArc)" strokeWidth="14" strokeLinecap="round" />
             {/* tick marks */}
             {[0, 1, 2, 3, 4].map((v) => {
-              const a = ((-90 + (v / 4) * 180) * Math.PI) / 180;
+              const a = ((180 + (v / 4) * 180) * Math.PI) / 180;
               const x1 = 100 + Math.cos(a) * 72;
               const y1 = 100 + Math.sin(a) * 72;
               const x2 = 100 + Math.cos(a) * 60;
@@ -481,7 +481,7 @@ function ForecastingHub() {
               return (
                 <g key={v}>
                   <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-                  <text x={100 + Math.cos(a) * 50} y={100 + Math.sin(a) * 50 + 3} textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))">
+                  <text x={100 + Math.cos(a) * 50} y={100 + Math.sin(a) * 50 + 3} textAnchor="middle" fontSize="9" fontWeight="600" fill="hsl(var(--muted-foreground))">
                     {v}
                   </text>
                 </g>
