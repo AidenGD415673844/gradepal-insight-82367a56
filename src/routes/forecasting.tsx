@@ -849,6 +849,29 @@ function rankLetter(l: string): number {
   return map[l] ?? 0;
 }
 
+function ProbCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "emerald" | "violet" | "rose" | "blue";
+}) {
+  const tones: Record<string, string> = {
+    emerald: "from-emerald-500/15 to-emerald-500/5 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
+    violet: "from-violet-500/15 to-violet-500/5 border-violet-500/30 text-violet-700 dark:text-violet-300",
+    rose: "from-rose-500/15 to-rose-500/5 border-rose-500/30 text-rose-700 dark:text-rose-300",
+    blue: "from-blue-500/15 to-blue-500/5 border-blue-500/30 text-blue-700 dark:text-blue-300",
+  };
+  return (
+    <div className={`rounded-xl border bg-gradient-to-br ${tones[tone]} p-3 flex flex-col justify-between min-h-[88px]`}>
+      <div className="text-[11px] font-semibold uppercase tracking-wide opacity-80">{label}</div>
+      <div className="text-2xl font-extrabold tabular-nums mt-1">{value.toFixed(0)}%</div>
+    </div>
+  );
+}
+
 function pearson(pairs: Array<[number, number]>): number {
   if (pairs.length < 2) return 0;
   const n = pairs.length;
