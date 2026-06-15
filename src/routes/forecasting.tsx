@@ -166,7 +166,7 @@ function ForecastingHub() {
     }, [avg, slopePerWk, ceiling, fatigueDrop, goalSlope]);
 
     const [visible, setVisible] = useState({
-      red: true, green: true, blue: true, yellow: true, purple: true,
+      red: false, green: false, blue: false, yellow: false, purple: false,
     });
     const toggle = (k: keyof typeof visible) => setVisible((v) => ({ ...v, [k]: !v[k] }));
 
@@ -188,6 +188,32 @@ function ForecastingHub() {
           Five client-side projection paths over the next {WEEKS} weeks. The shaded corridor spans the
           highest and lowest helper at every timeline step.
         </p>
+        <div className="flex flex-wrap gap-2">
+          {legend.map((l) => {
+            const active = visible[l.k];
+            return (
+              <button
+                key={l.k}
+                type="button"
+                onClick={() => toggle(l.k)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 flex items-center gap-2 ${
+                  active
+                    ? "shadow-sm scale-[1.02]"
+                    : "bg-card hover:bg-muted/60 opacity-80"
+                }`}
+                style={
+                  active
+                    ? { borderColor: l.color, background: `${l.color}1a`, color: l.color }
+                    : undefined
+                }
+                title={l.desc}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ background: l.color }} />
+                {l.label}
+              </button>
+            );
+          })}
+        </div>
         <div className="h-[340px] w-full">
           <ResponsiveContainer>
             <ComposedChart data={data} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
@@ -200,6 +226,12 @@ function ForecastingHub() {
                   border: "1px solid hsl(var(--border))",
                   borderRadius: 8,
                   fontSize: 12,
+                }}
+                formatter={(value: unknown) => {
+                  if (Array.isArray(value)) {
+                    return [`${Number(value[0]).toFixed(1)}% – ${Number(value[1]).toFixed(1)}%`, "Corridor"];
+                  }
+                  return typeof value === "number" ? `${value.toFixed(1)}%` : String(value);
                 }}
               />
               <Area
@@ -235,7 +267,8 @@ function ForecastingHub() {
                     strokeDasharray="4 3"
                     strokeWidth={1.75}
                     dot={false}
-                    isAnimationActive={false}
+                    isAnimationActive={true}
+                    animationDuration={400}
                   />
                 ) : null,
               )}
@@ -243,24 +276,10 @@ function ForecastingHub() {
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          {legend.map((l) => (
-            <button
-              key={l.k}
-              type="button"
-              onClick={() => toggle(l.k)}
-              className={`text-left rounded-lg border px-2.5 py-2 transition ${
-                visible[l.k] ? "bg-card" : "bg-muted/50 opacity-50"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: l.color }} />
-                <span className="text-xs font-bold">{l.label}</span>
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">{l.desc}</div>
-            </button>
-          ))}
-        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Click a capsule above to fade its trajectory line into view. By default only the shaded
+          corridor is shown for a cleaner read.
+        </p>
       </Card>
     );
   }
@@ -320,27 +339,39 @@ function ForecastingHub() {
         <div className="space-y-2">
           {results.map((r) => {
             const showBreakthrough = ["B", "A", "A*"].includes(r.baseLetter);
+            const sortedScale = [...scale].sort((a, b) => b.min - a.min);
+            const baseIdx = sortedScale.findIndex((s) => s.letter === r.baseLetter);
+            const prevLetter = baseIdx >= 0 && baseIdx < sortedScale.length - 1
+              ? sortedScale[baseIdx + 1].letter
+              : null;
+            const nextLetter = baseIdx > 0 ? sortedScale[baseIdx - 1].letter : null;
+            const showAStar = r.baseAvg >= 91 || r.aStar > 0;
             return (
-              <div key={r.course.id} className="rounded-xl border p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="font-semibold">{r.course.name}</div>
-                  <Badge variant="outline">{r.baseLetter} · {r.baseAvg.toFixed(1)}%</Badge>
+              <div key={r.course.id} className="rounded-2xl border bg-card/40 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="font-bold text-base">{r.course.name}</div>
+                  <Badge variant="outline" className="text-xs">
+                    Current: {r.baseLetter} · {r.baseAvg.toFixed(1)}%
+                  </Badge>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-                    A*: {r.aStar}%
-                  </Badge>
-                  <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                    A: {r.a}%
-                  </Badge>
-                  <Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30">
-                    Drop tier: {r.drop}%
-                  </Badge>
-                  {showBreakthrough && (
-                    <Badge className="bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30">
-                      Breakthrough to next tier: {r.breakthrough}%
-                    </Badge>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {showAStar && (
+                    <ProbCard
+                      label="Reaching A* tier"
+                      value={r.aStar}
+                      tone="emerald"
+                    />
                   )}
+                  <ProbCard
+                    label={nextLetter && nextLetter !== r.baseLetter ? `Climbing to ${nextLetter}` : "Climbing tiers"}
+                    value={r.breakthrough}
+                    tone="violet"
+                  />
+                  <ProbCard
+                    label={prevLetter ? `Dropping to ${prevLetter}` : "Holding current tier"}
+                    value={prevLetter ? r.drop : 100 - r.drop}
+                    tone={prevLetter ? "rose" : "blue"}
+                  />
                 </div>
               </div>
             );
@@ -431,8 +462,9 @@ function ForecastingHub() {
       return { vel, accel, currentGPA };
     }, []);
 
-    // Needle angles (gauge from -90deg = 0 to +90deg = 4)
-    const needleAngle = (v: number) => -90 + clamp(v / 4, 0, 1) * 180;
+    // Gauge arc sweeps from left (v=0) over the top to right (v=4).
+    // In SVG coords that is 180° → 360°.
+    const needleAngle = (v: number) => 180 + clamp(v / 4, 0, 1) * 180;
     const projected = clamp(currentGPA + vel * 4, 0, 4); // 4-week forward
 
     return (
@@ -453,7 +485,7 @@ function ForecastingHub() {
             <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeArc)" strokeWidth="14" strokeLinecap="round" />
             {/* tick marks */}
             {[0, 1, 2, 3, 4].map((v) => {
-              const a = ((-90 + (v / 4) * 180) * Math.PI) / 180;
+              const a = ((180 + (v / 4) * 180) * Math.PI) / 180;
               const x1 = 100 + Math.cos(a) * 72;
               const y1 = 100 + Math.sin(a) * 72;
               const x2 = 100 + Math.cos(a) * 60;
@@ -461,7 +493,7 @@ function ForecastingHub() {
               return (
                 <g key={v}>
                   <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-                  <text x={100 + Math.cos(a) * 50} y={100 + Math.sin(a) * 50 + 3} textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))">
+                  <text x={100 + Math.cos(a) * 50} y={100 + Math.sin(a) * 50 + 3} textAnchor="middle" fontSize="9" fontWeight="600" fill="hsl(var(--muted-foreground))">
                     {v}
                   </text>
                 </g>
@@ -815,6 +847,29 @@ function ForecastingHub() {
 function rankLetter(l: string): number {
   const map: Record<string, number> = { "A*": 7, A: 6, B: 5, C: 4, D: 3, E: 2, F: 1, G: 0 };
   return map[l] ?? 0;
+}
+
+function ProbCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "emerald" | "violet" | "rose" | "blue";
+}) {
+  const tones: Record<string, string> = {
+    emerald: "from-emerald-500/15 to-emerald-500/5 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
+    violet: "from-violet-500/15 to-violet-500/5 border-violet-500/30 text-violet-700 dark:text-violet-300",
+    rose: "from-rose-500/15 to-rose-500/5 border-rose-500/30 text-rose-700 dark:text-rose-300",
+    blue: "from-blue-500/15 to-blue-500/5 border-blue-500/30 text-blue-700 dark:text-blue-300",
+  };
+  return (
+    <div className={`rounded-xl border bg-gradient-to-br ${tones[tone]} p-3 flex flex-col justify-between min-h-[88px]`}>
+      <div className="text-[11px] font-semibold uppercase tracking-wide opacity-80">{label}</div>
+      <div className="text-2xl font-extrabold tabular-nums mt-1">{value.toFixed(0)}%</div>
+    </div>
+  );
 }
 
 function pearson(pairs: Array<[number, number]>): number {

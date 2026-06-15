@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useUIPrefs, setUIPrefs, resetAllLocalData } from "@/lib/ui-prefs";
-import { Moon, BarChart3, Zap, RotateCcw, Trash2, BookOpen, Target } from "lucide-react";
+import { Moon, BarChart3, Zap, RotateCcw, Trash2, BookOpen, Target, Sigma } from "lucide-react";
 import { toast } from "sonner";
 import { SnapshotManager } from "@/components/grade/SnapshotManager";
 import { BackupRestore } from "@/components/grade/BackupRestore";
@@ -89,6 +89,17 @@ function SettingsPage() {
           <Switch
             checked={prefs.hideCharts}
             onCheckedChange={(v) => setUIPrefs({ hideCharts: v })}
+          />
+        </Row>
+
+        <Row
+          icon={Sigma}
+          title="Display Advanced Statistical Analytics"
+          desc="Pro Analytics Mode: switches the Advanced Features portal to formal statistical terminology (Pareto Yield Matrix, EMA, Black Swan Factor, Third-Moment Skewness, Convergence Alignment). Off uses simplified academic labels."
+        >
+          <Switch
+            checked={prefs.advancedStatsMode}
+            onCheckedChange={(v) => setUIPrefs({ advancedStatsMode: v })}
           />
         </Row>
 

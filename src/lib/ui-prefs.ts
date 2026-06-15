@@ -6,6 +6,8 @@ export type UIPrefs = {
   quickAdd: boolean;
   welcomeDismissed: boolean;
   aspirationalAuto: boolean;
+  advancedStatsMode: boolean;
+  utilHubCollapsed: boolean;
 };
 
 const KEY = "gradecalc-ui-prefs-v1";
@@ -17,6 +19,8 @@ const DEFAULTS: UIPrefs = {
   quickAdd: false,
   welcomeDismissed: false,
   aspirationalAuto: false,
+  advancedStatsMode: false,
+  utilHubCollapsed: true,
 };
 
 function read(): UIPrefs {

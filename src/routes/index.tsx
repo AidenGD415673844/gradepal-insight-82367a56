@@ -20,6 +20,9 @@ import {
   Lock,
   ListChecks,
   LineChart,
+  ChevronDown,
+  ChevronRight,
+  Sigma,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -35,21 +38,26 @@ export const Route = createFileRoute("/")({
 const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
-const CARDS = [
+const CORE_CARDS = [
   { to: "/grades", title: "Grade Calculator Engine", desc: "Subjects, weights, charts & predictions", Icon: Calculator, accent: "from-indigo-500/20 to-blue-500/10" },
+  { to: "/reports", title: "Official Report Card", desc: "Multi-term filter & 10 bullet feedback", Icon: ClipboardCheck, accent: "from-rose-500/20 to-pink-500/10" },
+  { to: "/forecasting", title: "Strategic Forecasting Hub", desc: "Cone of uncertainty, Monte Carlo, GPA velocity & burnout thermometer", Icon: LineChart, accent: "from-fuchsia-500/20 to-purple-500/10" },
+  { to: "/advanced", title: "Advanced Features", desc: "Pareto matrix, EMA, Black Swan, skewness & convergence anchor", Icon: Sigma, accent: "from-violet-500/20 to-indigo-500/10" },
+] as const;
+
+const UTILITY_CARDS = [
   { to: "/utilities", title: "School Companion Utilities", desc: "Pomodoro, planners & bottlenecks", Icon: Wrench, accent: "from-emerald-500/20 to-teal-500/10" },
   { to: "/timetable", title: "Attendance & Timetable", desc: "Weekly schedule & attendance counters", Icon: CalendarRange, accent: "from-amber-500/20 to-orange-500/10" },
-  { to: "/reports", title: "Official Report Card", desc: "Multi-term filter & 10 bullet feedback", Icon: ClipboardCheck, accent: "from-rose-500/20 to-pink-500/10" },
   { to: "/saved-reports", title: "Saved Reports", desc: "Local 15-slot history hub of archived report cards", Icon: Archive, accent: "from-cyan-500/20 to-sky-500/10" },
   { to: "/teacher", title: "Teacher Gradebook View", desc: "Password-gated A*-G criteria gradebook", Icon: Lock, accent: "from-violet-500/20 to-fuchsia-500/10" },
   { to: "/criteria", title: "Assessment Criteria", desc: "Browse criteria & grades; teachers can edit", Icon: ListChecks, accent: "from-lime-500/20 to-green-500/10" },
-  { to: "/forecasting", title: "Strategic Forecasting Hub", desc: "Cone of uncertainty, Monte Carlo, GPA velocity & burnout thermometer", Icon: LineChart, accent: "from-fuchsia-500/20 to-purple-500/10" },
   { to: "/settings", title: "Settings & Preferences", desc: "Dark mode, quick add, reset & tutorial", Icon: SettingsIcon, accent: "from-slate-500/20 to-zinc-500/10" },
 ] as const;
 
 function Home() {
   const { tasks, courses } = useGrades();
   const [prefs] = useUIPrefs();
+  const utilCollapsed = prefs.utilHubCollapsed;
   const now = new Date();
   const todayISO = now.toISOString().slice(0, 10);
 
@@ -142,7 +150,7 @@ function Home() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
-          {CARDS.map(({ to, title, desc, Icon, accent }, idx) => (
+          {CORE_CARDS.map(({ to, title, desc, Icon, accent }, idx) => (
             <Link key={to} to={to} className="group" style={{ animationDelay: `${idx * 60}ms` }}>
               <Card className={`p-5 md:p-6 h-full bg-gradient-to-br ${accent} hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 animate-fade-in`}>
                 <div className="flex items-start gap-4">
@@ -158,6 +166,47 @@ function Home() {
             </Link>
           ))}
         </div>
+
+        <Card className="overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setUIPrefs({ utilHubCollapsed: !utilCollapsed })}
+            className="w-full flex items-center justify-between gap-2 p-4 hover:bg-muted/40 transition"
+          >
+            <div className="flex items-center gap-2">
+              {utilCollapsed ? (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+              <Wrench className="h-4 w-4 text-primary" />
+              <span className="font-bold text-sm">Utility Hub</span>
+              <span className="text-xs text-muted-foreground">
+                {UTILITY_CARDS.length} planners & secondary modules
+              </span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {utilCollapsed ? "Expand" : "Collapse"}
+            </span>
+          </button>
+          {!utilCollapsed && (
+            <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t">
+              {UTILITY_CARDS.map(({ to, title, desc, Icon }) => (
+                <Link key={to} to={to} className="group">
+                  <div className="flex items-center gap-3 p-3 rounded-lg border bg-card/40 hover:bg-muted/30 hover:shadow-sm transition">
+                    <div className="h-9 w-9 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold truncate">{title}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">{desc}</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   );
