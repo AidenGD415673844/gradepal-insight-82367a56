@@ -339,27 +339,39 @@ function ForecastingHub() {
         <div className="space-y-2">
           {results.map((r) => {
             const showBreakthrough = ["B", "A", "A*"].includes(r.baseLetter);
+            const sortedScale = [...scale].sort((a, b) => b.min - a.min);
+            const baseIdx = sortedScale.findIndex((s) => s.letter === r.baseLetter);
+            const prevLetter = baseIdx >= 0 && baseIdx < sortedScale.length - 1
+              ? sortedScale[baseIdx + 1].letter
+              : null;
+            const nextLetter = baseIdx > 0 ? sortedScale[baseIdx - 1].letter : null;
+            const showAStar = r.baseAvg >= 91 || r.aStar > 0;
             return (
-              <div key={r.course.id} className="rounded-xl border p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="font-semibold">{r.course.name}</div>
-                  <Badge variant="outline">{r.baseLetter} · {r.baseAvg.toFixed(1)}%</Badge>
+              <div key={r.course.id} className="rounded-2xl border bg-card/40 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="font-bold text-base">{r.course.name}</div>
+                  <Badge variant="outline" className="text-xs">
+                    Current: {r.baseLetter} · {r.baseAvg.toFixed(1)}%
+                  </Badge>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-                    A*: {r.aStar}%
-                  </Badge>
-                  <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                    A: {r.a}%
-                  </Badge>
-                  <Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30">
-                    Drop tier: {r.drop}%
-                  </Badge>
-                  {showBreakthrough && (
-                    <Badge className="bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30">
-                      Breakthrough to next tier: {r.breakthrough}%
-                    </Badge>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {showAStar && (
+                    <ProbCard
+                      label="Reaching A* tier"
+                      value={r.aStar}
+                      tone="emerald"
+                    />
                   )}
+                  <ProbCard
+                    label={nextLetter && nextLetter !== r.baseLetter ? `Climbing to ${nextLetter}` : "Climbing tiers"}
+                    value={r.breakthrough}
+                    tone="violet"
+                  />
+                  <ProbCard
+                    label={prevLetter ? `Dropping to ${prevLetter}` : "Holding current tier"}
+                    value={prevLetter ? r.drop : 100 - r.drop}
+                    tone={prevLetter ? "rose" : "blue"}
+                  />
                 </div>
               </div>
             );
