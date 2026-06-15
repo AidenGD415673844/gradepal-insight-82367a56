@@ -166,7 +166,7 @@ function ForecastingHub() {
     }, [avg, slopePerWk, ceiling, fatigueDrop, goalSlope]);
 
     const [visible, setVisible] = useState({
-      red: true, green: true, blue: true, yellow: true, purple: true,
+      red: false, green: false, blue: false, yellow: false, purple: false,
     });
     const toggle = (k: keyof typeof visible) => setVisible((v) => ({ ...v, [k]: !v[k] }));
 
@@ -188,6 +188,32 @@ function ForecastingHub() {
           Five client-side projection paths over the next {WEEKS} weeks. The shaded corridor spans the
           highest and lowest helper at every timeline step.
         </p>
+        <div className="flex flex-wrap gap-2">
+          {legend.map((l) => {
+            const active = visible[l.k];
+            return (
+              <button
+                key={l.k}
+                type="button"
+                onClick={() => toggle(l.k)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 flex items-center gap-2 ${
+                  active
+                    ? "shadow-sm scale-[1.02]"
+                    : "bg-card hover:bg-muted/60 opacity-80"
+                }`}
+                style={
+                  active
+                    ? { borderColor: l.color, background: `${l.color}1a`, color: l.color }
+                    : undefined
+                }
+                title={l.desc}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ background: l.color }} />
+                {l.label}
+              </button>
+            );
+          })}
+        </div>
         <div className="h-[340px] w-full">
           <ResponsiveContainer>
             <ComposedChart data={data} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
@@ -200,6 +226,12 @@ function ForecastingHub() {
                   border: "1px solid hsl(var(--border))",
                   borderRadius: 8,
                   fontSize: 12,
+                }}
+                formatter={(value: unknown) => {
+                  if (Array.isArray(value)) {
+                    return [`${Number(value[0]).toFixed(1)}% – ${Number(value[1]).toFixed(1)}%`, "Corridor"];
+                  }
+                  return typeof value === "number" ? `${value.toFixed(1)}%` : String(value);
                 }}
               />
               <Area
@@ -235,7 +267,8 @@ function ForecastingHub() {
                     strokeDasharray="4 3"
                     strokeWidth={1.75}
                     dot={false}
-                    isAnimationActive={false}
+                    isAnimationActive={true}
+                    animationDuration={400}
                   />
                 ) : null,
               )}
@@ -243,24 +276,10 @@ function ForecastingHub() {
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          {legend.map((l) => (
-            <button
-              key={l.k}
-              type="button"
-              onClick={() => toggle(l.k)}
-              className={`text-left rounded-lg border px-2.5 py-2 transition ${
-                visible[l.k] ? "bg-card" : "bg-muted/50 opacity-50"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: l.color }} />
-                <span className="text-xs font-bold">{l.label}</span>
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">{l.desc}</div>
-            </button>
-          ))}
-        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Click a capsule above to fade its trajectory line into view. By default only the shaded
+          corridor is shown for a cleaner read.
+        </p>
       </Card>
     );
   }
