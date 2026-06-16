@@ -28,6 +28,9 @@ import { TranscriptSheet } from "./TranscriptSheet";
 import { saveReport } from "@/lib/saved-reports";
 import { stddev } from "@/lib/grade-stats";
 import { toast } from "sonner";
+import { loadCriteria } from "@/lib/teacher-auth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Bold, Italic, List } from "lucide-react";
 import {
   Dialog,
   DialogContent,
