@@ -1214,12 +1214,20 @@ export function AcademicFeedback() {
                         })()
                       ) : manualOn ? (
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
-                          <Textarea
-                            rows={8}
-                            value={meta.manual[r.course.id] ?? ""}
-                            onChange={(e) => update("manual", r.course.id, e.target.value)}
-                            placeholder="Write your custom feedback..."
-                          />
+                          <div className="space-y-1.5">
+                            <RichTextToolbar
+                              courseId={r.course.id}
+                              value={meta.manual[r.course.id] ?? ""}
+                              onChange={(next) => update("manual", r.course.id, next)}
+                            />
+                            <Textarea
+                              id={`manual-${r.course.id}`}
+                              rows={8}
+                              value={meta.manual[r.course.id] ?? ""}
+                              onChange={(e) => update("manual", r.course.id, e.target.value)}
+                              placeholder="Write your custom feedback... Use **bold**, _italic_, or - bullet items."
+                            />
+                          </div>
                           <CommentBankPalette
                             value={meta.manual[r.course.id] ?? ""}
                             onAppend={(next) => update("manual", r.course.id, next)}
@@ -1231,7 +1239,9 @@ export function AcademicFeedback() {
                             {bullets.map((b, i) => (
                               <li
                                 key={i}
-                                className={`leading-relaxed ${
+                                className={`leading-relaxed rounded-md px-2 py-1.5 transition-colors ${
+                                  i % 2 === 1 ? "bg-slate-50/70 dark:bg-slate-900/30" : ""
+                                } ${
                                   i === 4 && urgent
                                     ? "text-destructive font-medium"
                                     : "text-muted-foreground"
@@ -1240,7 +1250,7 @@ export function AcademicFeedback() {
                                 <span className="font-semibold text-foreground">
                                   B{i + 1} ({labels[i]}):
                                 </span>{" "}
-                                {b}
+                                {decorateMetrics(b)}
                                 {i === 5 && r.hasData && (() => {
                                   const proj = projectGrade(r.done, r.avg, horizonWeeks);
                                   const projTier = projectedTierLabel(proj.projected);
