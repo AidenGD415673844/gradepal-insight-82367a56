@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, getLetter, filterByTerm } from "@/lib/grade-utils";
 import type { GradeScaleRow, Task } from "@/lib/grade-store";
@@ -28,6 +28,9 @@ import { TranscriptSheet } from "./TranscriptSheet";
 import { saveReport } from "@/lib/saved-reports";
 import { stddev } from "@/lib/grade-stats";
 import { toast } from "sonner";
+import { loadCriteria } from "@/lib/teacher-auth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Bold, Italic, List } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -534,6 +537,28 @@ export function AcademicFeedback() {
     // forward-looking milestone string based on the student's current
     // score AND volatility, phrased as a "X% to Y% away" range.
     const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg, sdSubject, r.done)}`;
+    // ---- B5 Quadrant Diagnostic (Effort vs Achievement) ----
+    // Cross-reference qualitative criteria marks against numerical avg.
+    let b5Diagnostic = "";
+    try {
+      const allCrit = loadCriteria();
+      const c = allCrit[r.course.id];
+      if (c) {
+        const RANK: Record<string, number> = { "A*": 0, A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
+        const marks = ["A", "B", "C", "D", "IA", "IB", "IC"]
+          .map((k) => (c as any)[k])
+          .filter((v) => v && v !== "N/A" && RANK[v] != null)
+          .map((v) => RANK[v as string]);
+        if (marks.length) {
+          const avgRank = marks.reduce((s, n) => s + n, 0) / marks.length;
+          if (avgRank <= 2 && r.avg < 60) {
+            b5Diagnostic = " Diagnostic: The student displays exceptional work consistency, suggesting academic hurdles are purely conceptual rather than motivational.";
+          } else if (avgRank >= 4 && r.avg > 85) {
+            b5Diagnostic = " Diagnostic: Core conceptual mastery remains excellent, but a distinct gap in engagement indicators suggests the student is operating below their full potential baseline.";
+          }
+        }
+      }
+    } catch { /* criteria optional */ }
     // Tail clauses add statistical colour (σ + Δ) to keep bullets 2–4 longer.
     const sdClause =
       pcts.length >= 2
@@ -626,7 +651,7 @@ export function AcademicFeedback() {
       `${b2 + sdClause} ${addons.b2}`,
       `${b3 + respClause} ${addons.b3}`,
       `${shiftedMain.bullets[3] + sdClause} ${addons.b4}`,
-      `${b5} ${addons.b5}`,
+      `${b5} ${addons.b5}${b5Diagnostic}`,
       b6Dynamic,
       b7,
       stats8910.b8,
@@ -1189,12 +1214,20 @@ export function AcademicFeedback() {
                         })()
                       ) : manualOn ? (
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
-                          <Textarea
-                            rows={8}
-                            value={meta.manual[r.course.id] ?? ""}
-                            onChange={(e) => update("manual", r.course.id, e.target.value)}
-                            placeholder="Write your custom feedback..."
-                          />
+                          <div className="space-y-1.5">
+                            <RichTextToolbar
+                              courseId={r.course.id}
+                              value={meta.manual[r.course.id] ?? ""}
+                              onChange={(next) => update("manual", r.course.id, next)}
+                            />
+                            <Textarea
+                              id={`manual-${r.course.id}`}
+                              rows={8}
+                              value={meta.manual[r.course.id] ?? ""}
+                              onChange={(e) => update("manual", r.course.id, e.target.value)}
+                              placeholder="Write your custom feedback... Use **bold**, _italic_, or - bullet items."
+                            />
+                          </div>
                           <CommentBankPalette
                             value={meta.manual[r.course.id] ?? ""}
                             onAppend={(next) => update("manual", r.course.id, next)}
@@ -1206,7 +1239,9 @@ export function AcademicFeedback() {
                             {bullets.map((b, i) => (
                               <li
                                 key={i}
-                                className={`leading-relaxed ${
+                                className={`leading-relaxed rounded-md px-2 py-1.5 transition-colors ${
+                                  i % 2 === 1 ? "bg-slate-50/70 dark:bg-slate-900/30" : ""
+                                } ${
                                   i === 4 && urgent
                                     ? "text-destructive font-medium"
                                     : "text-muted-foreground"
@@ -1215,7 +1250,7 @@ export function AcademicFeedback() {
                                 <span className="font-semibold text-foreground">
                                   B{i + 1} ({labels[i]}):
                                 </span>{" "}
-                                {b}
+                                {decorateMetrics(b)}
                                 {i === 5 && r.hasData && (() => {
                                   const proj = projectGrade(r.done, r.avg, horizonWeeks);
                                   const projTier = projectedTierLabel(proj.projected);
@@ -1494,5 +1529,110 @@ export function AcademicFeedback() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+// ---------------------------------------------------------------
+// Metric tooltip decorator: wraps σ tokens and key index phrases in
+// hover popovers explaining the underlying formula.
+// ---------------------------------------------------------------
+const METRIC_EXPLANATIONS: Array<{ pattern: RegExp; tip: string }> = [
+  { pattern: /\bσ\b/g, tip: "Standard deviation (σ) — square root of the mean squared deviation from the average. Measures score consistency." },
+  { pattern: /Grading Insulation Buffer/g, tip: "Grading Insulation Buffer — the percentage-point gap between your current average and the floor of your active letter-grade tier." },
+  { pattern: /Effort Efficiency Index/g, tip: "Effort Efficiency Index — marginal grade yield per unit of weighted task input." },
+  { pattern: /Summative Weight Strain Index/g, tip: "Summative Weight Strain Index — cumulative weight × variance leverage that any remaining summative carries." },
+];
+
+function decorateMetrics(text: string): React.ReactNode {
+  // Split on each metric pattern in order, wrapping matches in tooltips.
+  let parts: Array<string | React.ReactNode> = [text];
+  METRIC_EXPLANATIONS.forEach(({ pattern, tip }, mi) => {
+    const next: Array<string | React.ReactNode> = [];
+    parts.forEach((part, pi) => {
+      if (typeof part !== "string") { next.push(part); return; }
+      const segments = part.split(pattern);
+      const matches = part.match(pattern) || [];
+      segments.forEach((seg, i) => {
+        next.push(seg);
+        if (i < segments.length - 1) {
+          next.push(
+            <TooltipProvider key={`m-${mi}-${pi}-${i}`} delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="underline decoration-dotted decoration-primary/50 cursor-help font-medium text-foreground">
+                    {matches[i]}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                  {tip}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>,
+          );
+        }
+      });
+    });
+    parts = next;
+  });
+  return <>{parts}</>;
+}
+
+// ---------------------------------------------------------------
+// Rich-text toolbar — inserts markdown-style formatting around the
+// current selection in the linked <textarea>. Persists with the
+// existing manual-text localStorage flow.
+// ---------------------------------------------------------------
+function RichTextToolbar({
+  courseId, value, onChange,
+}: { courseId: string; value: string; onChange: (next: string) => void }) {
+  const wrap = (prefix: string, suffix: string = prefix) => {
+    const ta = document.getElementById(`manual-${courseId}`) as HTMLTextAreaElement | null;
+    if (!ta) {
+      onChange(`${value}${prefix}${suffix}`);
+      return;
+    }
+    const start = ta.selectionStart ?? value.length;
+    const end = ta.selectionEnd ?? value.length;
+    const before = value.slice(0, start);
+    const sel = value.slice(start, end) || "text";
+    const after = value.slice(end);
+    const next = `${before}${prefix}${sel}${suffix}${after}`;
+    onChange(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const pos = before.length + prefix.length + sel.length + suffix.length;
+      ta.setSelectionRange(pos, pos);
+    });
+  };
+  const bulletize = () => {
+    const ta = document.getElementById(`manual-${courseId}`) as HTMLTextAreaElement | null;
+    if (!ta) { onChange(`${value}\n- item`); return; }
+    const start = ta.selectionStart ?? value.length;
+    const end = ta.selectionEnd ?? value.length;
+    const before = value.slice(0, start);
+    const sel = value.slice(start, end) || "item";
+    const after = value.slice(end);
+    const lines = sel.split(/\r?\n/).map((l) => (l.trim() ? `- ${l.replace(/^[-*]\s*/, "")}` : l));
+    const next = `${before}${lines.join("\n")}${after}`;
+    onChange(next);
+  };
+  const Btn = ({ onClick, label, children }: { onClick: () => void; label: string; children: React.ReactNode }) => (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="h-8 px-2.5 rounded-md border bg-card hover:bg-muted/60 text-xs font-semibold flex items-center gap-1 transition-all"
+      style={{ transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
+    >
+      {children}
+    </button>
+  );
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <Btn onClick={() => wrap("**")} label="Bold"><Bold className="h-3.5 w-3.5" />Bold</Btn>
+      <Btn onClick={() => wrap("_")} label="Italic"><Italic className="h-3.5 w-3.5" />Italic</Btn>
+      <Btn onClick={bulletize} label="Bulleted list"><List className="h-3.5 w-3.5" />List</Btn>
+      <span className="text-[10px] text-muted-foreground ml-1">Markdown stored locally; renders in print exports.</span>
+    </div>
   );
 }
