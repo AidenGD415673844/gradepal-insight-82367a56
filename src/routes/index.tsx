@@ -61,7 +61,7 @@ function Home() {
   const { tasks, courses } = useGrades();
   const [prefs] = useUIPrefs();
   const utilCollapsed = prefs.utilHubCollapsed;
-  const CORE_CARDS = ALL_CORE_CARDS.filter((c) => !c.advanced || prefs.advancedStatsMode);
+  const CORE_CARDS = ALL_CORE_CARDS.filter((c) => !("advanced" in c && c.advanced) || prefs.advancedStatsMode);
   const now = new Date();
   const todayISO = now.toISOString().slice(0, 10);
 
