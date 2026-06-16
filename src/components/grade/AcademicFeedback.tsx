@@ -537,6 +537,28 @@ export function AcademicFeedback() {
     // forward-looking milestone string based on the student's current
     // score AND volatility, phrased as a "X% to Y% away" range.
     const b5 = `${main.bullets[4]} ${nextTierGoal(r.avg, sdSubject, r.done)}`;
+    // ---- B5 Quadrant Diagnostic (Effort vs Achievement) ----
+    // Cross-reference qualitative criteria marks against numerical avg.
+    let b5Diagnostic = "";
+    try {
+      const allCrit = loadCriteria();
+      const c = allCrit[r.course.id];
+      if (c) {
+        const RANK: Record<string, number> = { "A*": 0, A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
+        const marks = ["A", "B", "C", "D", "IA", "IB", "IC"]
+          .map((k) => (c as any)[k])
+          .filter((v) => v && v !== "N/A" && RANK[v] != null)
+          .map((v) => RANK[v as string]);
+        if (marks.length) {
+          const avgRank = marks.reduce((s, n) => s + n, 0) / marks.length;
+          if (avgRank <= 2 && r.avg < 60) {
+            b5Diagnostic = " Diagnostic: The student displays exceptional work consistency, suggesting academic hurdles are purely conceptual rather than motivational.";
+          } else if (avgRank >= 4 && r.avg > 85) {
+            b5Diagnostic = " Diagnostic: Core conceptual mastery remains excellent, but a distinct gap in engagement indicators suggests the student is operating below their full potential baseline.";
+          }
+        }
+      }
+    } catch { /* criteria optional */ }
     // Tail clauses add statistical colour (σ + Δ) to keep bullets 2–4 longer.
     const sdClause =
       pcts.length >= 2
