@@ -651,7 +651,7 @@ export function AcademicFeedback() {
       `${b2 + sdClause} ${addons.b2}`,
       `${b3 + respClause} ${addons.b3}`,
       `${shiftedMain.bullets[3] + sdClause} ${addons.b4}`,
-      `${b5} ${addons.b5}`,
+      `${b5} ${addons.b5}${b5Diagnostic}`,
       b6Dynamic,
       b7,
       stats8910.b8,
