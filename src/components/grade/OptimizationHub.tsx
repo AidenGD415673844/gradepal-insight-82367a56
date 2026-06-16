@@ -1888,6 +1888,7 @@ export function StudyStreakCalendar() {
 
 /* ===================== Container ===================== */
 import { AttendanceTimetable } from "./AttendanceTimetable";
+import { MicroTrendDrawer } from "./MicroTrendDrawer";
 
 export function OptimizationHub() {
   return (
