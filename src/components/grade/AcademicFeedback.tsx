@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, getLetter, filterByTerm } from "@/lib/grade-utils";
 import type { GradeScaleRow, Task } from "@/lib/grade-store";
