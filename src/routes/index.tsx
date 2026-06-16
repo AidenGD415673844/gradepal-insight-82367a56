@@ -6,6 +6,7 @@ import { useUIPrefs, setUIPrefs } from "@/lib/ui-prefs";
 import { BurnoutRadar } from "@/components/grade/BurnoutRadar";
 import { LeitnerCram } from "@/components/grade/LeitnerCram";
 import { GPAFireAlarm } from "@/components/grade/GPAFireAlarm";
+import { SubjectRadar } from "@/components/grade/SubjectRadar";
 import {
   GraduationCap,
   Calculator,
@@ -23,6 +24,7 @@ import {
   ChevronDown,
   ChevronRight,
   Sigma,
+  History,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -38,11 +40,11 @@ export const Route = createFileRoute("/")({
 const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
-const CORE_CARDS = [
+const ALL_CORE_CARDS = [
   { to: "/grades", title: "Grade Calculator Engine", desc: "Subjects, weights, charts & predictions", Icon: Calculator, accent: "from-indigo-500/20 to-blue-500/10" },
   { to: "/reports", title: "Official Report Card", desc: "Multi-term filter & 10 bullet feedback", Icon: ClipboardCheck, accent: "from-rose-500/20 to-pink-500/10" },
-  { to: "/forecasting", title: "Strategic Forecasting Hub", desc: "Cone of uncertainty, Monte Carlo, GPA velocity & burnout thermometer", Icon: LineChart, accent: "from-fuchsia-500/20 to-purple-500/10" },
-  { to: "/advanced", title: "Advanced Features", desc: "Pareto matrix, EMA, Black Swan, skewness & convergence anchor", Icon: Sigma, accent: "from-violet-500/20 to-indigo-500/10" },
+  { to: "/forecasting", title: "Strategic Forecasting Hub", desc: "Cone of uncertainty, Monte Carlo, GPA velocity & burnout thermometer", Icon: LineChart, accent: "from-fuchsia-500/20 to-purple-500/10", advanced: true },
+  { to: "/advanced", title: "Advanced Features", desc: "Pareto matrix, EMA, Black Swan, skewness & convergence anchor", Icon: Sigma, accent: "from-violet-500/20 to-indigo-500/10", advanced: true },
 ] as const;
 
 const UTILITY_CARDS = [
@@ -51,6 +53,7 @@ const UTILITY_CARDS = [
   { to: "/saved-reports", title: "Saved Reports", desc: "Local 15-slot history hub of archived report cards", Icon: Archive, accent: "from-cyan-500/20 to-sky-500/10" },
   { to: "/teacher", title: "Teacher Gradebook View", desc: "Password-gated A*-G criteria gradebook", Icon: Lock, accent: "from-violet-500/20 to-fuchsia-500/10" },
   { to: "/criteria", title: "Assessment Criteria", desc: "Browse criteria & grades; teachers can edit", Icon: ListChecks, accent: "from-lime-500/20 to-green-500/10" },
+  { to: "/changelog", title: "System Update Log", desc: "Chronological timeline of shipped features and fixes", Icon: History, accent: "from-blue-500/20 to-indigo-500/10" },
   { to: "/settings", title: "Settings & Preferences", desc: "Dark mode, quick add, reset & tutorial", Icon: SettingsIcon, accent: "from-slate-500/20 to-zinc-500/10" },
 ] as const;
 
@@ -58,6 +61,7 @@ function Home() {
   const { tasks, courses } = useGrades();
   const [prefs] = useUIPrefs();
   const utilCollapsed = prefs.utilHubCollapsed;
+  const CORE_CARDS = ALL_CORE_CARDS.filter((c) => !c.advanced || prefs.advancedStatsMode);
   const now = new Date();
   const todayISO = now.toISOString().slice(0, 10);
 
@@ -166,6 +170,8 @@ function Home() {
             </Link>
           ))}
         </div>
+
+        {!prefs.hideCharts && courses.length >= 3 && <SubjectRadar />}
 
         <Card className="overflow-hidden">
           <button
