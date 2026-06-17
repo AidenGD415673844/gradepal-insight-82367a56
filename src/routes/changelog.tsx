@@ -33,6 +33,22 @@ type LogEntry = {
 
 const LOG: LogEntry[] = [
   {
+    version: "v3.0.0",
+    title: "Big Decentralisation Update",
+    date: "2026-06-17",
+    category: "feature",
+    bullets: [
+      "Peer Network Hub — establish friend connections without any cloud server or websockets.",
+      "Base64 Token connection engine — copy your profile, paste a friend's token to sync locally.",
+      "localStorage life-cycle states — pending, accepted, and blocked peer registries.",
+      "Fullscreen Academic Sync with Stealth Blur Toggling — anonymise peer identifiers with one click.",
+      "Color-coded delta badges — emerald, amber, and crimson variance pills across the sync grid.",
+      "100-Message FIFO chat queue with status receipt ticks (sending, delivered, read).",
+      "Timetable study planners — propose joint study sessions that drop straight into peer chat.",
+      "Automated client-side Weekly Performance Review engine with histogram and category radar.",
+    ],
+  },
+  {
     version: "v2.6.0",
     title: "Strategic Analytics Expansion",
     date: "2026-06-16",
