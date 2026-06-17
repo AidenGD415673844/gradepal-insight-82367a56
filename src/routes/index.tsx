@@ -7,6 +7,8 @@ import { BurnoutRadar } from "@/components/grade/BurnoutRadar";
 import { LeitnerCram } from "@/components/grade/LeitnerCram";
 import { GPAFireAlarm } from "@/components/grade/GPAFireAlarm";
 import { SubjectRadar } from "@/components/grade/SubjectRadar";
+import { maybeGenerateWeeklyReview, usePeerNetwork } from "@/lib/peer-network";
+import { useEffect } from "react";
 import {
   GraduationCap,
   Calculator,
@@ -25,6 +27,8 @@ import {
   ChevronRight,
   Sigma,
   History,
+  Users,
+  Inbox as InboxIcon,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -43,6 +47,8 @@ const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Satur
 const ALL_CORE_CARDS = [
   { to: "/grades", title: "Grade Calculator Engine", desc: "Subjects, weights, charts & predictions", Icon: Calculator, accent: "from-indigo-500/20 to-blue-500/10" },
   { to: "/reports", title: "Official Report Card", desc: "Multi-term filter & 10 bullet feedback", Icon: ClipboardCheck, accent: "from-rose-500/20 to-pink-500/10" },
+  { to: "/peers", title: "Peer Network Hub", desc: "Decentralised base64 peer tokens, academic sync grid & FIFO chat", Icon: Users, accent: "from-blue-500/20 to-cyan-500/10" },
+  { to: "/inbox", title: "Local Inbox", desc: "Weekly performance reviews and peer sync notices", Icon: InboxIcon, accent: "from-amber-500/20 to-yellow-500/10" },
   { to: "/forecasting", title: "Strategic Forecasting Hub", desc: "Cone of uncertainty, Monte Carlo, GPA velocity & burnout thermometer", Icon: LineChart, accent: "from-fuchsia-500/20 to-purple-500/10", advanced: true },
   { to: "/advanced", title: "Advanced Features", desc: "Pareto matrix, EMA, Black Swan, skewness & convergence anchor", Icon: Sigma, accent: "from-violet-500/20 to-indigo-500/10", advanced: true },
 ] as const;
@@ -60,6 +66,10 @@ const UTILITY_CARDS = [
 function Home() {
   const { tasks, courses } = useGrades();
   const [prefs] = useUIPrefs();
+  usePeerNetwork();
+  useEffect(() => {
+    maybeGenerateWeeklyReview(tasks);
+  }, [tasks]);
   const utilCollapsed = prefs.utilHubCollapsed;
   const CORE_CARDS = ALL_CORE_CARDS.filter((c) => !("advanced" in c && c.advanced) || prefs.advancedStatsMode);
   const now = new Date();
