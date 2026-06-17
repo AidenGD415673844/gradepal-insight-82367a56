@@ -15,6 +15,7 @@ import { Route as TeacherRouteImport } from './routes/teacher'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedReportsRouteImport } from './routes/saved-reports'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as PeersRouteImport } from './routes/peers'
 import { Route as GradesRouteImport } from './routes/grades'
 import { Route as ForecastingRouteImport } from './routes/forecasting'
 import { Route as CriteriaRouteImport } from './routes/criteria'
@@ -50,6 +51,11 @@ const SavedReportsRoute = SavedReportsRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PeersRoute = PeersRouteImport.update({
+  id: '/peers',
+  path: '/peers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GradesRoute = GradesRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
+  '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
+  '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
+  '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/criteria'
     | '/forecasting'
     | '/grades'
+    | '/peers'
     | '/reports'
     | '/saved-reports'
     | '/settings'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/criteria'
     | '/forecasting'
     | '/grades'
+    | '/peers'
     | '/reports'
     | '/saved-reports'
     | '/settings'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/criteria'
     | '/forecasting'
     | '/grades'
+    | '/peers'
     | '/reports'
     | '/saved-reports'
     | '/settings'
@@ -178,6 +190,7 @@ export interface RootRouteChildren {
   CriteriaRoute: typeof CriteriaRoute
   ForecastingRoute: typeof ForecastingRoute
   GradesRoute: typeof GradesRoute
+  PeersRoute: typeof PeersRoute
   ReportsRoute: typeof ReportsRoute
   SavedReportsRoute: typeof SavedReportsRoute
   SettingsRoute: typeof SettingsRoute
@@ -228,6 +241,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/peers': {
+      id: '/peers'
+      path: '/peers'
+      fullPath: '/peers'
+      preLoaderRoute: typeof PeersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/grades': {
@@ -282,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   CriteriaRoute: CriteriaRoute,
   ForecastingRoute: ForecastingRoute,
   GradesRoute: GradesRoute,
+  PeersRoute: PeersRoute,
   ReportsRoute: ReportsRoute,
   SavedReportsRoute: SavedReportsRoute,
   SettingsRoute: SettingsRoute,
