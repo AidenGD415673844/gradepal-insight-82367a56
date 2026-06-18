@@ -51,6 +51,7 @@ const ALL_CORE_CARDS = [
   { to: "/inbox", title: "Local Inbox", desc: "Weekly performance reviews and peer sync notices", Icon: InboxIcon, accent: "from-amber-500/20 to-yellow-500/10" },
   { to: "/forecasting", title: "Strategic Forecasting Hub", desc: "Cone of uncertainty, Monte Carlo, GPA velocity & burnout thermometer", Icon: LineChart, accent: "from-fuchsia-500/20 to-purple-500/10", advanced: true },
   { to: "/advanced", title: "Advanced Features", desc: "Pareto matrix, EMA, Black Swan, skewness & convergence anchor", Icon: Sigma, accent: "from-violet-500/20 to-indigo-500/10", advanced: true },
+  { to: "/syndicate", title: "Academic Syndicate Hub", desc: "20 simulated cohorts, Frontier contour map & SVG box-and-whisker overlays", Icon: Users, accent: "from-purple-500/20 to-fuchsia-500/10", advanced: true },
 ] as const;
 
 const UTILITY_CARDS = [
