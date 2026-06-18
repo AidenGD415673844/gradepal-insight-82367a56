@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtilitiesRouteImport } from './routes/utilities'
 import { Route as TimetableRouteImport } from './routes/timetable'
 import { Route as TeacherRouteImport } from './routes/teacher'
+import { Route as SyndicateRouteImport } from './routes/syndicate'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedReportsRouteImport } from './routes/saved-reports'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -37,6 +38,11 @@ const TimetableRoute = TimetableRouteImport.update({
 const TeacherRoute = TeacherRouteImport.update({
   id: '/teacher',
   path: '/teacher',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SyndicateRoute = SyndicateRouteImport.update({
+  id: '/syndicate',
+  path: '/syndicate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
+  '/syndicate': typeof SyndicateRoute
   '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
   '/utilities': typeof UtilitiesRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
+  '/syndicate': typeof SyndicateRoute
   '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
   '/utilities': typeof UtilitiesRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
+  '/syndicate': typeof SyndicateRoute
   '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
   '/utilities': typeof UtilitiesRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/saved-reports'
     | '/settings'
+    | '/syndicate'
     | '/teacher'
     | '/timetable'
     | '/utilities'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/saved-reports'
     | '/settings'
+    | '/syndicate'
     | '/teacher'
     | '/timetable'
     | '/utilities'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/saved-reports'
     | '/settings'
+    | '/syndicate'
     | '/teacher'
     | '/timetable'
     | '/utilities'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SavedReportsRoute: typeof SavedReportsRoute
   SettingsRoute: typeof SettingsRoute
+  SyndicateRoute: typeof SyndicateRoute
   TeacherRoute: typeof TeacherRoute
   TimetableRoute: typeof TimetableRoute
   UtilitiesRoute: typeof UtilitiesRoute
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/teacher'
       fullPath: '/teacher'
       preLoaderRoute: typeof TeacherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/syndicate': {
+      id: '/syndicate'
+      path: '/syndicate'
+      fullPath: '/syndicate'
+      preLoaderRoute: typeof SyndicateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SavedReportsRoute: SavedReportsRoute,
   SettingsRoute: SettingsRoute,
+  SyndicateRoute: SyndicateRoute,
   TeacherRoute: TeacherRoute,
   TimetableRoute: TimetableRoute,
   UtilitiesRoute: UtilitiesRoute,
