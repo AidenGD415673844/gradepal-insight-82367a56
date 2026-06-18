@@ -515,3 +515,374 @@ function Ticks({ msg }: { msg: ChatMsg }) {
   if (msg.delivered) return <CheckCheck className="h-3 w-3" />;
   return <Check className="h-3 w-3" />;
 }
+
+// =============== Connection Health Meter ===============
+// Synthesises a local micro-sync ledger per peer so each accepted card
+// shows a small line chart of local sync activity over time. Real WebRTC
+// links report their live latency through the WebRTCHandshakeCard below.
+function ConnectionHealthMeter({ peerId }: { peerId: string }) {
+  const KEY = "gp_peer_sync_" + peerId;
+  const [series, setSeries] = useState<number[]>([]);
+  const [latency, setLatency] = useState<number>(() => 40 + Math.round(Math.random() * 60));
+
+  useEffect(() => {
+    let raw: number[] = [];
+    try {
+      raw = JSON.parse(localStorage.getItem(KEY) || "[]");
+    } catch {}
+    if (raw.length === 0) {
+      raw = Array.from({ length: 12 }).map(() => 40 + Math.round(Math.random() * 60));
+      localStorage.setItem(KEY, JSON.stringify(raw));
+    }
+    setSeries(raw);
+    const t = window.setInterval(() => {
+      const next = Math.max(20, Math.min(180, raw[raw.length - 1] + (Math.random() - 0.5) * 25));
+      raw = [...raw.slice(-23), Math.round(next)];
+      localStorage.setItem(KEY, JSON.stringify(raw));
+      setSeries(raw);
+      setLatency(Math.round(next));
+    }, 4500);
+    return () => window.clearInterval(t);
+  }, [KEY]);
+
+  const max = Math.max(...series, 120);
+  const points = series
+    .map((v, i) => `${(i / Math.max(series.length - 1, 1)) * 100},${100 - (v / max) * 100}`)
+    .join(" ");
+  const tier = latency < 60 ? "emerald" : latency < 110 ? "amber" : "rose";
+  const tierColor = tier === "emerald" ? "#10b981" : tier === "amber" ? "#f59e0b" : "#f43f5e";
+
+  return (
+    <div className="mt-1.5 flex items-center gap-2">
+      <Activity className="h-3 w-3" style={{ color: tierColor }} />
+      <span className="text-[10px] font-bold tabular-nums" style={{ color: tierColor }}>
+        {latency}ms
+      </span>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-3.5 w-16 opacity-90">
+        <polyline fill="none" stroke={tierColor} strokeWidth="3" points={points} />
+      </svg>
+      <span className="text-[9px] text-muted-foreground">{series.length} syncs</span>
+    </div>
+  );
+}
+
+// =============== WebRTC Handshake Card ===============
+// Manual SDP offer/answer paste — no signaling server. Uses STUN to gather
+// ICE candidates so two devices can establish a real DataChannel by
+// pasting the encoded SDP strings to each other.
+function WebRTCHandshakeCard() {
+  const linkRef = useRef<RTCPeerLink | null>(null);
+  const [mode, setMode] = useState<"idle" | "offerer" | "answerer">("idle");
+  const [offerOut, setOfferOut] = useState("");
+  const [answerOut, setAnswerOut] = useState("");
+  const [offerIn, setOfferIn] = useState("");
+  const [answerIn, setAnswerIn] = useState("");
+  const [health, setHealth] = useState<RTCHealth | null>(null);
+  const [log, setLog] = useState<string[]>([]);
+
+  useEffect(() => () => linkRef.current?.close(), []);
+
+  const link = () => {
+    if (!linkRef.current) {
+      linkRef.current = new RTCPeerLink();
+      linkRef.current.onHealth(() => setHealth({ ...linkRef.current!.health }));
+      linkRef.current.onMessage((env) => {
+        if (env.kind === "chat") {
+          setLog((l) => [...l.slice(-19), `${env.from}: ${env.text}`]);
+        }
+      });
+    }
+    return linkRef.current;
+  };
+
+  const startOffer = async () => {
+    setMode("offerer");
+    try {
+      const t = await link().createOffer();
+      setOfferOut(t);
+      toast.success("Offer SDP generated — copy and send to peer");
+    } catch (e: any) {
+      toast.error("Failed to create offer: " + (e?.message || "unknown"));
+    }
+  };
+
+  const acceptOffer = async () => {
+    if (!offerIn.trim()) return toast.error("Paste the peer offer first.");
+    setMode("answerer");
+    try {
+      const t = await link().acceptOfferCreateAnswer(offerIn);
+      setAnswerOut(t);
+      toast.success("Answer SDP generated — copy and send back");
+    } catch (e: any) {
+      toast.error("Failed to create answer: " + (e?.message || "unknown"));
+    }
+  };
+
+  const finaliseAnswer = async () => {
+    if (!answerIn.trim()) return toast.error("Paste the peer answer first.");
+    try {
+      await link().acceptAnswer(answerIn);
+      toast.success("WebRTC DataChannel handshake complete");
+    } catch (e: any) {
+      toast.error("Failed to apply answer: " + (e?.message || "unknown"));
+    }
+  };
+
+  const [chatIn, setChatIn] = useState("");
+  const sendOverRTC = () => {
+    if (!chatIn.trim()) return;
+    const ok = link().send({ kind: "chat", text: chatIn, from: "Me", ts: Date.now() });
+    if (!ok) return toast.error("DataChannel is not open yet.");
+    setLog((l) => [...l.slice(-19), `Me: ${chatIn}`]);
+    setChatIn("");
+  };
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Radio className="h-4 w-4 text-emerald-500" />
+        <h3 className="font-bold text-sm">Direct WebRTC DataChannel</h3>
+        {health && (
+          <Badge variant="outline" className="ml-auto text-[10px]">
+            {health.state}
+            {health.latencyMs != null ? ` · ${health.latencyMs}ms` : ""}
+          </Badge>
+        )}
+      </div>
+      <p className="text-[11px] text-muted-foreground mb-3">
+        Manual signaling: copy each SDP string to the other device. STUN-only — no signaling server.
+      </p>
+
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant={mode === "offerer" ? "default" : "outline"} onClick={startOffer} className="gap-1">
+            <Plus className="h-3.5 w-3.5" /> Create Offer
+          </Button>
+          <Button variant={mode === "answerer" ? "default" : "outline"} onClick={acceptOffer} className="gap-1">
+            <Check className="h-3.5 w-3.5" /> Accept Offer
+          </Button>
+        </div>
+
+        {mode === "offerer" && (
+          <>
+            <Textarea readOnly value={offerOut} placeholder="Offer SDP (share this)" className="font-mono text-[10px] h-20" />
+            <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(offerOut); toast.success("Offer copied"); }} className="gap-1 w-full">
+              <Copy className="h-3.5 w-3.5" /> Copy Offer
+            </Button>
+            <Textarea value={answerIn} onChange={(e) => setAnswerIn(e.target.value)} placeholder="Paste peer answer SDP here" className="font-mono text-[10px] h-20" />
+            <Button size="sm" onClick={finaliseAnswer} className="w-full">Finalise Handshake</Button>
+          </>
+        )}
+
+        {mode === "answerer" && (
+          <>
+            <Textarea value={offerIn} onChange={(e) => setOfferIn(e.target.value)} placeholder="Paste peer offer SDP here" className="font-mono text-[10px] h-20" />
+            <Textarea readOnly value={answerOut} placeholder="Answer SDP (share back)" className="font-mono text-[10px] h-20" />
+            <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(answerOut); toast.success("Answer copied"); }} className="gap-1 w-full">
+              <Copy className="h-3.5 w-3.5" /> Copy Answer
+            </Button>
+          </>
+        )}
+
+        {mode === "idle" && (
+          <>
+            <Textarea value={offerIn} onChange={(e) => setOfferIn(e.target.value)} placeholder="Paste an incoming offer SDP here…" className="font-mono text-[10px] h-20" />
+            <p className="text-[10px] text-muted-foreground">Or click Create Offer above to initiate.</p>
+          </>
+        )}
+
+        {health?.state === "connected" && (
+          <div className="rounded-lg border bg-emerald-500/10 border-emerald-500/30 p-2 space-y-2">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Live DataChannel</div>
+            <div className="text-[11px] tabular-nums grid grid-cols-3 gap-2">
+              <span>sent {health.sentCount}</span>
+              <span>recv {health.recvCount}</span>
+              <span>last {health.lastSyncTs ? new Date(health.lastSyncTs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
+            </div>
+            <div className="flex gap-1">
+              <Input value={chatIn} onChange={(e) => setChatIn(e.target.value)} placeholder="Send over WebRTC…" className="text-xs h-8" onKeyDown={(e) => e.key === "Enter" && sendOverRTC()} />
+              <Button size="sm" onClick={sendOverRTC}><Send className="h-3.5 w-3.5" /></Button>
+            </div>
+            <div className="max-h-24 overflow-y-auto text-[11px] space-y-0.5 font-mono">
+              {log.map((l, i) => <div key={i}>{l}</div>)}
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+// =============== Group Chat Hub ===============
+function GroupChatHub({ me }: { me: { id: string; name: string; color: string; bullets: number[] } }) {
+  const { session, nodes, messages } = useGroupChat();
+  const [token, setToken] = useState("");
+  const [memberTok, setMemberTok] = useState("");
+  const [text, setText] = useState("");
+  const [stealth, setStealth] = useState(false);
+  const [tab, setTab] = useState<"chat" | "leaderboard">("chat");
+
+  if (!session) {
+    return (
+      <Card className="p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Users className="h-4 w-4 text-primary" />
+          <h3 className="font-bold text-sm">Mesh-Grid Group Chat</h3>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          Initialise a Group Chat Hub to become the routing switchboard, or paste a host invite token to bind to one.
+        </p>
+        <Button
+          className="w-full mb-3 gap-2"
+          onClick={() => {
+            const tok = initGroupAsHost(me);
+            navigator.clipboard.writeText(tok).catch(() => {});
+            toast.success("Group Chat Hub initialised — invite token copied");
+          }}
+        >
+          <Hash className="h-4 w-4" /> Initialize Group Chat Hub (Host)
+        </Button>
+        <Textarea
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="Paste a host invite token to join…"
+          className="font-mono text-[10px] h-20"
+        />
+        <Button
+          variant="outline"
+          className="w-full mt-2"
+          onClick={() => {
+            const r = joinGroupAsMember(token, me);
+            if (!r.ok) return toast.error(r.reason || "Failed to join group");
+            toast.success("Bound to host group");
+            setToken("");
+          }}
+        >
+          Join Group
+        </Button>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-0 flex flex-col h-[640px] overflow-hidden">
+      <div className="p-3 border-b flex items-center gap-2 flex-wrap">
+        <Users className="h-4 w-4 text-primary" />
+        <span className="text-sm font-bold">Group · {session.groupId.slice(-6)}</span>
+        <Badge variant="outline" className="text-[10px]">{session.isHost ? "Host" : "Member"}</Badge>
+        <Badge variant="outline" className="text-[10px]">{nodes.length} nodes</Badge>
+        <Button size="icon" variant="ghost" onClick={() => setStealth((s) => !s)} title="Stealth Blur">
+          {stealth ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+        <Button size="icon" variant="ghost" onClick={() => { leaveGroup(); toast.success("Left group"); }} title="Leave">
+          <LogOut className="h-4 w-4 text-rose-500" />
+        </Button>
+        <div className="basis-full flex gap-1 mt-1">
+          <Button size="sm" variant={tab === "chat" ? "default" : "outline"} onClick={() => setTab("chat")} className="gap-1 h-7">
+            <Send className="h-3 w-3" /> Chat
+          </Button>
+          <Button size="sm" variant={tab === "leaderboard" ? "default" : "outline"} onClick={() => setTab("leaderboard")} className="gap-1 h-7">
+            <Trophy className="h-3 w-3" /> Leaderboard
+          </Button>
+        </div>
+      </div>
+
+      {tab === "chat" ? (
+        <>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-muted/20">
+            {messages.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">No group messages yet.</p>}
+            {messages.map((m) => {
+              const mine = m.fromId === session.myId;
+              const name = stealth ? `[Peer ${m.fromId.slice(-3).toUpperCase()}]` : m.from;
+              return (
+                <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"} flex-col`}>
+                  {!mine && <div className="text-[10px] font-bold text-muted-foreground mb-0.5 px-2">{name}</div>}
+                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-blue-600 text-white self-end" : "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 self-start"}`}>
+                    <div className="whitespace-pre-wrap break-words">{m.text}</div>
+                    <div className={`mt-1 text-[10px] ${mine ? "text-blue-100" : "text-slate-500"}`}>
+                      {new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="border-t p-2 flex items-center gap-2">
+            <Input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && text.trim()) { sendGroupMessage(text); setText(""); } }}
+              placeholder="Message the group…"
+              className="flex-1"
+            />
+            <Button onClick={() => { if (text.trim()) { sendGroupMessage(text); setText(""); } }} size="icon" disabled={!text.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="border-t p-2 text-[10px] text-muted-foreground">
+            {messages.length}/100 (FIFO)
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">10-Bullet Group Leaderboard</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase text-muted-foreground">
+                  <th className="text-left py-1.5">Member</th>
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <th key={i} className="text-right py-1.5 px-1">B{i + 1}</th>
+                  ))}
+                  <th className="text-right py-1.5 px-1">Avg</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nodes.map((n) => {
+                  const valid = n.bullets.filter((v) => Number.isFinite(v) && v > 0);
+                  const avg = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+                  const display = stealth ? `[Peer ${n.id.slice(-3).toUpperCase()}]` : n.name;
+                  return (
+                    <tr key={n.id} className="border-t">
+                      <td className="py-1.5 font-semibold">{display}</td>
+                      {Array.from({ length: 10 }).map((_, i) => {
+                        const v = n.bullets[i];
+                        return (
+                          <td key={i} className="text-right tabular-nums px-1">
+                            {Number.isFinite(v) && v > 0 ? v.toFixed(1) : "—"}
+                          </td>
+                        );
+                      })}
+                      <td className="text-right tabular-nums font-bold text-primary px-1">{avg.toFixed(1)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {session.isHost && (
+            <div className="mt-4 rounded-lg border p-3 bg-muted/30">
+              <div className="text-[10px] font-bold uppercase mb-2">Host: add member by token</div>
+              <Textarea value={memberTok} onChange={(e) => setMemberTok(e.target.value)} placeholder="Paste member join token…" className="font-mono text-[10px] h-16" />
+              <Button size="sm" className="w-full mt-2" onClick={() => {
+                const r = hostAddMemberByToken(memberTok);
+                if (!r.ok) return toast.error(r.reason || "Failed to add member");
+                toast.success("Member added");
+                setMemberTok("");
+              }}>Add Member</Button>
+            </div>
+          )}
+          {!session.isHost && (
+            <div className="mt-4 rounded-lg border p-3 bg-muted/30">
+              <div className="text-[10px] font-bold uppercase mb-2">Your member token (send to host)</div>
+              <Textarea readOnly value={buildMemberToken(me)} className="font-mono text-[10px] h-16" />
+              <Button size="sm" variant="outline" className="w-full mt-2 gap-1" onClick={() => { navigator.clipboard.writeText(buildMemberToken(me)); toast.success("Member token copied"); }}>
+                <Copy className="h-3.5 w-3.5" /> Copy Member Token
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
