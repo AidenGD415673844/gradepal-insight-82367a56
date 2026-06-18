@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/grade/AppShell";
 import { Card } from "@/components/ui/card";
@@ -41,7 +41,7 @@ import {
   Hash,
 } from "lucide-react";
 import { toast } from "sonner";
-import { RTCPeerLink, type RTCHealth } from "@/lib/webrtc-peer";
+import { RTCPeerLink, type RTCHealth, type RTCEnvelope } from "@/lib/webrtc-peer";
 import {
   useGroupChat,
   initGroupAsHost,
@@ -586,7 +586,7 @@ function WebRTCHandshakeCard() {
     if (!linkRef.current) {
       linkRef.current = new RTCPeerLink();
       linkRef.current.onHealth(() => setHealth({ ...linkRef.current!.health }));
-      linkRef.current.onMessage((env) => {
+      linkRef.current.onMessage((env: RTCEnvelope) => {
         if (env.kind === "chat") {
           setLog((l) => [...l.slice(-19), `${env.from}: ${env.text}`]);
         }
