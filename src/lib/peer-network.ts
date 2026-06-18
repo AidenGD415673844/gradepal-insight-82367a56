@@ -108,55 +108,23 @@ export function getBlocklist(): string[] {
 }
 
 function seedChat(peerId: string, _peerName: string) {
+  // Decentralised handshake — never auto-inject welcome chatter.
   const key = K_CHAT + peerId;
-  if (localStorage.getItem(key)) return;
-  const now = Date.now();
-  const msgs: ChatMsg[] = [
-    {
-      id: "s1",
-      from: "peer",
-      text: "Hey! Did you get the weighting for the upcoming Mathematics terminal exam? I heard it is 35%.",
-      ts: now - 1000 * 60 * 60 * 26,
-      delivered: true,
-      read: true,
-    },
-    {
-      id: "s2",
-      from: "me",
-      text: "Yes — terminal weight is 35%, internal coursework is the remaining 25%. Want to align revision blocks?",
-      ts: now - 1000 * 60 * 60 * 25,
-      delivered: true,
-      read: true,
-    },
-    {
-      id: "s3",
-      from: "peer",
-      text: "Sounds good. Let's lock in a joint study window this week — I will send a proposal from my timetable.",
-      ts: now - 1000 * 60 * 60 * 24,
-      delivered: true,
-      read: true,
-    },
-  ];
-  localStorage.setItem(key, JSON.stringify(msgs));
+  if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify([]));
 }
 
 export function acceptToken(token: string): { ok: boolean; reason?: string; peer?: Peer } {
   const profile = decodeToken(token);
   if (!profile) return { ok: false, reason: "Invalid token." };
+  // Reject self-tokens (cannot peer with own profile)
+  const myId = getMyProfile().id;
+  if (profile.id === myId) return { ok: false, reason: "Cannot add your own profile as a peer." };
   if (getBlocklist().includes(profile.id))
     return { ok: false, reason: "This peer is on your blocklist — connection dropped." };
   const list = getFriends();
   const existingIdx = list.findIndex((p) => p.id === profile.id);
   if (existingIdx >= 0) {
-    const prev = list[existingIdx];
-    list[existingIdx] = { ...prev, ...profile, status: prev.status, lastOnline: Date.now() };
-    setFriends(list);
-    pushInbox({
-      kind: "sync",
-      title: "Network Update Sync",
-      body: `Peer ${profile.name} has pushed an updated data package.`,
-    });
-    return { ok: true, peer: list[existingIdx] };
+    return { ok: false, reason: `Peer ${profile.name} is already in your network.` };
   }
   const peer: Peer = { ...profile, status: "pending", lastOnline: Date.now() };
   list.push(peer);
