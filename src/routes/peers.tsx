@@ -34,8 +34,23 @@ import {
   ShieldCheck,
   Sparkles,
   CalendarClock,
+  Radio,
+  Activity,
+  Trophy,
+  LogOut,
+  Hash,
 } from "lucide-react";
 import { toast } from "sonner";
+import { RTCPeerLink, type RTCHealth } from "@/lib/webrtc-peer";
+import {
+  useGroupChat,
+  initGroupAsHost,
+  joinGroupAsMember,
+  hostAddMemberByToken,
+  buildMemberToken,
+  sendGroupMessage,
+  leaveGroup,
+} from "@/lib/group-chat";
 
 export const Route = createFileRoute("/peers")({
   head: () => ({
