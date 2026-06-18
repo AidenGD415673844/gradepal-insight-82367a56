@@ -235,6 +235,7 @@ function PeerList({ friends, onOpen }: { friends: Peer[]; onOpen: (id: string) =
                 <div className="min-w-0">
                   <div className="font-semibold text-sm truncate">{p.name}</div>
                   <div className="text-[11px] text-muted-foreground">{fmt(p.lastOnline)}</div>
+                  <ConnectionHealthMeter peerId={p.id} />
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
