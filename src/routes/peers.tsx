@@ -101,6 +101,12 @@ function PeersPage() {
               onOpen={(id) => setSelectedId(id)}
             />
           </div>
+          <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <WebRTCHandshakeCard />
+            <GroupChatHub
+              me={{ id: me.id, name: meName || "You", color: me.color, bullets: me.bullets }}
+            />
+          </div>
         </div>
       )}
     </AppShell>
