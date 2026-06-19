@@ -28,7 +28,11 @@ export const Route = createFileRoute("/forecasting")({
     meta: [
       { title: "Strategic Forecasting Hub — GradeCalc" },
       { name: "description", content: "Local Monte Carlo simulations, cone-of-uncertainty trajectories, GPA velocity dials and burnout thermometer — all serverless." },
+      { property: "og:title", content: "Strategic Forecasting Hub — GradeCalc" },
+      { property: "og:description", content: "Local Monte Carlo simulations, cone-of-uncertainty trajectories, GPA velocity dials and burnout thermometer — all serverless." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/forecasting" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/forecasting" }],
   }),
   component: ForecastingHub,
 });
