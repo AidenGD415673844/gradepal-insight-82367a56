@@ -244,6 +244,7 @@ function PeerList({ friends, onOpen }: { friends: Peer[]; onOpen: (id: string) =
                   size="icon"
                   variant="ghost"
                   title="Block/Remove Peer"
+                  aria-label="Block or remove peer"
                   onClick={() => updatePeerStatus(p.id, "blocked")}
                 >
                   <Ban className="h-4 w-4 text-rose-500" />
