@@ -14,8 +14,12 @@ export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
       { title: "Settings — GradeCalc" },
-      { name: "description", content: "Local interface preferences and data controls." },
+      { name: "description", content: "Manage your GradeCalc interface preferences, toggle advanced analytics, and control your local data and backups." },
+      { property: "og:title", content: "Settings & Preferences — GradeCalc" },
+      { property: "og:description", content: "Manage your GradeCalc interface preferences, toggle advanced analytics, and control your local data and backups." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/settings" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/settings" }],
   }),
   component: SettingsPage,
 });
