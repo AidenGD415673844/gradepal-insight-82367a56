@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://gradepal-insight.lovable.app/sitemap.xml
