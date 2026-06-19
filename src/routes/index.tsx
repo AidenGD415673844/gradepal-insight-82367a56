@@ -35,8 +35,12 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "GradeCalc — Home" },
-      { name: "description", content: "Your local school dashboard: grades, utilities, timetable, and report cards." },
+      { name: "description", content: "GradeCalc is your local school dashboard for tracking grades, utilities, timetable, and generating report cards." },
+      { property: "og:title", content: "GradeCalc — Local School Dashboard" },
+      { property: "og:description", content: "Track grades, run forecasts, plan study sessions and generate report cards — all stored locally in your browser." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/" }],
   }),
   component: Home,
 });
@@ -93,7 +97,7 @@ function Home() {
             <div className="h-11 w-11 rounded-xl bg-primary flex items-center justify-center shadow-soft">
               <GraduationCap className="h-6 w-6 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">GradeCalc</h1>
+            <h1 className="text-2xl font-bold tracking-tight">GradeCalc — Local School Dashboard</h1>
           </div>
           <Button variant="outline" size="sm" asChild className="gap-2">
             <Link to="/timetable">

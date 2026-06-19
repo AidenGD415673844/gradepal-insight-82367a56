@@ -9,8 +9,12 @@ export const Route = createFileRoute("/utilities")({
   head: () => ({
     meta: [
       { title: "School Companion Utilities — GradeCalc" },
-      { name: "description", content: "Pomodoro, study planners, and exam bottleneck trackers." },
+      { name: "description", content: "Pomodoro timer, study session planners, exam bottleneck trackers and the Optimization Hub — all in one local toolkit." },
+      { property: "og:title", content: "School Companion Utilities — GradeCalc" },
+      { property: "og:description", content: "Pomodoro timer, study session planners, exam bottleneck trackers and the Optimization Hub — all in one local toolkit." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/utilities" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/utilities" }],
   }),
   component: UtilitiesPage,
 });

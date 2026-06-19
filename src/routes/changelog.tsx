@@ -10,7 +10,11 @@ export const Route = createFileRoute("/changelog")({
     meta: [
       { title: "System Update Log — GradeCalc" },
       { name: "description", content: "Chronological development milestones and shipped feature timeline." },
+      { property: "og:title", content: "System Update Log — GradeCalc" },
+      { property: "og:description", content: "Chronological development milestones and shipped feature timeline for the GradeCalc school companion app." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/changelog" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/changelog" }],
   }),
   component: ChangelogPage,
 });

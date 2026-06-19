@@ -32,7 +32,11 @@ export const Route = createFileRoute("/criteria")({
         content:
           "Browse assessment criteria and per-grade descriptors. Teachers can create, edit, and delete criteria (presets included).",
       },
+      { property: "og:title", content: "Assessment Criteria — GradeCalc" },
+      { property: "og:description", content: "Browse assessment criteria and per-grade descriptors. Teachers can create, edit, and delete criteria (presets included)." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/criteria" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/criteria" }],
   }),
   component: CriteriaPage,
 });

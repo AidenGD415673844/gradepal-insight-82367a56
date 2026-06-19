@@ -31,8 +31,12 @@ export const Route = createFileRoute("/inbox")({
   head: () => ({
     meta: [
       { title: "Local Inbox — GradeCalc" },
-      { name: "description", content: "Weekly performance reviews and peer sync notices." },
+      { name: "description", content: "Automated weekly performance reviews, peer sync notices and academic diagnostics — generated locally on your device." },
+      { property: "og:title", content: "Local Inbox — GradeCalc" },
+      { property: "og:description", content: "Automated weekly performance reviews, peer sync notices and academic diagnostics — generated locally on your device." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/inbox" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/inbox" }],
   }),
   component: InboxPage,
 });

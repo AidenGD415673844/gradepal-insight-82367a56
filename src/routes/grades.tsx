@@ -25,8 +25,12 @@ export const Route = createFileRoute("/grades")({
   head: () => ({
     meta: [
       { title: "Grade Calculator — GradeCalc" },
-      { name: "description", content: "Track subjects, weights, charts and predicted grades." },
+      { name: "description", content: "Track subjects, weights, charts and predicted grades — all stored locally on your device with rich analytics." },
+      { property: "og:title", content: "Grade Calculator Engine — GradeCalc" },
+      { property: "og:description", content: "Track subjects, weights, charts and predicted grades — all stored locally on your device with rich analytics." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/grades" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/grades" }],
   }),
   component: GradesPage,
 });
