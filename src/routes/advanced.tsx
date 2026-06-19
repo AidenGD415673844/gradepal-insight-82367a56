@@ -14,7 +14,11 @@ export const Route = createFileRoute("/advanced")({
     meta: [
       { title: "Advanced Features — GradeCalc" },
       { name: "description", content: "Pareto matrix, EMA sparkline, Black Swan stress, skewness profile and convergence anchor — all client-side." },
+      { property: "og:title", content: "Advanced Features Portal — GradeCalc" },
+      { property: "og:description", content: "Pareto matrix, EMA sparkline, Black Swan stress, skewness profile and convergence anchor — all client-side." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/advanced" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/advanced" }],
   }),
   component: AdvancedPage,
 });
