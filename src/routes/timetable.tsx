@@ -7,8 +7,12 @@ export const Route = createFileRoute("/timetable")({
   head: () => ({
     meta: [
       { title: "Attendance & Timetable — GradeCalc" },
-      { name: "description", content: "Weekly class schedule with color-coded attendance counters." },
+      { name: "description", content: "Plan your weekly class schedule with color-coded attendance counters and a synced local calendar view." },
+      { property: "og:title", content: "Attendance & Timetable — GradeCalc" },
+      { property: "og:description", content: "Plan your weekly class schedule with color-coded attendance counters and a synced local calendar view." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/timetable" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/timetable" }],
   }),
   component: TimetablePage,
 });
