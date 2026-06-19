@@ -21,7 +21,11 @@ export const Route = createFileRoute("/syndicate")({
     meta: [
       { title: "Academic Syndicate Hub — GradeCalc" },
       { name: "description", content: "Cohort analytics, frontier contour map, and box-and-whisker overlays — fully client-side." },
+      { property: "og:title", content: "Academic Syndicate Hub — GradeCalc" },
+      { property: "og:description", content: "Cohort analytics, frontier contour map, and box-and-whisker overlays — fully client-side." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/syndicate" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/syndicate" }],
   }),
   component: SyndicatePage,
 });
