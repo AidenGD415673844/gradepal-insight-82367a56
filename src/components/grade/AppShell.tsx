@@ -47,7 +47,7 @@ export function AppShell({
             </Button>
           </div>
         </header>
-        {children}
+        <main>{children}</main>
       </div>
     </div>
     </SandboxFrame>
