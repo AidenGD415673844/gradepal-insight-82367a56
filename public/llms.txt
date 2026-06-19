@@ -1,0 +1,24 @@
+# GradeCalc
+
+> GradeCalc is a local-first, all-in-one school companion for students and teachers. It tracks grades, generates report cards, runs forecasting simulations, manages timetables and supports decentralised peer study — all stored in your browser with no cloud backend.
+
+## Pages
+
+- [Home](/): Local school dashboard with grades overview, agenda and quick links.
+- [Grade Calculator](/grades): Track subjects, weights, charts and predicted grades.
+- [Report Card Generator](/reports): Multi-term filters with detailed 10-bullet feedback.
+- [Strategic Forecasting Hub](/forecasting): Monte Carlo simulations, cone-of-uncertainty trajectories and GPA velocity dials.
+- [Advanced Features](/advanced): Pareto matrix, EMA sparkline, Black Swan stress and convergence anchor.
+- [Academic Syndicate Hub](/syndicate): Cohort analytics, frontier contour map and box-and-whisker overlays.
+- [Peer Network Hub](/peers): Decentralised base64 peer tokens, FIFO chat queue and academic sync grid.
+- [Local Inbox](/inbox): Automated weekly performance reviews and peer sync notices.
+- [School Companion Utilities](/utilities): Pomodoro, planners, bottleneck trackers and the Optimization Hub.
+- [Attendance & Timetable](/timetable): Weekly class schedule with attendance counters and calendar.
+- [Saved Reports](/saved-reports): Local 15-slot archive of saved report cards.
+- [Assessment Criteria](/criteria): Browse and edit assessment criteria with per-grade descriptors.
+- [Teacher Gradebook](/teacher): Password-gated A*-G criteria gradebook for educators.
+- [System Update Log](/changelog): Chronological feature and fix timeline.
+
+## Optional
+
+- [Settings & Preferences](/settings): Interface preferences, advanced analytics toggle and local data controls.
