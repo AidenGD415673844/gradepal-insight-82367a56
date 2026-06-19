@@ -11,8 +11,12 @@ export const Route = createFileRoute("/teacher")({
   head: () => ({
     meta: [
       { title: "Teacher Gradebook — GradeCalc" },
-      { name: "description", content: "Password-gated A*-G criteria gradebook (local-only)." },
+      { name: "description", content: "Password-gated A*-G criteria gradebook for educators — fully local with per-criterion grade descriptors." },
+      { property: "og:title", content: "Teacher Gradebook View — GradeCalc" },
+      { property: "og:description", content: "Password-gated A*-G criteria gradebook for educators — fully local with per-criterion grade descriptors." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/teacher" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/teacher" }],
   }),
   component: TeacherRoute,
 });
