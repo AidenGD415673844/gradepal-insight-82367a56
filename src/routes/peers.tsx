@@ -56,8 +56,12 @@ export const Route = createFileRoute("/peers")({
   head: () => ({
     meta: [
       { title: "Peer Network Hub — GradeCalc" },
-      { name: "description", content: "Decentralised peer connections via base64 tokens — fully client-side." },
+      { name: "description", content: "Decentralised peer connections via base64 tokens, FIFO chat queues and academic sync grids — fully client-side." },
+      { property: "og:title", content: "Peer Network Hub — GradeCalc" },
+      { property: "og:description", content: "Decentralised peer connections via base64 tokens, FIFO chat queues and academic sync grids — fully client-side." },
+      { property: "og:url", content: "https://gradepal-insight.lovable.app/peers" },
     ],
+    links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/peers" }],
   }),
   component: PeersPage,
 });
