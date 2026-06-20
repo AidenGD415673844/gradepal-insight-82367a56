@@ -72,7 +72,16 @@ export function setMyProfile(patch: Partial<PeerProfile>) {
 
 export function encodeToken(p: PeerProfile): string {
   try {
-    const json = JSON.stringify(p);
+    // Stable token: omit volatile updatedAt so the same browser produces the
+    // same token across reloads / unrelated profile field touches.
+    const stable = {
+      id: p.id,
+      name: p.name,
+      color: p.color,
+      subjects: p.subjects,
+      bullets: p.bullets,
+    };
+    const json = JSON.stringify(stable);
     if (typeof window !== "undefined" && window.btoa) {
       return window.btoa(unescape(encodeURIComponent(json)));
     }

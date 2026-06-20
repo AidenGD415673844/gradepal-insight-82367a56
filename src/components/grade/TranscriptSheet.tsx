@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, calcGPA, getLetter, filterByTerm } from "@/lib/grade-utils";
+import { applyAStarOverride } from "./a-star-override";
 
 const SIG_KEY = "gradecalc-signature";
 
@@ -44,7 +45,8 @@ export function TranscriptSheet() {
               activeTerm,
             );
             const avg = ct.length ? calcAverage(ct, settings.weighted) : 0;
-            const letter = ct.length ? (getLetter(avg, scale)?.letter ?? "—") : "N/A";
+            const baseLetter = ct.length ? (getLetter(avg, scale)?.letter ?? "—") : "N/A";
+            const letter = ct.length ? applyAStarOverride(avg, baseLetter) : "N/A";
             return (
               <tr key={c.id}>
                 <td>{c.name}</td>
