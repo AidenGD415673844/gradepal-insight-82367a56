@@ -67,16 +67,48 @@ function SyndicatePage() {
 
   return (
     <AppShell title="Academic Syndicate Hub">
-      <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-5">
-        <CohortSidebar selectedId={selectedId} onSelect={setSelectedId} />
+      <div className="grid grid-cols-1 xl:grid-cols-[260px_1fr] gap-5">
+        <div className="hidden xl:block">
+          <CohortSidebar selectedId={selectedId} onSelect={setSelectedId} />
+        </div>
 
         <div className="space-y-5">
+          <div className="xl:hidden">
+            <CohortPicker selectedId={selectedId} onSelect={setSelectedId} />
+          </div>
           <CohortHeader cohort={cohort} user={userProfile} />
           <FrontierMap cohort={cohort} user={userProfile} />
           <BoxplotOverlay cohort={cohort} user={userProfile} />
         </div>
       </div>
     </AppShell>
+  );
+}
+
+// =============== Compact Cohort Picker (small / mobile) ===============
+function CohortPicker({ selectedId, onSelect }: { selectedId: string; onSelect: (id: string) => void }) {
+  return (
+    <Card className="p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Layers className="h-4 w-4 text-primary" />
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Compare against cohort</h2>
+      </div>
+      <select
+        value={selectedId}
+        onChange={(e) => onSelect(e.target.value)}
+        className="w-full rounded-lg border bg-background px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+      >
+        {TIER_GROUPS.map((g) => (
+          <optgroup key={g.id} label={g.label}>
+            {COHORT_PROFILES.filter((p) => p.tier === g.id).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} — {p.avg.toFixed(1)}%
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </Card>
   );
 }
 
