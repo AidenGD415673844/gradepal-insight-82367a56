@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/grade/AppShell";
 import { AdvancedTools } from "@/components/grade/AdvancedTools";
 import { OptimizationHub } from "@/components/grade/OptimizationHub";
+import { FlightSimulator } from "@/components/grade/FlightSimulator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Wand2, Rocket } from "lucide-react";
+import { Wand2, Rocket, Plane } from "lucide-react";
 
 export const Route = createFileRoute("/utilities")({
   head: () => ({
@@ -34,10 +35,14 @@ function UtilitiesPage() {
             <TabsTrigger value="advanced" className="gap-2 snap-start whitespace-nowrap">
               <Wand2 className="h-4 w-4" /> Advanced Tools
             </TabsTrigger>
+            <TabsTrigger value="flight" className="gap-2 snap-start whitespace-nowrap">
+              <Plane className="h-4 w-4" /> Flight Simulator
+            </TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="hub" className="mt-0"><OptimizationHub /></TabsContent>
         <TabsContent value="advanced" className="mt-0"><AdvancedTools /></TabsContent>
+        <TabsContent value="flight" className="mt-0"><FlightSimulator /></TabsContent>
       </Tabs>
     </AppShell>
   );

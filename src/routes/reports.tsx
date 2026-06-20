@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/grade/AppShell";
 import { AcademicFeedback } from "@/components/grade/AcademicFeedback";
 import { TermManager } from "@/components/grade/TermManager";
+import { SchoolPortalExport } from "@/components/grade/SchoolPortalExport";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -20,7 +21,10 @@ export const Route = createFileRoute("/reports")({
 function ReportsPage() {
   return (
     <AppShell title="Report Card Generator" actions={<TermManager />}>
-      <AcademicFeedback />
+      <div className="space-y-5">
+        <SchoolPortalExport />
+        <AcademicFeedback />
+      </div>
     </AppShell>
   );
 }
