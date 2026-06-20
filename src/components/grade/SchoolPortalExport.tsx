@@ -42,7 +42,18 @@ export function SchoolPortalExport() {
   const term = terms.find((t: any) => t.id === activeTermId) ?? null;
   const termLabel = term?.name ?? "All Terms";
 
-  const rows = useMemo(() => {
+  type Row = {
+    code: string;
+    subject: string;
+    avg: number | "";
+    letter: string;
+    tasks: number;
+    completed: number;
+    attendance: number;
+    credits: number;
+  };
+
+  const rows: Row[] = useMemo(() => {
     return courses.map((c: any) => {
       const ct = filterByTerm(
         tasks.filter((t: any) => t.courseId === c.id && !t.pending),
@@ -67,7 +78,7 @@ export function SchoolPortalExport() {
         attendance,
         credits: c.credits ?? 0,
       };
-    });
+    }) as Row[];
   }, [courses, tasks, scale, term, settings.weighted]);
 
   function exportNow() {
