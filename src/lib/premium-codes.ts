@@ -4,13 +4,13 @@
 // on next deploy. Locally-saved promos live in localStorage and merge on top.
 
 export type GlobalPromo = {
-  code: string;       // uppercase keyword
-  hkd: number;        // wallet credit amount in HKD
+  code: string; // uppercase keyword
+  hkd: number; // wallet credit amount in HKD
   note?: string;
 };
 
 export const GLOBAL_PROMOS: GlobalPromo[] = [
-  { code: "WELCOME10", hkd: 10, note: "Sign-up bonus" },
-  { code: "STUDY5", hkd: 5, note: "Study streak gift" },
-  { code: "FRIEND25", hkd: 25, note: "Friend referral bonus" },
+  { code: "WELCOME3", hkd: 3, note: "Sign-up bonus" },
+  { code: "UPDATEADMIN", hkd: 3, note: "Update bonus" },
+  { code: "SKUNK0613", hkd: 20, note: "21/6/26 code" },
 ];
