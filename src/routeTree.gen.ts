@@ -14,6 +14,7 @@ import { Route as TimetableRouteImport } from './routes/timetable'
 import { Route as TeacherRouteImport } from './routes/teacher'
 import { Route as SyndicateRouteImport } from './routes/syndicate'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedReportsRouteImport } from './routes/saved-reports'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -49,6 +50,11 @@ const SyndicateRoute = SyndicateRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
+  '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/syndicate': typeof SyndicateRoute
   '/teacher': typeof TeacherRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
+  '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/syndicate': typeof SyndicateRoute
   '/teacher': typeof TeacherRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
+  '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/syndicate': typeof SyndicateRoute
   '/teacher': typeof TeacherRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/saved-reports'
     | '/settings'
+    | '/shop'
     | '/sitemap.xml'
     | '/syndicate'
     | '/teacher'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/saved-reports'
     | '/settings'
+    | '/shop'
     | '/sitemap.xml'
     | '/syndicate'
     | '/teacher'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/saved-reports'
     | '/settings'
+    | '/shop'
     | '/sitemap.xml'
     | '/syndicate'
     | '/teacher'
@@ -231,6 +243,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SavedReportsRoute: typeof SavedReportsRoute
   SettingsRoute: typeof SettingsRoute
+  ShopRoute: typeof ShopRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SyndicateRoute: typeof SyndicateRoute
   TeacherRoute: typeof TeacherRoute
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -367,6 +387,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SavedReportsRoute: SavedReportsRoute,
   SettingsRoute: SettingsRoute,
+  ShopRoute: ShopRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SyndicateRoute: SyndicateRoute,
   TeacherRoute: TeacherRoute,
