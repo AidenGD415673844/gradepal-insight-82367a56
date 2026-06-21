@@ -29,6 +29,7 @@ import {
   History,
   Users,
   Inbox as InboxIcon,
+  Crown,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -53,6 +54,7 @@ const ALL_CORE_CARDS = [
   { to: "/reports", title: "Official Report Card", desc: "Multi-term filter & 10 bullet feedback", Icon: ClipboardCheck, accent: "from-rose-500/20 to-pink-500/10" },
   { to: "/peers", title: "Peer Network Hub", desc: "Decentralised base64 peer tokens, academic sync grid & FIFO chat", Icon: Users, accent: "from-blue-500/20 to-cyan-500/10" },
   { to: "/inbox", title: "Local Inbox", desc: "Weekly performance reviews and peer sync notices", Icon: InboxIcon, accent: "from-amber-500/20 to-yellow-500/10" },
+  { to: "/shop", title: "GradePal Pro Shop", desc: "Subscription tiers, referral wallet checkout & promo codes", Icon: Crown, accent: "from-amber-500/20 to-orange-500/10" },
   { to: "/forecasting", title: "Strategic Forecasting Hub", desc: "Cone of uncertainty, Monte Carlo, GPA velocity & burnout thermometer", Icon: LineChart, accent: "from-fuchsia-500/20 to-purple-500/10", advanced: true },
   { to: "/advanced", title: "Advanced Features", desc: "Pareto matrix, EMA, Black Swan, skewness & convergence anchor", Icon: Sigma, accent: "from-violet-500/20 to-indigo-500/10", advanced: true },
   { to: "/syndicate", title: "Academic Syndicate Hub", desc: "20 simulated cohorts, Frontier contour map & SVG box-and-whisker overlays", Icon: Users, accent: "from-purple-500/20 to-fuchsia-500/10", advanced: true },
