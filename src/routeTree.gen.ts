@@ -17,7 +17,6 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedReportsRouteImport } from './routes/saved-reports'
-import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PeersRouteImport } from './routes/peers'
 import { Route as InboxRouteImport } from './routes/inbox'
@@ -61,11 +60,6 @@ const ShopRoute = ShopRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShopRoute = ShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SavedReportsRoute = SavedReportsRouteImport.update({
