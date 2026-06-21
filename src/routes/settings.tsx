@@ -4,11 +4,13 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useUIPrefs, setUIPrefs, resetAllLocalData } from "@/lib/ui-prefs";
-import { Moon, BarChart3, Zap, RotateCcw, Trash2, BookOpen, Target, Sigma } from "lucide-react";
+import { Moon, BarChart3, Zap, RotateCcw, Trash2, BookOpen, Target, Sigma, User } from "lucide-react";
 import { toast } from "sonner";
 import { SnapshotManager } from "@/components/grade/SnapshotManager";
 import { BackupRestore } from "@/components/grade/BackupRestore";
 import { createAutoSnapshot } from "@/lib/snapshots";
+import { useRef, useState } from "react";
+import { AdminCommandCenter } from "@/components/grade/AdminCommandCenter";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -52,6 +54,19 @@ function Row({
 function SettingsPage() {
   const [prefs] = useUIPrefs();
   const navigate = useNavigate();
+  const [adminOpen, setAdminOpen] = useState(false);
+  const clickRef = useRef<{ n: number; t: number }>({ n: 0, t: 0 });
+
+  const handleAvatarClick = () => {
+    const now = Date.now();
+    if (now - clickRef.current.t > 600) clickRef.current.n = 0;
+    clickRef.current.n += 1;
+    clickRef.current.t = now;
+    if (clickRef.current.n >= 3) {
+      clickRef.current.n = 0;
+      setAdminOpen(true);
+    }
+  };
 
   const restartTutorial = () => {
     setUIPrefs({ welcomeDismissed: false });
@@ -76,6 +91,21 @@ function SettingsPage() {
   return (
     <AppShell title="Settings">
       <div className="space-y-5">
+      <Card className="p-4 max-w-2xl flex items-center gap-3">
+        <button
+          onClick={handleAvatarClick}
+          aria-label="Student profile avatar"
+          className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground shadow-soft transition-transform active:scale-95 hover:scale-105"
+        >
+          <User className="h-6 w-6" />
+        </button>
+        <div className="min-w-0">
+          <div className="font-bold text-sm">Student Profile</div>
+          <div className="text-xs text-muted-foreground">
+            Local-only identity. Used for peer tokens and weekly reviews.
+          </div>
+        </div>
+      </Card>
       <Card className="p-5 max-w-2xl">
         <h2 className="text-lg font-bold mb-2">Interface preferences</h2>
         <p className="text-xs text-muted-foreground mb-3">
