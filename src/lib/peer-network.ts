@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { addWallet } from "./premium";
 
 export type PeerStatus = "pending" | "accepted" | "blocked";
 export type PeerSubject = { name: string; avg: number };
@@ -139,6 +140,10 @@ export function acceptToken(token: string): { ok: boolean; reason?: string; peer
   list.push(peer);
   setFriends(list);
   seedChat(peer.id, peer.name);
+  // Referral wallet: +$1.00 HKD per brand-new peer (capped at WALLET_CAP)
+  try {
+    addWallet(1);
+  } catch {}
   return { ok: true, peer };
 }
 
