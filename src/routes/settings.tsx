@@ -183,6 +183,7 @@ function SettingsPage() {
       <SnapshotManager />
       <BackupRestore />
       </div>
+      <AdminCommandCenter open={adminOpen} onOpenChange={setAdminOpen} />
     </AppShell>
   );
 }
