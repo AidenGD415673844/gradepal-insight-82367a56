@@ -93,13 +93,28 @@ function InboxPage() {
         <div className="flex items-center gap-2 mb-3">
           <InboxIcon className="h-5 w-5 text-primary" />
           <h2 className="text-base font-bold">Inbox</h2>
-          <span className="text-xs text-muted-foreground ml-auto">{inbox.length} messages</span>
+          <span className="text-xs text-muted-foreground ml-auto">
+            {(() => {
+              const filtered = inbox.filter((i) =>
+                filter === "all" ? true :
+                filter === "unread" ? !i.read :
+                i.kind === filter,
+              );
+              return `${filtered.length} of ${inbox.length} messages`;
+            })()}
+          </span>
         </div>
-        {inbox.length === 0 ? (
+        {(() => {
+          const filtered = inbox.filter((i) =>
+            filter === "all" ? true :
+            filter === "unread" ? !i.read :
+            i.kind === filter,
+          );
+          return filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground">No messages. Weekly reviews appear here automatically.</p>
         ) : (
           <ul className="space-y-2">
-            {inbox.map((i) => (
+            {filtered.map((i) => (
               <li
                 key={i.id}
                 className={`flex items-center justify-between gap-3 rounded-xl border p-3 transition hover:shadow-sm ${i.read ? "bg-card/50" : "bg-primary/5 border-primary/30"}`}
@@ -130,7 +145,8 @@ function InboxPage() {
               </li>
             ))}
           </ul>
-        )}
+          );
+        })()}
       </Card>
     </AppShell>
   );
