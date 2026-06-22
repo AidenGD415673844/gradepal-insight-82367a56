@@ -112,7 +112,7 @@ export function UIDesignStudio() {
             <polyline
               points="0,30 25,22 50,28 75,15 100,18 125,8 150,12 175,4 200,10"
               fill="none"
-              stroke="hsl(var(--chart-1))"
+              stroke="var(--chart-1)"
               strokeWidth="2"
             />
           </svg>
