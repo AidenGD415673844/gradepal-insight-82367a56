@@ -17,13 +17,17 @@ import {
   type Tier,
   generateCipherToken,
   getMasters,
+  getLocalMasters,
   parseMasterRegistry,
   setMasters,
   setLocalPromos,
   getLocalPromos,
+  getRedeemed,
+  deleteRedeemed,
+  clearRedeemed,
   K_SYSOP,
 } from "@/lib/premium";
-import { Shield, Copy, KeyRound, Lock, ScrollText, Megaphone } from "lucide-react";
+import { Shield, Copy, KeyRound, Lock, ScrollText, Megaphone, History, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 
 const REQUIRED_TOKEN = "SYSOP-LO6130-99X72-GLOBAL";
@@ -130,7 +134,7 @@ export function AdminCommandCenter({
           </div>
         ) : (
           <Tabs defaultValue="cipher" className="animate-fade-in">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="cipher" className="gap-1.5">
                 <KeyRound className="h-4 w-4" /> Cipher
               </TabsTrigger>
@@ -139,6 +143,9 @@ export function AdminCommandCenter({
               </TabsTrigger>
               <TabsTrigger value="promo" className="gap-1.5">
                 <Megaphone className="h-4 w-4" /> Promo Distributor
+              </TabsTrigger>
+              <TabsTrigger value="log" className="gap-1.5">
+                <History className="h-4 w-4" /> Log
               </TabsTrigger>
             </TabsList>
 
@@ -150,6 +157,9 @@ export function AdminCommandCenter({
             </TabsContent>
             <TabsContent value="promo" className="mt-4">
               <PromoTab />
+            </TabsContent>
+            <TabsContent value="log" className="mt-4">
+              <RedemptionLogTab />
             </TabsContent>
           </Tabs>
         )}
