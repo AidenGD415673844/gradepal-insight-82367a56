@@ -45,6 +45,7 @@ function InboxPage() {
   const { inbox } = usePeerNetwork();
   const { tasks } = useGrades();
   const [openReview, setOpenReview] = useState<WeeklyReview | null>(null);
+  const [filter, setFilter] = useState<"all" | "unread" | "weekly" | "sync">("all");
 
   if (openReview) {
     return (
@@ -59,7 +60,7 @@ function InboxPage() {
 
   return (
     <AppShell title="Local Inbox">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
         <Button
           size="sm"
           variant="outline"
@@ -72,18 +73,48 @@ function InboxPage() {
         >
           <RefreshCw className="h-4 w-4" /> Generate Weekly Review Now
         </Button>
+        <div className="ml-auto flex items-center gap-1 text-xs">
+          {(["all", "unread", "weekly", "sync"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-2.5 py-1 rounded-full border transition-all capitalize ${
+                filter === f
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card hover:bg-muted border-border"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
       </div>
       <Card className="p-5">
         <div className="flex items-center gap-2 mb-3">
           <InboxIcon className="h-5 w-5 text-primary" />
           <h2 className="text-base font-bold">Inbox</h2>
-          <span className="text-xs text-muted-foreground ml-auto">{inbox.length} messages</span>
+          <span className="text-xs text-muted-foreground ml-auto">
+            {(() => {
+              const filtered = inbox.filter((i) =>
+                filter === "all" ? true :
+                filter === "unread" ? !i.read :
+                i.kind === filter,
+              );
+              return `${filtered.length} of ${inbox.length} messages`;
+            })()}
+          </span>
         </div>
-        {inbox.length === 0 ? (
+        {(() => {
+          const filtered = inbox.filter((i) =>
+            filter === "all" ? true :
+            filter === "unread" ? !i.read :
+            i.kind === filter,
+          );
+          return filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground">No messages. Weekly reviews appear here automatically.</p>
         ) : (
           <ul className="space-y-2">
-            {inbox.map((i) => (
+            {filtered.map((i) => (
               <li
                 key={i.id}
                 className={`flex items-center justify-between gap-3 rounded-xl border p-3 transition hover:shadow-sm ${i.read ? "bg-card/50" : "bg-primary/5 border-primary/30"}`}
@@ -114,7 +145,8 @@ function InboxPage() {
               </li>
             ))}
           </ul>
-        )}
+          );
+        })()}
       </Card>
     </AppShell>
   );

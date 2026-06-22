@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { GLOBAL_PROMOS, type GlobalPromo } from "./premium-codes";
+import { BROADCAST_MASTERS, BROADCAST_PROMOS } from "./premium-broadcast";
 
 // ===== Storage keys ============================================================
 const K_TIER = "gradecalc_premium_v1";
@@ -88,7 +89,7 @@ export function clearTier() {
 }
 
 // ===== Wallet ==================================================================
-export const WALLET_CAP = 250;
+export const WALLET_CAP = 50;
 export function getWallet(): number {
   return read<number>(K_WALLET, 0);
 }
@@ -106,6 +107,56 @@ export function spendWallet(amount: number): boolean {
   if (w < amount) return false;
   setWallet(w - amount);
   return true;
+}
+
+// ===== Smart purchase logic ===================================================
+function tierRank(t: Tier): number {
+  const meta = TIERS.find((x) => x.id === t)!;
+  const fam = meta.family === "pro" ? 1000 : 100;
+  return fam + meta.durationDays;
+}
+
+export type PurchaseCheck =
+  | { kind: "block"; reason: string }
+  | { kind: "free"; reason: string }
+  | { kind: "charge" };
+
+/** Blocks unfair double-purchase, free-switches lateral/down moves. */
+export function checkPurchase(targetTier: Tier): PurchaseCheck {
+  const cur = getActiveTier();
+  if (!cur) return { kind: "charge" };
+  if (cur.tier === targetTier) {
+    const remainingMs = cur.expiresAt - Date.now();
+    if (remainingMs > 24 * 3600_000) {
+      const days = Math.ceil(remainingMs / 86400_000);
+      return {
+        kind: "block",
+        reason: `Already active for ~${days} more day${days === 1 ? "" : "s"}. Extension unlocks within 24h of expiry.`,
+      };
+    }
+    return { kind: "charge" };
+  }
+  if (tierRank(cur.tier) >= tierRank(targetTier)) {
+    return { kind: "free", reason: "Free switch — your current plan already covers this tier." };
+  }
+  return { kind: "charge" };
+}
+
+/** Switch tier without wallet debit, carrying remaining value proportionally. */
+export function switchTierFree(target: Tier, source: string) {
+  const cur = getActiveTier();
+  const tm = TIERS.find((t) => t.id === target)!;
+  if (!cur) {
+    write(K_TIER, { tier: target, expiresAt: Date.now() + tm.durationDays * 86400_000, source });
+    return;
+  }
+  const cm = TIERS.find((t) => t.id === cur.tier)!;
+  const remainingMs = Math.max(0, cur.expiresAt - Date.now());
+  const dailyCur = cm.hkd / cm.durationDays;
+  const dailyTarget = tm.hkd / tm.durationDays;
+  const ratio = dailyTarget > 0 ? dailyCur / dailyTarget : 1;
+  const carry = remainingMs * Math.max(0.1, ratio);
+  write(K_TIER, { tier: target, expiresAt: Date.now() + carry, source });
 }
 
 // ===== Cipher (mathematical scrambler) =========================================
@@ -148,8 +199,20 @@ export function verifyCipherToken(raw: string): Tier | null {
 // ===== Master license registry (admin Tab B) ===================================
 // Lines of "KEY=AMOUNT_HKD" or "KEY=tier:pro_monthly"
 export type MasterEntry = { key: string; kind: "wallet" | "tier"; amount?: number; tier?: Tier };
-export function getMasters(): MasterEntry[] {
+/** Only the locally-saved (device-only) master entries. */
+export function getLocalMasters(): MasterEntry[] {
   return read<MasterEntry[]>(K_MASTERS, []);
+}
+/** All effective masters = bundled BROADCAST + local. */
+export function getMasters(): MasterEntry[] {
+  const local = getLocalMasters();
+  const seen = new Set<string>();
+  return [...BROADCAST_MASTERS, ...local].filter((m) => {
+    const k = m.key.toUpperCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 export function setMasters(list: MasterEntry[]) {
   write(K_MASTERS, list);
@@ -183,7 +246,7 @@ export function setLocalPromos(list: GlobalPromo[]) {
 }
 export function allPromos(): GlobalPromo[] {
   const seen = new Set<string>();
-  const merge = [...GLOBAL_PROMOS, ...getLocalPromos()];
+  const merge = [...GLOBAL_PROMOS, ...BROADCAST_PROMOS, ...getLocalPromos()];
   return merge.filter((p) => {
     const k = p.code.toUpperCase();
     if (seen.has(k)) return false;
@@ -199,6 +262,14 @@ export function getRedeemed(): string[] {
 function markRedeemed(code: string) {
   const r = getRedeemed();
   if (!r.includes(code)) write(K_REDEEMED, [...r, code]);
+}
+/** Admin: forget a redeemed code so it can be reused for testing. */
+export function deleteRedeemed(code: string) {
+  write(K_REDEEMED, getRedeemed().filter((c) => c.toUpperCase() !== code.toUpperCase()));
+}
+/** Admin: wipe entire redemption log. */
+export function clearRedeemed() {
+  write(K_REDEEMED, []);
 }
 
 // ===== Code evaluation (the "Enter Code Here" gateway) =========================

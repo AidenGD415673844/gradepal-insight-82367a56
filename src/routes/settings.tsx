@@ -11,6 +11,7 @@ import { BackupRestore } from "@/components/grade/BackupRestore";
 import { createAutoSnapshot } from "@/lib/snapshots";
 import { useRef, useState } from "react";
 import { AdminCommandCenter } from "@/components/grade/AdminCommandCenter";
+import { UIDesignStudio } from "@/components/grade/UIDesignStudio";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -182,6 +183,7 @@ function SettingsPage() {
       </Card>
       <SnapshotManager />
       <BackupRestore />
+      <UIDesignStudio />
       </div>
       <AdminCommandCenter open={adminOpen} onOpenChange={setAdminOpen} />
     </AppShell>

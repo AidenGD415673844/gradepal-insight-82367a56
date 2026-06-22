@@ -6,6 +6,7 @@ import { Sparkles, ShieldAlert, Lock } from "lucide-react";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, filterByTerm } from "@/lib/grade-utils";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
+import { spendCredits, costFor } from "@/lib/ai-credits";
 
 /* ---------- Redundant-key obfuscated storage ------------------------ */
 
@@ -263,6 +264,12 @@ export function AIDeepGenerate({
       setError("Duplicate generation blocked. Please modify numerical grade values or change subjects before generating.");
       return;
     }
+    // AI Credit gate — charged only after every other validation passes.
+    const spend = spendCredits("ai_deep_generate");
+    if (!spend.ok) {
+      setError(`Not enough AI credits — need ${spend.need.toFixed(1)}, have ${spend.have.toFixed(1)}. Top up in the Pro Shop.`);
+      return;
+    }
     const text = composeReport({
       subject: course.name,
       teacher,
@@ -327,7 +334,7 @@ export function AIDeepGenerate({
         <Sparkles className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold">AI Deep Generate</h3>
         <span className="text-xs text-muted-foreground ml-auto">
-          {usedThisWeek}/3 this week · resets in {countdown}
+          {usedThisWeek}/3 this week · resets in {countdown} · {costFor("ai_deep_generate").toFixed(1)} cr/run
         </span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">

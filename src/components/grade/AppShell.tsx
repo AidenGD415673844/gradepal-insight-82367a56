@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, GraduationCap, CalendarRange } from "lucide-react";
 import { type ReactNode } from "react";
 import { SandboxFrame, SandboxToggle } from "@/components/grade/SandboxToggle";
+import { AICreditChip } from "@/components/grade/AICreditChip";
 
 export function AppShell({
   title,
@@ -39,6 +40,7 @@ export function AppShell({
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {actions}
+            <AICreditChip />
             <SandboxToggle />
             <Button variant="outline" size="sm" asChild className="gap-2">
               <Link to="/timetable">

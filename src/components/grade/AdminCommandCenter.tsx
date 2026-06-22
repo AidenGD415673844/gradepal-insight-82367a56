@@ -17,13 +17,17 @@ import {
   type Tier,
   generateCipherToken,
   getMasters,
+  getLocalMasters,
   parseMasterRegistry,
   setMasters,
   setLocalPromos,
   getLocalPromos,
+  getRedeemed,
+  deleteRedeemed,
+  clearRedeemed,
   K_SYSOP,
 } from "@/lib/premium";
-import { Shield, Copy, KeyRound, Lock, ScrollText, Megaphone } from "lucide-react";
+import { Shield, Copy, KeyRound, Lock, ScrollText, Megaphone, History, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 
 const REQUIRED_TOKEN = "SYSOP-LO6130-99X72-GLOBAL";
@@ -130,7 +134,7 @@ export function AdminCommandCenter({
           </div>
         ) : (
           <Tabs defaultValue="cipher" className="animate-fade-in">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="cipher" className="gap-1.5">
                 <KeyRound className="h-4 w-4" /> Cipher
               </TabsTrigger>
@@ -139,6 +143,9 @@ export function AdminCommandCenter({
               </TabsTrigger>
               <TabsTrigger value="promo" className="gap-1.5">
                 <Megaphone className="h-4 w-4" /> Promo Distributor
+              </TabsTrigger>
+              <TabsTrigger value="log" className="gap-1.5">
+                <History className="h-4 w-4" /> Log
               </TabsTrigger>
             </TabsList>
 
@@ -150,6 +157,9 @@ export function AdminCommandCenter({
             </TabsContent>
             <TabsContent value="promo" className="mt-4">
               <PromoTab />
+            </TabsContent>
+            <TabsContent value="log" className="mt-4">
+              <RedemptionLogTab />
             </TabsContent>
           </Tabs>
         )}
@@ -216,7 +226,7 @@ function CipherTab() {
 }
 
 function MasterTab() {
-  const existing = getMasters();
+  const existing = getLocalMasters();
   const [text, setText] = useState(
     existing
       .map((m) =>
@@ -224,11 +234,26 @@ function MasterTab() {
       )
       .join("\n"),
   );
+  const [snippet, setSnippet] = useState("");
 
   const save = () => {
     const parsed = parseMasterRegistry(text);
     setMasters(parsed);
     toast.success(`Saved ${parsed.length} master entr${parsed.length === 1 ? "y" : "ies"}.`);
+  };
+
+  const exportBroadcast = () => {
+    const parsed = parseMasterRegistry(text);
+    if (!parsed.length) return toast.error("Nothing to export — add rows above first.");
+    const lines = parsed.map((m) =>
+      m.kind === "tier"
+        ? `  { key: ${JSON.stringify(m.key)}, kind: "tier", tier: ${JSON.stringify(m.tier)} },`
+        : `  { key: ${JSON.stringify(m.key)}, kind: "wallet", amount: ${m.amount} },`,
+    );
+    const out = lines.join("\n");
+    setSnippet(out);
+    navigator.clipboard?.writeText(out).catch(() => undefined);
+    toast.success("Broadcast snippet copied — paste into BROADCAST_MASTERS.");
   };
 
   return (
@@ -245,9 +270,70 @@ function MasterTab() {
         className="font-mono text-xs"
         placeholder={"GOLDEN=tier:pro_annual\nVIP=50\nMOON=tier:student_monthly"}
       />
-      <Button onClick={save} className="gap-2">
-        <ScrollText className="h-4 w-4" /> Save Master Registry
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={save} className="gap-2">
+          <ScrollText className="h-4 w-4" /> Save Locally
+        </Button>
+        <Button onClick={exportBroadcast} variant="outline" className="gap-2">
+          <Download className="h-4 w-4" /> Export Global Broadcast Snippet
+        </Button>
+      </div>
+      {snippet && (
+        <div className="rounded-lg border bg-muted/40 p-3">
+          <div className="text-[11px] text-muted-foreground mb-1.5">
+            Paste into <code>src/lib/premium-broadcast.ts → BROADCAST_MASTERS</code>:
+          </div>
+          <pre className="text-xs font-mono whitespace-pre-wrap break-all">{snippet}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RedemptionLogTab() {
+  const [log, setLog] = useState<string[]>(() => getRedeemed());
+  const refresh = () => setLog(getRedeemed());
+
+  const remove = (code: string) => {
+    deleteRedeemed(code);
+    refresh();
+    toast.success(`Removed ${code} — it can be redeemed again.`);
+  };
+  const wipe = () => {
+    if (!confirm("Wipe entire redemption log? All codes become reusable again.")) return;
+    clearRedeemed();
+    refresh();
+    toast.success("Redemption log cleared.");
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Every code redeemed on this device. Delete an entry to let it be redeemed again
+        (useful for testing or undoing accidental redemptions).
+      </p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs text-muted-foreground">{log.length} entr{log.length === 1 ? "y" : "ies"}</div>
+        <Button variant="outline" size="sm" onClick={wipe} className="gap-1.5 text-destructive">
+          <Trash2 className="h-3.5 w-3.5" /> Wipe All
+        </Button>
+      </div>
+      {log.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-6 text-center text-xs text-muted-foreground">
+          No codes redeemed on this device yet.
+        </div>
+      ) : (
+        <div className="border rounded-lg divide-y bg-muted/30 max-h-72 overflow-y-auto">
+          {log.map((c) => (
+            <div key={c} className="flex items-center justify-between p-2.5 font-mono text-xs">
+              <span className="truncate">{c}</span>
+              <Button variant="ghost" size="sm" onClick={() => remove(c)} className="h-7 gap-1">
+                <Trash2 className="h-3 w-3" /> Delete
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

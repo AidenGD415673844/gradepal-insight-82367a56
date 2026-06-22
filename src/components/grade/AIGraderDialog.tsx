@@ -14,6 +14,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { gradeWork } from "@/lib/ai-grader.functions";
 import { toast } from "sonner";
 import { useGrades } from "@/lib/grade-store";
+import { spendCredits, costFor } from "@/lib/ai-credits";
+import { Link } from "@tanstack/react-router";
 
 type Result = {
   score: number;
@@ -101,6 +103,14 @@ export function AIGraderDialog({
       toast.error("You have reached the limit for the week. Resets every Sunday 5AM HKT.");
       return;
     }
+    // AI Credit gate (variable cost per feature)
+    const spend = spendCredits("ai_grader");
+    if (!spend.ok) {
+      toast.error(
+        `Not enough AI credits — need ${spend.need.toFixed(1)}, have ${spend.have.toFixed(1)}. Top up in the Pro Shop.`,
+      );
+      return;
+    }
     setLoading(true);
     setResult(null);
     try {
@@ -148,6 +158,10 @@ export function AIGraderDialog({
           {remaining === 0
             ? "You have reached the limit for the week. The quota resets every Sunday at 5AM HKT."
             : `${remaining} of ${AI_LIMIT} AI grading messages remaining this week (resets Sunday 5AM HKT).`}
+        </div>
+        <div className="text-[11px] text-muted-foreground px-3">
+          Cost: <b>{costFor("ai_grader").toFixed(1)} credits</b> per grading run.{" "}
+          <Link to="/shop" className="underline text-primary">Top up</Link>
         </div>
         <div className="space-y-3">
           <div>
