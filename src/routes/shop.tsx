@@ -12,6 +12,10 @@ import {
   usePremium,
   spendWallet,
   activateTier,
+  switchTierFree,
+  checkPurchase,
+  verifyCipherToken,
+  getMasters,
   redeemCode,
   WALLET_CAP,
 } from "@/lib/premium";
@@ -23,6 +27,7 @@ import {
   Sparkles,
   Phone,
   GraduationCap,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,8 +53,21 @@ function TierCard({ meta }: { meta: TierMeta }) {
   const { wallet, tier } = usePremium();
   const active = tier?.tier === meta.id;
   const canAfford = wallet >= meta.hkd;
+  const check = checkPurchase(meta.id);
+  const isFreeSwitch = check.kind === "free";
+  const isBlocked = check.kind === "block";
 
   const buy = () => {
+    const c = checkPurchase(meta.id);
+    if (c.kind === "block") {
+      toast.error(c.reason);
+      return;
+    }
+    if (c.kind === "free") {
+      switchTierFree(meta.id, "wallet-switch");
+      toast.success(`Switched to ${meta.label} — no charge (carried over remaining value).`);
+      return;
+    }
     if (!spendWallet(meta.hkd)) {
       toast.error(`Need $${meta.hkd.toFixed(2)} HKD — wallet has $${wallet.toFixed(2)}.`);
       return;
@@ -74,6 +92,7 @@ function TierCard({ meta }: { meta: TierMeta }) {
           <div className="font-bold text-base">{meta.label}</div>
         </div>
         {active && <Badge className="bg-primary">Active</Badge>}
+        {isFreeSwitch && !active && <Badge variant="secondary" className="text-[10px]">Free switch</Badge>}
       </div>
       <div className="text-3xl font-extrabold tabular-nums">
         ${meta.hkd}
@@ -84,15 +103,72 @@ function TierCard({ meta }: { meta: TierMeta }) {
         {meta.durationDays === 30 && "Billed monthly · 30-day access."}
         {meta.durationDays === 365 && "Best value · full 365 days."}
       </div>
+      {isBlocked && (
+        <div className="text-[11px] rounded-md bg-warning/10 border border-warning/30 text-warning-foreground p-1.5">
+          {check.reason}
+        </div>
+      )}
       <Button
         onClick={buy}
-        disabled={!canAfford}
+        disabled={isBlocked || (check.kind === "charge" && !canAfford)}
         size="sm"
         className="gap-2 mt-auto transition-transform active:scale-95"
+        variant={isFreeSwitch ? "outline" : "default"}
       >
         <Wallet className="h-4 w-4" />
-        Purchase Using Wallet Balance
+        {isFreeSwitch ? "Switch For Free" : "Purchase Using Wallet"}
       </Button>
+    </Card>
+  );
+}
+
+function DeveloperCodeBox() {
+  const [code, setCode] = useState("");
+
+  const apply = () => {
+    const raw = code.trim().toUpperCase();
+    if (!raw) {
+      toast.error("Enter the code your developer gave you.");
+      return;
+    }
+    // Accept only cipher tokens + master keys (no public promo words here).
+    const cipher = verifyCipherToken(raw);
+    const master = getMasters().find((m) => m.key.toUpperCase() === raw);
+    if (!cipher && !master) {
+      toast.error("This input only accepts developer-issued subscription codes.");
+      return;
+    }
+    const r = redeemCode(raw);
+    if (r.ok) {
+      toast.success(r.message);
+      setCode("");
+    } else {
+      toast.error(r.message);
+    }
+  };
+
+  return (
+    <Card className="p-5 space-y-3 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/5 border-violet-500/30">
+      <div className="flex items-center gap-2">
+        <KeyRound className="h-5 w-5 text-violet-600" />
+        <h3 className="font-bold text-base">Enter Code Given By Developer</h3>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Redeem a private subscription key issued directly to you. For promo words and
+        wallet credits, use the standard code box below.
+      </p>
+      <div className="flex gap-2">
+        <Input
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="GP-XX-XXXXXX-XXXX  or  master key"
+          onKeyDown={(e) => e.key === "Enter" && apply()}
+          className="font-mono uppercase"
+        />
+        <Button onClick={apply} className="gap-2 transition-transform active:scale-95">
+          <CheckCircle2 className="h-4 w-4" /> Redeem
+        </Button>
+      </div>
     </Card>
   );
 }
