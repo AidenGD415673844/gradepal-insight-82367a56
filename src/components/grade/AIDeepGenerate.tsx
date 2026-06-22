@@ -241,12 +241,6 @@ export function AIDeepGenerate({
       setError(`Weekly limit reached. Resets in ${countdown}.`);
       return;
     }
-    // AI Credit gate
-    const spend = spendCredits("ai_deep_generate");
-    if (!spend.ok) {
-      setError(`Not enough AI credits — need ${spend.need.toFixed(1)}, have ${spend.have.toFixed(1)}. Top up in the Pro Shop.`);
-      return;
-    }
     const course = courses.find((c) => c.id === target);
     if (!course) {
       setError("Pick a subject first.");
@@ -268,6 +262,12 @@ export function AIDeepGenerate({
     const lastEntry = log.entries[log.entries.length - 1];
     if (lastEntry && lastEntry.hash === hash) {
       setError("Duplicate generation blocked. Please modify numerical grade values or change subjects before generating.");
+      return;
+    }
+    // AI Credit gate — charged only after every other validation passes.
+    const spend = spendCredits("ai_deep_generate");
+    if (!spend.ok) {
+      setError(`Not enough AI credits — need ${spend.need.toFixed(1)}, have ${spend.have.toFixed(1)}. Top up in the Pro Shop.`);
       return;
     }
     const text = composeReport({
