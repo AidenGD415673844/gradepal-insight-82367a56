@@ -11,6 +11,8 @@ import {
 import { GradeProvider } from "@/lib/grade-store";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
+import { useEffect } from "react";
+import { applyThemeProfile, getThemeProfile } from "@/lib/theme-profiles";
 
 import appCss from "../styles.css?url";
 
@@ -100,6 +102,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    applyThemeProfile(getThemeProfile());
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <GradeProvider>
