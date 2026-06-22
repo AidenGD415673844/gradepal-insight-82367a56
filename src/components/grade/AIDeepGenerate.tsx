@@ -334,7 +334,7 @@ export function AIDeepGenerate({
         <Sparkles className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold">AI Deep Generate</h3>
         <span className="text-xs text-muted-foreground ml-auto">
-          {usedThisWeek}/3 this week · resets in {countdown}
+          {usedThisWeek}/3 this week · resets in {countdown} · {costFor("ai_deep_generate").toFixed(1)} cr/run
         </span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
