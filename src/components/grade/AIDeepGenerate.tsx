@@ -6,6 +6,7 @@ import { Sparkles, ShieldAlert, Lock } from "lucide-react";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, filterByTerm } from "@/lib/grade-utils";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
+import { spendCredits, costFor } from "@/lib/ai-credits";
 
 /* ---------- Redundant-key obfuscated storage ------------------------ */
 
@@ -238,6 +239,12 @@ export function AIDeepGenerate({
     }
     if (limitReached) {
       setError(`Weekly limit reached. Resets in ${countdown}.`);
+      return;
+    }
+    // AI Credit gate
+    const spend = spendCredits("ai_deep_generate");
+    if (!spend.ok) {
+      setError(`Not enough AI credits — need ${spend.need.toFixed(1)}, have ${spend.have.toFixed(1)}. Top up in the Pro Shop.`);
       return;
     }
     const course = courses.find((c) => c.id === target);
