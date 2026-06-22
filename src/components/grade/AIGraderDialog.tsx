@@ -14,6 +14,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { gradeWork } from "@/lib/ai-grader.functions";
 import { toast } from "sonner";
 import { useGrades } from "@/lib/grade-store";
+import { spendCredits, costFor } from "@/lib/ai-credits";
+import { Link } from "@tanstack/react-router";
 
 type Result = {
   score: number;
@@ -99,6 +101,14 @@ export function AIGraderDialog({
     if (fresh.count >= AI_LIMIT) {
       setQuota(fresh);
       toast.error("You have reached the limit for the week. Resets every Sunday 5AM HKT.");
+      return;
+    }
+    // AI Credit gate (variable cost per feature)
+    const spend = spendCredits("ai_grader");
+    if (!spend.ok) {
+      toast.error(
+        `Not enough AI credits — need ${spend.need.toFixed(1)}, have ${spend.have.toFixed(1)}. Top up in the Pro Shop.`,
+      );
       return;
     }
     setLoading(true);
