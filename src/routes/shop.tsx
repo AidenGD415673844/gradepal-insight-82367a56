@@ -285,6 +285,7 @@ function ShopPage() {
         </div>
 
         <CodeBox />
+        <DeveloperCodeBox />
 
         <Card className="p-5 bg-gradient-to-br from-indigo-500/10 to-blue-500/5 border-indigo-500/30">
           <div className="flex items-start gap-3">
