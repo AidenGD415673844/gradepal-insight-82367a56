@@ -19,7 +19,7 @@ import {
   updateCriterion,
   useCriteriaList,
 } from "@/lib/criteria-store";
-import { Plus, Trash2, Save, Lock, LogOut, BadgeCheck, Award } from "lucide-react";
+import { Plus, Trash2, Save, Lock, LogOut, BadgeCheck, Award, Copy } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
@@ -190,6 +190,15 @@ function CriterionCard({
     )
       return;
     removeCriterion(criterion.id);
+  };
+
+  const handleDuplicate = () => {
+    addCriterion({
+      title: `${criterion.title} (copy)`,
+      description: criterion.description,
+      grades: criterion.grades.map((g) => ({ ...g })),
+    });
+    toast.success("Criterion duplicated.");
   };
 
   return (
@@ -379,6 +388,14 @@ function CriterionCard({
           >
             <Trash2 className="h-3.5 w-3.5" />{" "}
             {criterion.preset ? "Delete preset" : "Delete"}
+          </Button>
+          <Button
+            onClick={handleDuplicate}
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+          >
+            <Copy className="h-3.5 w-3.5" /> Duplicate
           </Button>
         </div>
       )}
