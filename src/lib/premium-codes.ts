@@ -11,6 +11,7 @@ export type GlobalPromo = {
 
 export const GLOBAL_PROMOS: GlobalPromo[] = [
   { code: "WELCOME3", hkd: 3, note: "Sign-up bonus" },
-  { code: "UPDATEADMIN", hkd: 3, note: "Update bonus" },
-  { code: "SKUNK0613", hkd: 20, note: "21/6/26 code" },
+  { code: "UPDATEPHASEA", hkd: 1, note: "Update bonus" },
+  { code: "GRADECALC", hkd: 3, note: "Cool bonus" },
+  { code: "SUMMER2026", hkd: 5, note: "Summer promo" },
 ];
