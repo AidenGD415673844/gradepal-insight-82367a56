@@ -159,6 +159,10 @@ export function AIGraderDialog({
             ? "You have reached the limit for the week. The quota resets every Sunday at 5AM HKT."
             : `${remaining} of ${AI_LIMIT} AI grading messages remaining this week (resets Sunday 5AM HKT).`}
         </div>
+        <div className="text-[11px] text-muted-foreground px-3">
+          Cost: <b>{costFor("ai_grader").toFixed(1)} credits</b> per grading run.{" "}
+          <Link to="/shop" className="underline text-primary">Top up</Link>
+        </div>
         <div className="space-y-3">
           <div>
             <Label>Rubric (optional)</Label>
