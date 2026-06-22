@@ -45,6 +45,7 @@ function InboxPage() {
   const { inbox } = usePeerNetwork();
   const { tasks } = useGrades();
   const [openReview, setOpenReview] = useState<WeeklyReview | null>(null);
+  const [filter, setFilter] = useState<"all" | "unread" | "weekly" | "sync">("all");
 
   if (openReview) {
     return (
@@ -59,7 +60,7 @@ function InboxPage() {
 
   return (
     <AppShell title="Local Inbox">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
         <Button
           size="sm"
           variant="outline"
@@ -72,6 +73,21 @@ function InboxPage() {
         >
           <RefreshCw className="h-4 w-4" /> Generate Weekly Review Now
         </Button>
+        <div className="ml-auto flex items-center gap-1 text-xs">
+          {(["all", "unread", "weekly", "sync"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-2.5 py-1 rounded-full border transition-all capitalize ${
+                filter === f
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card hover:bg-muted border-border"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
       </div>
       <Card className="p-5">
         <div className="flex items-center gap-2 mb-3">
