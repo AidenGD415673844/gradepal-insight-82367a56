@@ -19,11 +19,13 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedReportsRouteImport } from './routes/saved-reports'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PeersRouteImport } from './routes/peers'
+import { Route as NotebookRouteImport } from './routes/notebook'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as GradesRouteImport } from './routes/grades'
 import { Route as ForecastingRouteImport } from './routes/forecasting'
 import { Route as CriteriaRouteImport } from './routes/criteria'
 import { Route as ChangelogRouteImport } from './routes/changelog'
+import { Route as AiAnalyserRouteImport } from './routes/ai-analyser'
 import { Route as AdvancedRouteImport } from './routes/advanced'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -77,6 +79,11 @@ const PeersRoute = PeersRouteImport.update({
   path: '/peers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotebookRoute = NotebookRouteImport.update({
+  id: '/notebook',
+  path: '/notebook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InboxRoute = InboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
@@ -102,6 +109,11 @@ const ChangelogRoute = ChangelogRouteImport.update({
   path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiAnalyserRoute = AiAnalyserRouteImport.update({
+  id: '/ai-analyser',
+  path: '/ai-analyser',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdvancedRoute = AdvancedRouteImport.update({
   id: '/advanced',
   path: '/advanced',
@@ -116,11 +128,13 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
+  '/ai-analyser': typeof AiAnalyserRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
   '/inbox': typeof InboxRoute
+  '/notebook': typeof NotebookRoute
   '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
@@ -135,11 +149,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
+  '/ai-analyser': typeof AiAnalyserRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
   '/inbox': typeof InboxRoute
+  '/notebook': typeof NotebookRoute
   '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
@@ -155,11 +171,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
+  '/ai-analyser': typeof AiAnalyserRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
   '/inbox': typeof InboxRoute
+  '/notebook': typeof NotebookRoute
   '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
@@ -176,11 +194,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/advanced'
+    | '/ai-analyser'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
     | '/grades'
     | '/inbox'
+    | '/notebook'
     | '/peers'
     | '/reports'
     | '/saved-reports'
@@ -195,11 +215,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/advanced'
+    | '/ai-analyser'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
     | '/grades'
     | '/inbox'
+    | '/notebook'
     | '/peers'
     | '/reports'
     | '/saved-reports'
@@ -214,11 +236,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/advanced'
+    | '/ai-analyser'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
     | '/grades'
     | '/inbox'
+    | '/notebook'
     | '/peers'
     | '/reports'
     | '/saved-reports'
@@ -234,11 +258,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdvancedRoute: typeof AdvancedRoute
+  AiAnalyserRoute: typeof AiAnalyserRoute
   ChangelogRoute: typeof ChangelogRoute
   CriteriaRoute: typeof CriteriaRoute
   ForecastingRoute: typeof ForecastingRoute
   GradesRoute: typeof GradesRoute
   InboxRoute: typeof InboxRoute
+  NotebookRoute: typeof NotebookRoute
   PeersRoute: typeof PeersRoute
   ReportsRoute: typeof ReportsRoute
   SavedReportsRoute: typeof SavedReportsRoute
@@ -323,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PeersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notebook': {
+      id: '/notebook'
+      path: '/notebook'
+      fullPath: '/notebook'
+      preLoaderRoute: typeof NotebookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inbox': {
       id: '/inbox'
       path: '/inbox'
@@ -358,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-analyser': {
+      id: '/ai-analyser'
+      path: '/ai-analyser'
+      fullPath: '/ai-analyser'
+      preLoaderRoute: typeof AiAnalyserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/advanced': {
       id: '/advanced'
       path: '/advanced'
@@ -378,11 +418,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdvancedRoute: AdvancedRoute,
+  AiAnalyserRoute: AiAnalyserRoute,
   ChangelogRoute: ChangelogRoute,
   CriteriaRoute: CriteriaRoute,
   ForecastingRoute: ForecastingRoute,
   GradesRoute: GradesRoute,
   InboxRoute: InboxRoute,
+  NotebookRoute: NotebookRoute,
   PeersRoute: PeersRoute,
   ReportsRoute: ReportsRoute,
   SavedReportsRoute: SavedReportsRoute,
@@ -397,13 +439,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { applyThemeProfile, getThemeProfile } from "@/lib/theme-profiles";
 
 import appCss from "../styles.css?url";
+import katexCss from "katex/dist/katex.min.css?url";
 
 function NotFoundComponent() {
   return (
@@ -80,7 +81,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "stylesheet", href: katexCss },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

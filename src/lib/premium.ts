@@ -125,6 +125,8 @@ export type PurchaseCheck =
 export function checkPurchase(targetTier: Tier): PurchaseCheck {
   const cur = getActiveTier();
   if (!cur) return { kind: "charge" };
+  const curMeta = TIERS.find((t) => t.id === cur.tier)!;
+  const tarMeta = TIERS.find((t) => t.id === targetTier)!;
   if (cur.tier === targetTier) {
     const remainingMs = cur.expiresAt - Date.now();
     if (remainingMs > 24 * 3600_000) {
@@ -136,8 +138,16 @@ export function checkPurchase(targetTier: Tier): PurchaseCheck {
     }
     return { kind: "charge" };
   }
+  // Cross-family swaps (Pro ↔ Student) are blocked. Avoids the bug where a
+  // Pro-Monthly holder could lateral-jump into Student-Annual for free.
+  if (curMeta.family !== tarMeta.family) {
+    return {
+      kind: "block",
+      reason: `You're on ${curMeta.label}. Cannot cross over to a different plan family — wait for it to expire or contact the developer.`,
+    };
+  }
   if (tierRank(cur.tier) >= tierRank(targetTier)) {
-    return { kind: "free", reason: "Free switch — your current plan already covers this tier." };
+    return { kind: "free", reason: "Free switch within your current plan family." };
   }
   return { kind: "charge" };
 }

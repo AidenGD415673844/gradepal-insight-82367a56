@@ -14,7 +14,8 @@ export type RTCHealth = {
 export type RTCEnvelope =
   | { kind: "chat"; text: string; from: string; ts: number }
   | { kind: "ping"; ts: number }
-  | { kind: "pong"; ts: number };
+  | { kind: "pong"; ts: number }
+  | { kind: "notes_payload"; folderName: string; from: string; ts: number; data: string };
 
 type Listener = (env: RTCEnvelope) => void;
 

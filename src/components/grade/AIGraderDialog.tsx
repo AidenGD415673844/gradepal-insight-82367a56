@@ -14,7 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { gradeWork } from "@/lib/ai-grader.functions";
 import { toast } from "sonner";
 import { useGrades } from "@/lib/grade-store";
-import { spendCredits, costFor } from "@/lib/ai-credits";
+import { spendCredits, estimateCost } from "@/lib/ai-credits";
 import { Link } from "@tanstack/react-router";
 
 type Result = {
@@ -24,48 +24,6 @@ type Result = {
   strengths: string[];
   improvements: string[];
 };
-
-const AI_QUOTA_KEY = "gradecalc-ai-grader-quota-v1";
-const AI_LIMIT = 15;
-
-/**
- * Compute the most-recent reset boundary: Sunday 05:00 in Hong Kong time
- * (HKT = UTC+8). Returns a UTC timestamp (ms). Counts in localStorage that
- * pre-date this boundary are wiped.
- */
-function currentWeekKey(): string {
-  const now = new Date();
-  const hkt = new Date(now.getTime() + 8 * 60 * 60 * 1000); // shift to HKT wallclock
-  const day = hkt.getUTCDay(); // 0..6 in HKT
-  const hour = hkt.getUTCHours();
-  const daysSinceSunday = day; // 0 if today is Sun
-  // If today is Sunday and HKT-hour < 5, the active window still belongs to last week.
-  const offsetDays = day === 0 && hour < 5 ? 7 : daysSinceSunday;
-  const boundary = new Date(hkt);
-  boundary.setUTCDate(hkt.getUTCDate() - offsetDays);
-  boundary.setUTCHours(5, 0, 0, 0);
-  return boundary.toISOString().slice(0, 10);
-}
-
-function readQuota(): { week: string; count: number } {
-  if (typeof window === "undefined") return { week: currentWeekKey(), count: 0 };
-  try {
-    const raw = localStorage.getItem(AI_QUOTA_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.week === currentWeekKey()) return parsed;
-    }
-  } catch {}
-  return { week: currentWeekKey(), count: 0 };
-}
-
-function bumpQuota(): { week: string; count: number } {
-  if (typeof window === "undefined") return { week: currentWeekKey(), count: 0 };
-  const q = readQuota();
-  const next = { week: q.week, count: q.count + 1 };
-  localStorage.setItem(AI_QUOTA_KEY, JSON.stringify(next));
-  return next;
-}
 
 export function AIGraderDialog({
   open,
@@ -79,7 +37,6 @@ export function AIGraderDialog({
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
-  const [quota, setQuota] = useState(() => readQuota());
   const fileRef = useRef<HTMLInputElement>(null);
   const grade = useServerFn(gradeWork);
   const { scale } = useGrades();
@@ -90,21 +47,21 @@ export function AIGraderDialog({
     reader.readAsDataURL(file);
   };
 
-  const remaining = Math.max(0, AI_LIMIT - quota.count);
+  const cost = estimateCost("ai_grader", {
+    chars: (text?.length ?? 0) + (rubric?.length ?? 0),
+    hasImage: !!imageDataUrl,
+  });
 
   const run = async () => {
     if (!text && !imageDataUrl) {
       toast.error("Provide text or an image");
       return;
     }
-    const fresh = readQuota();
-    if (fresh.count >= AI_LIMIT) {
-      setQuota(fresh);
-      toast.error("You have reached the limit for the week. Resets every Sunday 5AM HKT.");
-      return;
-    }
-    // AI Credit gate (variable cost per feature)
-    const spend = spendCredits("ai_grader");
+    // AI Credit gate — variable cost scaled by amount of work.
+    const spend = spendCredits("ai_grader", {
+      chars: (text?.length ?? 0) + (rubric?.length ?? 0),
+      hasImage: !!imageDataUrl,
+    });
     if (!spend.ok) {
       toast.error(
         `Not enough AI credits — need ${spend.need.toFixed(1)}, have ${spend.have.toFixed(1)}. Top up in the Pro Shop.`,
@@ -128,7 +85,6 @@ export function AIGraderDialog({
         },
       });
       setResult(r);
-      setQuota(bumpQuota());
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI grading failed");
     } finally {
@@ -148,19 +104,8 @@ export function AIGraderDialog({
         <p className="text-sm text-muted-foreground">
           Upload student work as text or image and get an AI-generated grade with feedback.
         </p>
-        <div
-          className={`text-xs px-3 py-2 rounded-lg border ${
-            remaining === 0
-              ? "bg-destructive/10 border-destructive/30 text-destructive"
-              : "bg-muted/40 border-border"
-          }`}
-        >
-          {remaining === 0
-            ? "You have reached the limit for the week. The quota resets every Sunday at 5AM HKT."
-            : `${remaining} of ${AI_LIMIT} AI grading messages remaining this week (resets Sunday 5AM HKT).`}
-        </div>
         <div className="text-[11px] text-muted-foreground px-3">
-          Cost: <b>{costFor("ai_grader").toFixed(1)} credits</b> per grading run.{" "}
+          Estimated cost: <b>{cost.toFixed(1)} credits</b> (scales with input length).{" "}
           <Link to="/shop" className="underline text-primary">Top up</Link>
         </div>
         <div className="space-y-3">
@@ -204,7 +149,7 @@ export function AIGraderDialog({
               <img src={imageDataUrl} alt="" className="mt-2 max-h-40 rounded-lg border" />
             )}
           </div>
-          <Button onClick={run} disabled={loading || remaining === 0} className="w-full" size="lg">
+          <Button onClick={run} disabled={loading} className="w-full" size="lg">
             {loading ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Grading…</>
             ) : (

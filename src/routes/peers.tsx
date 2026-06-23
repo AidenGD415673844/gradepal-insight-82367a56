@@ -51,6 +51,7 @@ import {
   sendGroupMessage,
   leaveGroup,
 } from "@/lib/group-chat";
+import { SyndicateCanvas } from "@/components/grade/SyndicateCanvas";
 
 export const Route = createFileRoute("/peers")({
   head: () => ({
@@ -99,6 +100,14 @@ function PeersPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <MyTokenCard token={token} meName={meName} setMeName={setMeName} />
           <AddPeerCard />
+          <div className="lg:col-span-2">
+            <SyndicateCanvas
+              meName={meName || "You"}
+              meBullets={me.bullets}
+              meColor={me.color}
+              peers={friends.filter((f) => f.status === "accepted")}
+            />
+          </div>
           <div className="lg:col-span-2">
             <PeerList
               friends={friends}

@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import {
   TIERS,
-  type Tier,
   type TierMeta,
   usePremium,
   spendWallet,
@@ -19,6 +18,7 @@ import {
   redeemCode,
   WALLET_CAP,
 } from "@/lib/premium";
+import { grantCredits } from "@/lib/ai-credits";
 import {
   Crown,
   Wallet,
@@ -28,6 +28,7 @@ import {
   Phone,
   GraduationCap,
   KeyRound,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -287,6 +288,8 @@ function ShopPage() {
         <CodeBox />
         <DeveloperCodeBox />
 
+        <TopUpsCard />
+
         <Card className="p-5 bg-gradient-to-br from-indigo-500/10 to-blue-500/5 border-indigo-500/30">
           <div className="flex items-start gap-3">
             <Phone className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
@@ -311,5 +314,67 @@ function ShopPage() {
         </Card>
       </div>
     </AppShell>
+  );
+}
+
+// =============================================================================
+// Top-Ups — credit packs purchased with wallet HKD. Separate from subscription
+// pricing per user spec: 10→$10, 20→$20, 50→$45, 75→$70, 100→$90, 150→$130.
+// =============================================================================
+
+const TOPUP_PACKS: { credits: number; hkd: number }[] = [
+  { credits: 10, hkd: 10 },
+  { credits: 20, hkd: 20 },
+  { credits: 50, hkd: 45 },
+  { credits: 75, hkd: 70 },
+  { credits: 100, hkd: 90 },
+  { credits: 150, hkd: 130 },
+];
+
+function TopUpsCard() {
+  const { wallet } = usePremium();
+  return (
+    <Card className="p-5 bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 border-emerald-500/30">
+      <div className="flex items-center gap-2 mb-1">
+        <Zap className="h-5 w-5 text-emerald-600" />
+        <h3 className="font-bold text-base">AI Credit Top-Ups</h3>
+        <Badge variant="outline" className="ml-auto text-[10px]">Optional · stacks on any plan</Badge>
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">
+        Buy extra AI credits with your referral wallet. Stack on top of a Pro/Student plan, or use standalone.
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {TOPUP_PACKS.map((p) => {
+          const perUnit = (p.hkd / p.credits).toFixed(2);
+          const afford = wallet >= p.hkd;
+          const buy = () => {
+            if (!spendWallet(p.hkd)) {
+              toast.error(`Need $${p.hkd} HKD — wallet has $${wallet.toFixed(2)}.`);
+              return;
+            }
+            grantCredits(p.credits);
+            toast.success(`+${p.credits} AI credits added!`);
+          };
+          return (
+            <button
+              key={p.credits}
+              type="button"
+              disabled={!afford}
+              onClick={buy}
+              className={`text-left rounded-xl border p-3 transition-all hover:-translate-y-0.5 ${
+                afford ? "bg-card hover:shadow-md border-emerald-500/30" : "bg-muted/30 opacity-60 cursor-not-allowed"
+              }`}
+            >
+              <div className="text-2xl font-extrabold tabular-nums text-emerald-700 dark:text-emerald-300">
+                +{p.credits}
+                <span className="text-xs font-semibold text-muted-foreground"> credits</span>
+              </div>
+              <div className="text-sm font-bold mt-1">${p.hkd} HKD</div>
+              <div className="text-[10px] text-muted-foreground">${perUnit} per credit</div>
+            </button>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
