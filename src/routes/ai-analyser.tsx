@@ -14,8 +14,6 @@ import { Sparkles, Send, Loader2, Trash2, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 
-export const aiApiKey = import.meta.env.VITE_AI_API_KEY;
-
 type Msg = { role: "user" | "assistant"; content: string; ts: number };
 
 const K = "gradecalc_ai_pro_chat_v1";
@@ -37,10 +35,7 @@ export const Route = createFileRoute("/ai-analyser")({
           "Conversational AI that reads your full grade dataset to deliver homework help, trend analysis, and strategic study advice.",
       },
       { property: "og:title", content: "AI Pro Analyser & Helper" },
-      {
-        property: "og:description",
-        content: "Personal AI tutor with full visibility into your grades, terms and trends.",
-      },
+      { property: "og:description", content: "Personal AI tutor with full visibility into your grades, terms and trends." },
       { property: "og:url", content: "https://gradepal-insight.lovable.app/ai-analyser" },
     ],
     links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/ai-analyser" }],
@@ -162,7 +157,9 @@ function AIAnalyserPage() {
               <div
                 key={i}
                 className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
-                  m.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "bg-muted/60"
+                  m.role === "user"
+                    ? "ml-auto bg-primary text-primary-foreground"
+                    : "bg-muted/60"
                 }`}
               >
                 {m.content}
@@ -192,10 +189,7 @@ function AIAnalyserPage() {
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] text-muted-foreground">
-                ~{cost.toFixed(1)} credits ·{" "}
-                <Link to="/shop" className="underline text-primary">
-                  Top up
-                </Link>
+                ~{cost.toFixed(1)} credits · <Link to="/shop" className="underline text-primary">Top up</Link>
               </span>
               <Button size="sm" onClick={() => send(input)} disabled={loading || !input.trim()} className="gap-2">
                 <Send className="h-4 w-4" /> Send
