@@ -268,7 +268,7 @@ export function AIDeepGenerate({
     const spend = spendCredits("ai_deep_generate", {
       chars: course.name.length + teacher.length + cur.length * 8,
       items: cur.length,
-      depth: hasPrevTermComparison(prev),
+      depth: prev.length > 0 ? 1 : 0,
     });
     if (!spend.ok) {
       setError(`Not enough AI credits — need ${spend.need.toFixed(1)}, have ${spend.have.toFixed(1)}. Top up in the Pro Shop.`);
