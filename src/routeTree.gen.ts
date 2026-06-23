@@ -19,6 +19,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedReportsRouteImport } from './routes/saved-reports'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PeersRouteImport } from './routes/peers'
+import { Route as NotebookRouteImport } from './routes/notebook'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as GradesRouteImport } from './routes/grades'
 import { Route as ForecastingRouteImport } from './routes/forecasting'
@@ -77,6 +78,11 @@ const PeersRoute = PeersRouteImport.update({
   path: '/peers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotebookRoute = NotebookRouteImport.update({
+  id: '/notebook',
+  path: '/notebook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InboxRoute = InboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
   '/inbox': typeof InboxRoute
+  '/notebook': typeof NotebookRoute
   '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
   '/inbox': typeof InboxRoute
+  '/notebook': typeof NotebookRoute
   '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/forecasting': typeof ForecastingRoute
   '/grades': typeof GradesRoute
   '/inbox': typeof InboxRoute
+  '/notebook': typeof NotebookRoute
   '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
   '/saved-reports': typeof SavedReportsRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/forecasting'
     | '/grades'
     | '/inbox'
+    | '/notebook'
     | '/peers'
     | '/reports'
     | '/saved-reports'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/forecasting'
     | '/grades'
     | '/inbox'
+    | '/notebook'
     | '/peers'
     | '/reports'
     | '/saved-reports'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/forecasting'
     | '/grades'
     | '/inbox'
+    | '/notebook'
     | '/peers'
     | '/reports'
     | '/saved-reports'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   ForecastingRoute: typeof ForecastingRoute
   GradesRoute: typeof GradesRoute
   InboxRoute: typeof InboxRoute
+  NotebookRoute: typeof NotebookRoute
   PeersRoute: typeof PeersRoute
   ReportsRoute: typeof ReportsRoute
   SavedReportsRoute: typeof SavedReportsRoute
@@ -323,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PeersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notebook': {
+      id: '/notebook'
+      path: '/notebook'
+      fullPath: '/notebook'
+      preLoaderRoute: typeof NotebookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inbox': {
       id: '/inbox'
       path: '/inbox'
@@ -383,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForecastingRoute: ForecastingRoute,
   GradesRoute: GradesRoute,
   InboxRoute: InboxRoute,
+  NotebookRoute: NotebookRoute,
   PeersRoute: PeersRoute,
   ReportsRoute: ReportsRoute,
   SavedReportsRoute: SavedReportsRoute,
