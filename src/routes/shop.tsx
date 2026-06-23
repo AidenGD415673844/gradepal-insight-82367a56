@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import {
   TIERS,
-  type Tier,
   type TierMeta,
   usePremium,
   spendWallet,
