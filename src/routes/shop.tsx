@@ -19,6 +19,7 @@ import {
   redeemCode,
   WALLET_CAP,
 } from "@/lib/premium";
+import { grantCredits } from "@/lib/ai-credits";
 import {
   Crown,
   Wallet,
@@ -28,6 +29,7 @@ import {
   Phone,
   GraduationCap,
   KeyRound,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -230,6 +232,11 @@ function ShopPage() {
   const pro = TIERS.filter((t) => t.family === "pro");
   const student = TIERS.filter((t) => t.family === "student");
 
+  return ShopBody({ wallet, tier, pro, student });
+}
+
+function ShopBody({ wallet, tier, pro, student }: { wallet: number; tier: ReturnType<typeof usePremium>["tier"]; pro: TierMeta[]; student: TierMeta[] }) {
+
   return (
     <AppShell title="GradePal Pro Shop">
       <div className="space-y-5">
@@ -286,6 +293,8 @@ function ShopPage() {
 
         <CodeBox />
         <DeveloperCodeBox />
+
+        <TopUpsCard />
 
         <Card className="p-5 bg-gradient-to-br from-indigo-500/10 to-blue-500/5 border-indigo-500/30">
           <div className="flex items-start gap-3">

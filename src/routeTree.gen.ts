@@ -25,6 +25,7 @@ import { Route as GradesRouteImport } from './routes/grades'
 import { Route as ForecastingRouteImport } from './routes/forecasting'
 import { Route as CriteriaRouteImport } from './routes/criteria'
 import { Route as ChangelogRouteImport } from './routes/changelog'
+import { Route as AiAnalyserRouteImport } from './routes/ai-analyser'
 import { Route as AdvancedRouteImport } from './routes/advanced'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -108,6 +109,11 @@ const ChangelogRoute = ChangelogRouteImport.update({
   path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiAnalyserRoute = AiAnalyserRouteImport.update({
+  id: '/ai-analyser',
+  path: '/ai-analyser',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdvancedRoute = AdvancedRouteImport.update({
   id: '/advanced',
   path: '/advanced',
@@ -122,6 +128,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
+  '/ai-analyser': typeof AiAnalyserRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
+  '/ai-analyser': typeof AiAnalyserRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
+  '/ai-analyser': typeof AiAnalyserRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/advanced'
+    | '/ai-analyser'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/advanced'
+    | '/ai-analyser'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/advanced'
+    | '/ai-analyser'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -246,6 +258,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdvancedRoute: typeof AdvancedRoute
+  AiAnalyserRoute: typeof AiAnalyserRoute
   ChangelogRoute: typeof ChangelogRoute
   CriteriaRoute: typeof CriteriaRoute
   ForecastingRoute: typeof ForecastingRoute
@@ -378,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-analyser': {
+      id: '/ai-analyser'
+      path: '/ai-analyser'
+      fullPath: '/ai-analyser'
+      preLoaderRoute: typeof AiAnalyserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/advanced': {
       id: '/advanced'
       path: '/advanced'
@@ -398,6 +418,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdvancedRoute: AdvancedRoute,
+  AiAnalyserRoute: AiAnalyserRoute,
   ChangelogRoute: ChangelogRoute,
   CriteriaRoute: CriteriaRoute,
   ForecastingRoute: ForecastingRoute,
