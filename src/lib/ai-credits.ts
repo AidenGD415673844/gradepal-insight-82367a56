@@ -28,7 +28,34 @@ export const AI_COST: Record<string, number> = {
 };
 
 export function costFor(feature: string): number {
-  return AI_COST[feature] ?? AI_COST.default;
+  return estimateCost(feature);
+}
+
+/**
+ * Variable cost engine — replaces the old fixed `AI_COST` map.
+ * Returns a credit charge between 0.5 and 7.5 that scales with how much
+ * work the AI has to do (chars of input, number of items, rubric depth).
+ */
+export function estimateCost(
+  feature: string,
+  payload?: { chars?: number; items?: number; depth?: number; hasImage?: boolean },
+): number {
+  const base: Record<string, number> = {
+    ai_grader: 1.5,
+    ai_deep_generate: 1.0,
+    homework_helper: 0.5,
+    analyser: 0.8,
+    feedback_bullets: 0.7,
+    ai_chat: 0.6,
+    default: 0.5,
+  };
+  const b = base[feature] ?? base.default;
+  const chars = payload?.chars ?? 0;
+  const items = payload?.items ?? 0;
+  const depth = payload?.depth ?? 0;
+  const image = payload?.hasImage ? 1.2 : 0;
+  const raw = b + (chars / 500) * 0.5 + items * 0.3 + depth * 0.4 + image;
+  return Math.max(0.5, Math.min(7.5, Math.round(raw * 10) / 10));
 }
 
 type CreditState = {
@@ -127,9 +154,13 @@ export function getCredits(): number {
 
 export type SpendResult = { ok: true; remaining: number } | { ok: false; need: number; have: number };
 
-/** Try to spend credits for a feature. Returns ok/false; emits event on success. */
-export function spendCredits(feature: string): SpendResult {
-  const cost = costFor(feature);
+/** Try to spend credits for a feature. Accepts an optional payload so the
+ *  charge scales with the amount of work the AI is doing. */
+export function spendCredits(
+  feature: string,
+  payload?: { chars?: number; items?: number; depth?: number; hasImage?: boolean },
+): SpendResult {
+  const cost = estimateCost(feature, payload);
   const s = reconcile();
   if (s.balance < cost) {
     return { ok: false, need: cost, have: s.balance };

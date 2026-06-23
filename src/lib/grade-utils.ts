@@ -34,14 +34,11 @@ export function calcAverage(tasks: Task[], weighted: boolean): number {
 
 export function getLetter(pct: number, scale: GradeScaleRow[]): GradeScaleRow | null {
   const sorted = [...scale].sort((a, b) => b.min - a.min);
-  // A* may only render at an exact 100%. Below 100, drop to the next tier.
+  // A* renders for any pct >= the A* row min (default 91). The scale row's
+  // own `min` is the single source of truth — no extra 100%-only gate.
   const idx = sorted.findIndex((r) => pct >= r.min);
   if (idx === -1) return sorted[sorted.length - 1] ?? null;
-  const row = sorted[idx];
-  if (row.letter === "A*" && pct < 100) {
-    return sorted[idx + 1] ?? row;
-  }
-  return row;
+  return sorted[idx];
 }
 
 export function calcGPA(courses: Course[], tasks: Task[], scale: GradeScaleRow[]): number {
