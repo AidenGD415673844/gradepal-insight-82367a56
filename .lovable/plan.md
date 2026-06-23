@@ -1,81 +1,59 @@
+## Scope split
 
-# Implementation Plan — Phase A vs Phase B
-
-Two large feature batches. Pick one to execute this turn; the other gets deferred.
-
----
-
-## PHASE A — UI Design Studio + Monetization fixes + AI Credit engine + cross-page extensions
-
-### A0. Bug fixes & monetization hardening (`src/lib/premium.ts`, `src/routes/shop.tsx`, `src/components/grade/AdminCommandCenter.tsx`)
-- **No-charge downgrades / sidegrades**: in checkout, compare target tier family + price vs active tier. If user already has a higher-or-equal tier active, allow free switch (no wallet debit), just rewrite `K_TIER` with new tier + carry remaining time (prorated by ratio of HKD prices).
-- **Double-purchase guard**: if same tier already active, block re-purchase unless within 24h of expiry; show "Already active until <date>". Extension only kicks in near expiry.
-- **Wallet cap → $50** (was $250): update `WALLET_CAP = 50`, clamp existing balances on load.
-- **Developer "Enter Code Given By Developer"** input on `/shop`: secondary input clearly labelled, routes through `redeemCode` but only accepts cipher tokens + master keys (filters out promo words for clarity).
-- **Delete previous codes**: Admin → new tab "Redemption Log" listing `getRedeemed()`, each row has a Delete button (removes from `K_REDEEMED` so a token can be reused/tested). Also lets admin purge all.
-- **No-code global subscription codes**: Admin → extend Master List tab to also publish entries into a "Live Master Broadcast" string stored in `localStorage` AND printable as a single base64 blob the dev can paste into a new file `src/lib/premium-broadcast.ts` (auto-loaded by `allPromos()` + `getMasters()`). Until pasted, the codes still work for every device that hits the public broadcast endpoint we mock via a hardcoded `BROADCAST_SEED` array — admin adds rows live, then exports the array snippet for next deploy. Same mechanism as promos, just for tier codes.
-
-### A1. AI Credit engine (`src/lib/ai-credits.ts` — new)
-- Rolling balance: 10 credits/day baseline, weekly cap 20, resets every Monday 00:00 local.
-- Variable cost table: `ai_grader = 6.5`, `homework_helper = 0.8`, `analyser = 1.2`, `deep_generate = 3.0`, `feedback_bullets = 2.0`, etc. Single `spendCredits(feature)` API.
-- Pro/Student top-ups: Pro grants +50 on activation, Student +25; weekly auto-refill while active.
-- Hook into every AI call site (`AIGraderDialog`, `AIDeepGenerate`, future homework helper) — block + toast if insufficient, surface "Top up" CTA linking to `/shop`.
-- Credit meter chip in `AppShell` header.
-
-### A2. Workspace UX "small motors" (deferred from earlier)
-- `/criteria`: drag-reorder rubric rows + duplicate button.
-- `/inbox`: filter chips (Unread/Alerts/Tips/Archived) + saved filter persistence.
-- `/grades`: sticky term filter bar, keyboard `n` to add row.
-- `/forecasting`: snapshot pinning.
-
-### A3. GradePal UI Design Studio (`src/components/grade/UIDesignStudio.tsx` — new, mounted in `/settings`)
-- 4 theme profiles wired to CSS variables in `src/styles.css`:
-  1. **ManageBac Dark** — midnight gray + white + emerald borders.
-  2. **Aero Glass** — gradient bg + `backdrop-blur` cards via existing tailwind utilities.
-  3. **Cyberpunk Neon** — obsidian + violet glow + magenta accents.
-  4. **Monochrome E-Ink** — paper white, print-optimized.
-- Storage: `gradecalc_theme_profile` in localStorage; applied via `data-theme` attr on `<html>`.
-- Each profile overrides ~25 semantic tokens (`--background`, `--card`, `--primary`, `--border`, `--ring`, chart colors, shadow, radius). All shadcn components + Recharts pick it up automatically since they already read tokens.
-- Opacity slider for card translucency (Aero/Cyberpunk only).
-- Live preview panel inside the studio showing a card + button + chart sample.
-
-### A4. Cross-page serverless ecosystem extensions
-- `/criteria` ↔ `/peers`: "Share Rubric" button encodes criteria into existing peer token format; peers can import.
-- `/peers` ↔ `/grades`: "Mock Transcript" — render peer's bullets into a TranscriptSheet preview.
-- `/grades` ↔ `/reports`: cohort overlay line on subject projection chart using peer means.
-- `/reports` ↔ `/inbox`: auto-drop a "New report ready" inbox card on generation.
-- Page-mode extensions: each page reads a `?ext=` query and conditionally mounts an extension drawer (peer trends on /grades, criteria share on /peers, etc.).
-
-**Phase A file impact**: ~6 new files, ~12 edited. Heavier on logic than visuals (except A3).
+Two phases. Phase 1 = Notebook Vault + LaTeX + Syndicate Canvas + 6 quick fixes. Phase 2 = Velocity Breach + Lorenz/Gini + Streak Multiplier + Sensitivity Heatmap + Bulletin Board. All client-side, localStorage only, no servers.
 
 ---
 
-## PHASE B — Syndicate gauges + Pomodoro + Ripple alerts + Tournament + page extensions
+## PHASE 1 — Notebook Vault, LaTeX, Syndicate Canvas + Quick Fixes
 
-### B1. Cohort Alignment Vector dial (`src/components/grade/CohortAlignmentDial.tsx`)
-- Dual-needle SVG speedometer in `/syndicate`. Needle 1 = active user's course mean, Needle 2 = peer pacing (from `peer-network` ledger). Computes |Δ| variance and renders a diagnostic paragraph (safety margin, divergence band).
+### 0. Quick fixes (small, high-leverage)
+- **AICreditChip**: remove the "15 of 15" pill copy in AI column header; chip only shows balance.
+- **Variable cost → work-scaled cost**: replace fixed `AI_COST` map with a `estimateCost(feature, payload)` function that returns 0.5–7.5 based on input size (chars, criteria count, rubric depth). Wire all call sites.
+- **Cross-tier purchase bug**: in `premium.ts checkPurchase`, block ALL tier swaps while any tier active (not just same family). Only `switchTierFree` may move sideways with prorated time.
+- **A* bug**: `applyAStarOverride` already uses `>= 91` — fix is in the *Grade Calculator* surface (`GradeScaleTester` / inline letter resolver) that bypassed the helper. Route every letter resolution through `applyAStarOverride`.
+- **Flight Simulator realistic range**: derive `[min,max]` from actual grade history (p10..p90 of recent scores) instead of 0–100.
+- **Top-ups redesigned**: separate section under subscription card. Prices: 10→$10, 20→$20, 50→$45, 75→$70, 100→$90, 150→$130. Adds to active subscription only; standalone if free.
+- **New nav route `/ai-analyser`**: dedicated "AI Pro Analyser & Helper" chat surface (textarea + history in localStorage, calls existing AI gateway server fn). Move homework-helper out of inline panels.
 
-### B2. P2P Pomodoro Synchronizer (`src/components/grade/StudySprintDrawer.tsx`)
-- Drawer mounted from `/timetable` + `/peers`. Uses existing `webrtc-peer.ts` data channel to broadcast `{type:'pomodoro', state:'run|pause|reset', remainingMs, ts}`. Both peers see synchronized ring + toast on state change.
+### 1. Notebook Vault — Hierarchical Folders
+- New route `/notebook` + components `NotebookSidebar`, `NotebookEditor`.
+- `notebook-store.ts`: tree of `{id, name, color?, parentId, children[], notes[]}`, persisted to `gradecalc_notebook_v1`.
+- Sidebar: collapsible folders, rename inline, color picker pulling from subject theme hexes.
 
-### B3. Syndicate Ripple-Effect inbox warnings (`src/lib/ripple-monitor.ts`)
-- Background interval (when peers connected) compares each peer's weekly velocity from their shared ledger snapshots. On sharp negative delta in a shared course, push the exact-worded warning card into local inbox (dedupe by peer+course+week).
+### 2. Rich-text editor + base64 media
+- ContentEditable block with toolbar: Bold/Italic/Underline/Code/Checklist (`document.execCommand` fallback + manual range ops).
+- HTML5 drag-drop zone → `FileReader.readAsDataURL` → embed `<img src="data:...">` inline; stored in the note's HTML string in localStorage. Size guard (~2MB per asset, warn user).
 
-### B4. Mock Exam Tournament Arena
-- Extend `FlightSimulator.tsx` with a `tournament` mode: "Initiate Academic Simulation Challenge" button in `/peers`. WebRTC challenge handshake → identical seeded disruption prompts on both clients → both submit baseline scores per round → real-time sparkline overlay of both deltas → winner declaration screen.
+### 3. KaTeX inline compiler
+- `bun add katex`. Import CSS once in `__root.tsx`.
+- Editor scans for `$...$` and `$$...$$` runs on debounce; replaces with rendered KaTeX HTML in a preview pane next to the editor (split view) to avoid caret-jump in contenteditable.
 
-### B5. Page-specific extensions
-- `/inbox`: bulk-archive toolbar + auto rule-checker that pulse-borders unread Volatility Alerts (amber).
-- `/peers`: Connection Health Metre per friend card — sampling DataChannel `bufferedAmount` + ping RTT, micro-sparkline of last 30 samples.
-- `/reports`: Historical Trend Compare widget overlaying last 3 term snapshots on the current term preview.
-- `/criteria`: Rubric Weight Sandbox — per-card slider that re-projects target averages live without persisting until "Save".
-
-**Phase B file impact**: ~5 new files, ~6 edited. Heavier on WebRTC + canvas/SVG.
+### 4. Syndicate Canvas Matrix
+- Inside `/peers`, new component `SyndicateCanvas.tsx`. SVG canvas, center node = self, up to 4 peer orbs.
+- Similarity delta = abs diff of average GPA + criterion vector cosine distance → line length 80–260px.
+- Pulsing stroke via CSS `@keyframes`.
+- **Broadcast Notes button** on each folder: dropdown of connected RTC peers (from existing `webrtc-peer.ts`), serializes folder JSON → `RTCEnvelope` kind `notes_payload` → recipient pushes "Notes Received" card into inbox.
 
 ---
 
-## Which one this turn?
+## PHASE 2 — Analytics & alerts
 
-Both are large; doing both at once risks shallow execution on each. Recommend one phase fully polished now, the other next turn.
+1. **Velocity Breach** — background interval in grade-store; computes 7-day slope per course; on slope < −1.5 injects inbox card with decay rate + days-until-tier-break.
+2. **Lorenz/Gini chart** — Advanced-only card in `/forecasting`; sort scores, plot cumulative share vs equity diagonal, compute Gini = 1 − 2∫L.
+3. **Study Streak Multiplier** — listens to Kanban task updates; if 5 consecutive completions <48h apart, sets streak; badge in AppShell header; unlocks elite phrases in Optimization Hub commentary.
+4. **Sensitivity Heatmap** — replace category list in advanced subject panel with grid; `score = weight * (100 - avg)`; crimson bg high, ice-blue low.
+5. **Syndicate Bulletin** — extend peer token base64 to include 120-char `milestone` string; new bulletin row in `/peers`; importing peer pushes inbox notice.
 
-**Reply with `A` or `B`** (or "A then B next turn") and I'll execute.
+---
+
+## Technical notes (skip if non-technical)
+
+- All new state in `localStorage` under `gradecalc_*` namespace.
+- KaTeX is ~280KB gz; loaded once. No server calls.
+- Notes payload over RTC reuses existing `RTCEnvelope` discriminated union (add `notes_payload` and `bulletin` variants).
+- Velocity / Gini / sensitivity are pure functions — unit-testable.
+- No changes to password locks, 10-bullet report, or existing card animations.
+
+---
+
+**Which phase should I ship now — Phase 1 or Phase 2?** (Other ships next turn.)
