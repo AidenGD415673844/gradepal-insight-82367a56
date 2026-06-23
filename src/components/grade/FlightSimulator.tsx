@@ -127,7 +127,8 @@ function pickRandomScenario(seed: number): Scenario {
 
 export function FlightSimulator() {
   const { courses, tasks, scale, settings } = useGrades();
-  const baseAvg = useMemo(() => {
+  void courses;
+  const { baseAvg, dataMin, dataMax } = useMemo(() => {
     const all = tasks.filter(
       (t) =>
         !t.pending &&
@@ -135,7 +136,18 @@ export function FlightSimulator() {
         Number.isFinite(t.score) &&
         t.maxScore > 0,
     );
-    return all.length ? calcAverage(all, settings.weighted) : 78;
+    if (!all.length) return { baseAvg: 78, dataMin: 50, dataMax: 90 };
+    const avg = calcAverage(all, settings.weighted);
+    const pcts = all
+      .map((t) => (t.score / t.maxScore) * 100)
+      .sort((a, b) => a - b);
+    const p = (q: number) =>
+      pcts[Math.max(0, Math.min(pcts.length - 1, Math.floor(q * (pcts.length - 1))))];
+    return {
+      baseAvg: avg,
+      dataMin: Math.max(30, Math.floor(p(0.1) - 5)),
+      dataMax: Math.min(98, Math.ceil(p(0.9) + 5)),
+    };
   }, [tasks, settings.weighted]);
 
   const [missionId, setMissionId] = useState<string>("astar");
@@ -174,7 +186,9 @@ export function FlightSimulator() {
   function nextScenario() {
     const s = pickRandomScenario(Math.random());
     setScenario(s);
-    setInput(s.defaultInput);
+    const mid = Math.round((dataMin + dataMax) / 2);
+    const biased = Math.round(mid + (s.defaultInput - 60) * 0.3);
+    setInput(Math.max(dataMin, Math.min(dataMax, biased)));
   }
 
   function applyScenario() {
@@ -283,22 +297,25 @@ export function FlightSimulator() {
           <div className="mt-1.5 flex items-center gap-3">
             <input
               type="range"
-              min={0}
-              max={100}
+              min={dataMin}
+              max={dataMax}
               value={input}
               onChange={(e) => setInput(Number(e.target.value))}
               className="flex-1 accent-primary"
             />
             <input
               type="number"
-              min={0}
-              max={100}
+              min={dataMin}
+              max={dataMax}
               value={input}
               onChange={(e) => setInput(Number(e.target.value))}
               className="w-20 rounded-lg border bg-background px-2 py-1 text-sm tabular-nums"
             />
           </div>
-          <p className="mt-1 text-[10px] text-muted-foreground">{scenario.inputHint}</p>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            {scenario.inputHint}{" "}
+            <span className="opacity-70">Range {dataMin}–{dataMax}% reflects your p10–p90 score band.</span>
+          </p>
           <div className="mt-3 flex gap-2">
             <Button size="sm" onClick={applyScenario} className="gap-2">
               <Zap className="h-4 w-4" /> Lock-in & advance
