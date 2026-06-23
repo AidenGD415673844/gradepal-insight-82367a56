@@ -23,7 +23,7 @@ export type ChatMsg = {
 export type InboxItem = {
   id: string;
   ts: number;
-  kind: "sync" | "weekly";
+  kind: "sync" | "weekly" | "notes";
   title: string;
   body: string;
   payload?: any;
