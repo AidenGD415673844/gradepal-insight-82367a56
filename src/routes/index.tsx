@@ -9,6 +9,7 @@ import { GPAFireAlarm } from "@/components/grade/GPAFireAlarm";
 import { SubjectRadar } from "@/components/grade/SubjectRadar";
 import { maybeGenerateWeeklyReview, usePeerNetwork } from "@/lib/peer-network";
 import { useEffect } from "react";
+import { runVelocityBreachScan } from "@/lib/velocity-breach";
 import {
   GraduationCap,
   Calculator,
