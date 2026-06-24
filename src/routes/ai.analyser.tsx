@@ -22,7 +22,7 @@ const SUGGESTIONS = [
   "Give me long-form encouraging analysis on my recent trajectory.",
 ];
 
-export const Route = createFileRoute("/ai-analyser")({ component: AnalyserTab });
+export const Route = createFileRoute("/ai/analyser")({ component: AnalyserTab });
 
 function loadMsgs(): Msg[] {
   if (typeof window === "undefined") return [];
