@@ -10,6 +10,8 @@ export type PeerProfile = {
   subjects: PeerSubject[];
   bullets: number[];
   updatedAt: number;
+  /** Optional 120-char Syndicate Bulletin string. */
+  milestone?: string;
 };
 export type Peer = PeerProfile & { status: PeerStatus; lastOnline: number };
 export type ChatMsg = {
@@ -36,6 +38,7 @@ const K_CHAT = "gp_chat_";
 const K_INBOX = "gp_inbox";
 const K_BLOCK = "gp_blocklist";
 const K_LASTWEEKLY = "gp_last_weekly_ts";
+const K_MILESTONE = "gp_my_milestone_v1";
 const EVT = "gp-peer-change";
 
 const fire = () => {
@@ -71,6 +74,16 @@ export function setMyProfile(patch: Partial<PeerProfile>) {
   write(K_PROFILE, next);
 }
 
+export function getMyMilestone(): string {
+  if (typeof window === "undefined") return "";
+  try { return localStorage.getItem(K_MILESTONE) || ""; } catch { return ""; }
+}
+export function setMyMilestone(s: string) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(K_MILESTONE, (s || "").slice(0, 120));
+  fire();
+}
+
 export function encodeToken(p: PeerProfile): string {
   try {
     // Stable token: omit volatile updatedAt so the same browser produces the
@@ -81,6 +94,7 @@ export function encodeToken(p: PeerProfile): string {
       color: p.color,
       subjects: p.subjects,
       bullets: p.bullets,
+      milestone: (p.milestone ?? getMyMilestone()).slice(0, 120),
     };
     const json = JSON.stringify(stable);
     if (typeof window !== "undefined" && window.btoa) {
@@ -144,6 +158,15 @@ export function acceptToken(token: string): { ok: boolean; reason?: string; peer
   try {
     addWallet(1);
   } catch {}
+  // If they broadcast a milestone, log a Syndicate Notice into the inbox.
+  if (profile.milestone && profile.milestone.trim()) {
+    pushInbox({
+      kind: "sync",
+      title: "Syndicate Notice",
+      body: `Peer ${profile.name} has broadcasted a new milestone target.`,
+      payload: { milestone: profile.milestone, peerName: profile.name },
+    });
+  }
   return { ok: true, peer };
 }
 
