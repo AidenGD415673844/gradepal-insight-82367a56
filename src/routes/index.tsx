@@ -76,12 +76,16 @@ const UTILITY_CARDS = [
 ] as const;
 
 function Home() {
-  const { tasks, courses } = useGrades();
+  const { tasks, courses, scale } = useGrades();
   const [prefs] = useUIPrefs();
   usePeerNetwork();
   useEffect(() => {
     maybeGenerateWeeklyReview(tasks);
   }, [tasks]);
+  useEffect(() => {
+    try { runVelocityBreachScan(courses, tasks, scale); }
+    catch (e) { console.warn("velocity scan failed", e); }
+  }, [tasks, courses, scale]);
   const utilCollapsed = prefs.utilHubCollapsed;
   const CORE_CARDS = ALL_CORE_CARDS.filter((c) => !("advanced" in c && c.advanced) || prefs.advancedStatsMode);
   const now = new Date();
