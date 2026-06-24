@@ -8,6 +8,7 @@ import { useUIPrefs } from "@/lib/ui-prefs";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, getLetter } from "@/lib/grade-utils";
 import { Target, TrendingUp, Shield, Activity, Sparkles, Settings } from "lucide-react";
+import { SensitivityMatrix } from "@/components/grade/SensitivityMatrix";
 
 export const Route = createFileRoute("/advanced")({
   head: () => ({
@@ -102,6 +103,31 @@ function AdvancedPage() {
         </Card>
 
         <ParetoCard label={L.pareto} courses={courses} tasks={tasks} weighted={settings.weighted} />
+        {prefs.advancedStatsMode && (
+          <SensitivityMatrix
+            rows={(() => {
+              // build weight × (100-avg) rows from all course/category combos
+              const buckets = new Map<string, { weight: number; scores: number[] }>();
+              for (const c of courses) {
+                const cats = (c as { categories?: { name: string; weight: number }[] }).categories ?? [];
+                const ct = tasks.filter((t) => t.courseId === c.id && !t.pending && t.maxScore > 0);
+                for (const cat of cats) {
+                  const key = `${c.name} · ${cat.name}`;
+                  const scores = ct
+                    .filter((t) => t.category === cat.name)
+                    .map((t) => (t.score / t.maxScore) * 100);
+                  if (!scores.length) continue;
+                  buckets.set(key, { weight: Math.min(1, Math.max(0, cat.weight)), scores });
+                }
+              }
+              return Array.from(buckets.entries()).map(([category, b]) => ({
+                category,
+                weight: b.weight,
+                avg: b.scores.reduce((s, v) => s + v, 0) / b.scores.length,
+              }));
+            })()}
+          />
+        )}
         <EMACard label={L.ema} courses={courses} tasks={tasks} />
         <BlackSwanCard
           label={L.blackSwan}
