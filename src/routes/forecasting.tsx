@@ -22,6 +22,8 @@ import { useGrades } from "@/lib/grade-store";
 import { calcAverage, getLetter } from "@/lib/grade-utils";
 import { useSyllabusUnits, masteryIndex } from "@/lib/syllabus-store";
 import { Activity, Gauge, TrendingUp, Zap, Shield, Thermometer, Brain, Sigma } from "lucide-react";
+import { useUIPrefs } from "@/lib/ui-prefs";
+import { LorenzGiniChart } from "@/components/grade/LorenzGiniChart";
 
 export const Route = createFileRoute("/forecasting")({
   head: () => ({
@@ -60,6 +62,13 @@ function ForecastingHub() {
   const { courses, tasks, scale, settings, subjectGoals } = useGrades();
   const [selected, setSelected] = useState<string>(courses[0]?.id ?? "");
   const course = courses.find((c) => c.id === selected) ?? courses[0];
+  const [prefs] = useUIPrefs();
+  const allTermScores = useMemo(() => {
+    return tasks
+      .filter((t) => !t.pending && t.maxScore > 0)
+      .map((t) => (t.score / t.maxScore) * 100)
+      .filter((p) => Number.isFinite(p));
+  }, [tasks]);
 
   return (
     <AppShell
@@ -106,6 +115,7 @@ function ForecastingHub() {
             <DeficitInsurance course={course} />
           </div>
           <CorrelationHeatmap />
+          {prefs.advancedStatsMode && <LorenzGiniChart scores={allTermScores} />}
         </>
       )}
     </AppShell>
