@@ -52,6 +52,7 @@ import {
   leaveGroup,
 } from "@/lib/group-chat";
 import { SyndicateCanvas } from "@/components/grade/SyndicateCanvas";
+import { SyndicateBulletin } from "@/components/grade/SyndicateBulletin";
 
 export const Route = createFileRoute("/peers")({
   head: () => ({
@@ -107,6 +108,9 @@ function PeersPage() {
               meColor={me.color}
               peers={friends.filter((f) => f.status === "accepted")}
             />
+          </div>
+          <div className="lg:col-span-2">
+            <SyndicateBulletin />
           </div>
           <div className="lg:col-span-2">
             <PeerList
