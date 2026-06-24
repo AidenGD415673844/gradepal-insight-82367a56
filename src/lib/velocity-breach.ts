@@ -3,11 +3,9 @@
 // client-side; idempotent per course/day via a localStorage marker.
 
 import { pushInbox } from "./peer-network";
-import { getLetter } from "./grade-utils";
+import type { GradeScaleRow } from "./grade-store";
 
 const K_MARK = "gradecalc_velocity_breach_marks_v1";
-
-type GradeScale = { min: number; letter: string }[];
 type TaskLite = { id: string; courseId: string; date: string; score: number; maxScore: number; pending?: boolean };
 type Course = { id: string; name: string };
 
@@ -34,7 +32,12 @@ function slope(points: { x: number; y: number }[]): number {
   return den === 0 ? 0 : num / den;
 }
 
-export function runVelocityBreachScan(courses: Course[], tasks: TaskLite[], scale: GradeScale) {
+function letterFor(pct: number, scale: GradeScaleRow[]): string {
+  const sorted = [...scale].sort((a, b) => b.min - a.min);
+  return sorted.find((r) => pct >= r.min)?.letter ?? "—";
+}
+
+export function runVelocityBreachScan(courses: Course[], tasks: TaskLite[], scale: GradeScaleRow[]) {
   const today = new Date().toISOString().slice(0, 10);
   const marks = getMarks();
   const cutoff = Date.now() - 7 * 86400000;
@@ -58,7 +61,7 @@ export function runVelocityBreachScan(courses: Course[], tasks: TaskLite[], scal
     if (s <= -1.5) {
       // Current letter and how many points until the next-lower tier
       const lastAvg = ct[ct.length - 1].pct;
-      const letter = getLetter(lastAvg, scale);
+      const letter = letterFor(lastAvg, scale);
       const lowerThresh = [...scale].sort((a, b) => b.min - a.min).find((row) => row.min < lastAvg)?.min ?? 0;
       const ptsUntilBreak = Math.max(0, lastAvg - lowerThresh);
       const daysUntilBreak = Math.max(1, Math.ceil(ptsUntilBreak / Math.abs(s)));
