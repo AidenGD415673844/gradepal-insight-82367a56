@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useGrades, type Task } from "@/lib/grade-store";
+import { recordKanbanProgress } from "@/lib/study-streak";
 
 const KANBAN_KEY = "gradecalc-kanban-status-v1";
 const COLS = ["To-Do", "In Progress", "Submitted", "Graded"] as const;
@@ -39,6 +40,11 @@ export function KanbanBoard() {
   function moveTo(taskId: string, col: Col) {
     const t = tasks.find((x) => x.id === taskId);
     if (!t) return;
+    const prev = (statuses[taskId] ?? defaultCol(t)) as Col;
+    if (prev !== col) {
+      // any column transition counts as a progression event
+      try { recordKanbanProgress(); } catch { /* never break the board */ }
+    }
     setStatuses((s) => ({ ...s, [taskId]: col }));
     if (col === "Graded") setModal({ task: t, pct: "" });
   }
