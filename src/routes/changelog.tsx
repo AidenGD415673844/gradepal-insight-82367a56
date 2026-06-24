@@ -37,6 +37,50 @@ type LogEntry = {
 
 const LOG: LogEntry[] = [
   {
+    version: "v4.0.0",
+    title: "Phase 2 — OpenRouter AI Hub, PeerJS, Velocity & Sensitivity Engines",
+    date: "2026-06-24",
+    category: "feature",
+    bullets: [
+      "AI features unified under a single /ai nav with sub-tabs: AI Analysis Pro, AI Grader, Homework Helper.",
+      "Multi-model OpenRouter wiring — Llama-3-8B (grader), Mistral-7B (analyser), Gemini-Flash-1.5-8B (helper) — all free tiers.",
+      "Direct frontend fetch using VITE_AI_API_KEY (+ VITE_AI_API_KEY_2 fallback) — no raw keys in component source.",
+      "Top-down sliding dark-red PeerJS error toast banner with 7 mapped error codes (122–126, 121, 6x001002x).",
+      "PeerJS package wired against the free public PeerJS cloud server (handshake only — grade data still 100% localStorage).",
+      "Variable AI costs tightened to a 1.5–5 credit window; 75-credit top-up pack repriced to $67.5 HKD.",
+      "Velocity Breach Warning — background slope scan injects an urgent inbox card when 7-day velocity drops below −1.5pp/day.",
+      "Lorenz Dispersion Curve + Academic Gini coefficient added to Strategic Forecasting Hub (advanced mode only).",
+      "Study Streak Multiplier engine — sub-48h Kanban progressions unlock 1.2x → 2.0x multipliers and elite commendation phrases.",
+      "Category Weight Sensitivity Matrix replaces the static category list with a crimson/ice-blue heat-mapped leverage grid (advanced).",
+      "Syndicate Bulletin Board — base64 connection token now carries a 120-char milestone; importing peers triggers a 'Syndicate Notice' inbox card.",
+    ],
+  },
+  {
+    version: "v3.3.0",
+    title: "Phase 1 — Notebook Vault, KaTeX, Syndicate Canvas",
+    date: "2026-06-23",
+    category: "feature",
+    bullets: [
+      "Academic Notebook Vault — hierarchical folders, rich-text editor, KaTeX math rendering, base64 image/video embeds.",
+      "Syndicate Canvas Matrix — SVG peer graph with cosine-similarity edge lengths and pulsing alignment indicators.",
+      "AI Pro Analyser & Helper conversational tutor with full grade-dataset context injection.",
+      "A* override fix: ≥91% now promotes to A* on both report card and grade scale tester.",
+      "Flight Simulator anchored to actual p10–p90 score range; top-up packs restructured (10/20/50/75/100/150).",
+    ],
+  },
+  {
+    version: "v3.2.0",
+    title: "GradePal UI Design Studio & Pro Subscription Engine",
+    date: "2026-06-22",
+    category: "feature",
+    bullets: [
+      "GradePal UI Design Studio — full theme/variable/opacity layout panel with 100% localStorage persistence.",
+      "Pro subscription AI activation hooked to add-on credits and live broadcast across components.",
+      "Workspace UX motors: deferred panels, sandbox toggle improvements, premium broadcast bus.",
+      "Sub-nav restructuring across Settings for cleaner discoverability.",
+    ],
+  },
+  {
     version: "v3.0.0",
     title: "Big Decentralisation Update",
     date: "2026-06-17",

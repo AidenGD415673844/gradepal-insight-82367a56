@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
 import { useEffect } from "react";
 import { applyThemeProfile, getThemeProfile } from "@/lib/theme-profiles";
+import { PeerErrorToastHost } from "@/lib/peerjs-toast";
 
 import appCss from "../styles.css?url";
 import katexCss from "katex/dist/katex.min.css?url";
@@ -115,6 +116,7 @@ function RootComponent() {
         <GlobalErrorBoundary>
           <Outlet />
           <Toaster richColors position="top-right" />
+          <PeerErrorToastHost />
         </GlobalErrorBoundary>
       </GradeProvider>
     </QueryClientProvider>

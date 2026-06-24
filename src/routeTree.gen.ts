@@ -25,9 +25,12 @@ import { Route as GradesRouteImport } from './routes/grades'
 import { Route as ForecastingRouteImport } from './routes/forecasting'
 import { Route as CriteriaRouteImport } from './routes/criteria'
 import { Route as ChangelogRouteImport } from './routes/changelog'
-import { Route as AiAnalyserRouteImport } from './routes/ai-analyser'
+import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdvancedRouteImport } from './routes/advanced'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiHelperRouteImport } from './routes/ai.helper'
+import { Route as AiGraderRouteImport } from './routes/ai.grader'
+import { Route as AiAnalyserRouteImport } from './routes/ai.analyser'
 
 const UtilitiesRoute = UtilitiesRouteImport.update({
   id: '/utilities',
@@ -109,9 +112,9 @@ const ChangelogRoute = ChangelogRouteImport.update({
   path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AiAnalyserRoute = AiAnalyserRouteImport.update({
-  id: '/ai-analyser',
-  path: '/ai-analyser',
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdvancedRoute = AdvancedRouteImport.update({
@@ -124,11 +127,26 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiHelperRoute = AiHelperRouteImport.update({
+  id: '/helper',
+  path: '/helper',
+  getParentRoute: () => AiRoute,
+} as any)
+const AiGraderRoute = AiGraderRouteImport.update({
+  id: '/grader',
+  path: '/grader',
+  getParentRoute: () => AiRoute,
+} as any)
+const AiAnalyserRoute = AiAnalyserRouteImport.update({
+  id: '/analyser',
+  path: '/analyser',
+  getParentRoute: () => AiRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
-  '/ai-analyser': typeof AiAnalyserRoute
+  '/ai': typeof AiRouteWithChildren
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -145,11 +163,14 @@ export interface FileRoutesByFullPath {
   '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
   '/utilities': typeof UtilitiesRoute
+  '/ai/analyser': typeof AiAnalyserRoute
+  '/ai/grader': typeof AiGraderRoute
+  '/ai/helper': typeof AiHelperRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
-  '/ai-analyser': typeof AiAnalyserRoute
+  '/ai': typeof AiRouteWithChildren
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -166,12 +187,15 @@ export interface FileRoutesByTo {
   '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
   '/utilities': typeof UtilitiesRoute
+  '/ai/analyser': typeof AiAnalyserRoute
+  '/ai/grader': typeof AiGraderRoute
+  '/ai/helper': typeof AiHelperRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
-  '/ai-analyser': typeof AiAnalyserRoute
+  '/ai': typeof AiRouteWithChildren
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -188,13 +212,16 @@ export interface FileRoutesById {
   '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
   '/utilities': typeof UtilitiesRoute
+  '/ai/analyser': typeof AiAnalyserRoute
+  '/ai/grader': typeof AiGraderRoute
+  '/ai/helper': typeof AiHelperRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/advanced'
-    | '/ai-analyser'
+    | '/ai'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -211,11 +238,14 @@ export interface FileRouteTypes {
     | '/teacher'
     | '/timetable'
     | '/utilities'
+    | '/ai/analyser'
+    | '/ai/grader'
+    | '/ai/helper'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/advanced'
-    | '/ai-analyser'
+    | '/ai'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -232,11 +262,14 @@ export interface FileRouteTypes {
     | '/teacher'
     | '/timetable'
     | '/utilities'
+    | '/ai/analyser'
+    | '/ai/grader'
+    | '/ai/helper'
   id:
     | '__root__'
     | '/'
     | '/advanced'
-    | '/ai-analyser'
+    | '/ai'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -253,12 +286,15 @@ export interface FileRouteTypes {
     | '/teacher'
     | '/timetable'
     | '/utilities'
+    | '/ai/analyser'
+    | '/ai/grader'
+    | '/ai/helper'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdvancedRoute: typeof AdvancedRoute
-  AiAnalyserRoute: typeof AiAnalyserRoute
+  AiRoute: typeof AiRouteWithChildren
   ChangelogRoute: typeof ChangelogRoute
   CriteriaRoute: typeof CriteriaRoute
   ForecastingRoute: typeof ForecastingRoute
@@ -391,11 +427,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ai-analyser': {
-      id: '/ai-analyser'
-      path: '/ai-analyser'
-      fullPath: '/ai-analyser'
-      preLoaderRoute: typeof AiAnalyserRouteImport
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/advanced': {
@@ -412,13 +448,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai/helper': {
+      id: '/ai/helper'
+      path: '/helper'
+      fullPath: '/ai/helper'
+      preLoaderRoute: typeof AiHelperRouteImport
+      parentRoute: typeof AiRoute
+    }
+    '/ai/grader': {
+      id: '/ai/grader'
+      path: '/grader'
+      fullPath: '/ai/grader'
+      preLoaderRoute: typeof AiGraderRouteImport
+      parentRoute: typeof AiRoute
+    }
+    '/ai/analyser': {
+      id: '/ai/analyser'
+      path: '/analyser'
+      fullPath: '/ai/analyser'
+      preLoaderRoute: typeof AiAnalyserRouteImport
+      parentRoute: typeof AiRoute
+    }
   }
 }
+
+interface AiRouteChildren {
+  AiAnalyserRoute: typeof AiAnalyserRoute
+  AiGraderRoute: typeof AiGraderRoute
+  AiHelperRoute: typeof AiHelperRoute
+}
+
+const AiRouteChildren: AiRouteChildren = {
+  AiAnalyserRoute: AiAnalyserRoute,
+  AiGraderRoute: AiGraderRoute,
+  AiHelperRoute: AiHelperRoute,
+}
+
+const AiRouteWithChildren = AiRoute._addFileChildren(AiRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdvancedRoute: AdvancedRoute,
-  AiAnalyserRoute: AiAnalyserRoute,
+  AiRoute: AiRouteWithChildren,
   ChangelogRoute: ChangelogRoute,
   CriteriaRoute: CriteriaRoute,
   ForecastingRoute: ForecastingRoute,

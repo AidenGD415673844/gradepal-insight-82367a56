@@ -4,6 +4,7 @@ import { ArrowLeft, GraduationCap, CalendarRange } from "lucide-react";
 import { type ReactNode } from "react";
 import { SandboxFrame, SandboxToggle } from "@/components/grade/SandboxToggle";
 import { AICreditChip } from "@/components/grade/AICreditChip";
+import { StreakBadge } from "@/components/grade/StreakBadge";
 
 export function AppShell({
   title,
@@ -40,6 +41,7 @@ export function AppShell({
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {actions}
+            <StreakBadge />
             <AICreditChip />
             <SandboxToggle />
             <Button variant="outline" size="sm" asChild className="gap-2">

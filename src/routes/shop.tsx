@@ -319,14 +319,14 @@ function ShopPage() {
 
 // =============================================================================
 // Top-Ups — credit packs purchased with wallet HKD. Separate from subscription
-// pricing per user spec: 10→$10, 20→$20, 50→$45, 75→$70, 100→$90, 150→$130.
+// pricing: 10→$10, 20→$20, 50→$45, 75→$67.5, 100→$90, 150→$130.
 // =============================================================================
 
 const TOPUP_PACKS: { credits: number; hkd: number }[] = [
   { credits: 10, hkd: 10 },
   { credits: 20, hkd: 20 },
   { credits: 50, hkd: 45 },
-  { credits: 75, hkd: 70 },
+  { credits: 75, hkd: 67.5 },
   { credits: 100, hkd: 90 },
   { credits: 150, hkd: 130 },
 ];

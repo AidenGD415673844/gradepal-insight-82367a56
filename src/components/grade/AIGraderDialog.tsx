@@ -10,12 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRef, useState } from "react";
 import { Sparkles, Upload, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
-import { gradeWork } from "@/lib/ai-grader.functions";
 import { toast } from "sonner";
 import { useGrades } from "@/lib/grade-store";
 import { spendCredits, estimateCost } from "@/lib/ai-credits";
 import { Link } from "@tanstack/react-router";
+import { callOpenRouter, OpenRouterError } from "@/lib/openrouter";
 
 type Result = {
   score: number;
@@ -38,7 +37,6 @@ export function AIGraderDialog({
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const grade = useServerFn(gradeWork);
   const { scale } = useGrades();
 
   const handleFile = (file: File) => {
@@ -71,22 +69,33 @@ export function AIGraderDialog({
     setLoading(true);
     setResult(null);
     try {
-      const r = await grade({
-        data: {
-          text: text || undefined,
-          imageDataUrl: imageDataUrl || undefined,
-          rubric: rubric || undefined,
-          scale: scale.map((s) => ({
-            min: s.min,
-            letter: s.letter,
-            description: s.description,
-            gpa: s.gpa,
-          })),
-        },
+      const sorted = [...scale].sort((a, b) => b.min - a.min);
+      const scaleStr = sorted.map((s) => `${s.min}+ → ${s.letter}`).join(", ");
+      const userPart = text ? `Student work:\n${text}` : `Image attached (described to you separately).`;
+      const raw = await callOpenRouter({
+        feature: "grader",
+        maxTokens: 700,
+        temperature: 0.3,
+        messages: [
+          {
+            role: "system",
+            content: `You are a strict but fair teacher. Reply ONLY with JSON: {"score": int 0-100, "letter": string, "summary": string, "strengths": string[], "improvements": string[]}. Use exactly these letters: ${scaleStr}. ${rubric ? "Rubric: " + rubric : ""}`,
+          },
+          { role: "user", content: userPart + (imageDataUrl ? "\n[An image was provided; the free Llama-3-8B model is text-only — base grading on the text.]" : "") },
+        ],
       });
-      setResult(r);
+      const cleaned = raw.replace(/```json|```/gi, "").trim();
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error("AI returned malformed grading output.");
+      const parsed = JSON.parse(m[0]) as Result;
+      const correct = sorted.find((s) => parsed.score >= s.min);
+      if (correct) parsed.letter = correct.letter;
+      setResult(parsed);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "AI grading failed");
+      const msg = e instanceof OpenRouterError && e.busy
+        ? "The AI Grader's free server is busy. Try again in a few seconds."
+        : e instanceof Error ? e.message : "AI grading failed";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
