@@ -25,7 +25,6 @@ import { Route as GradesRouteImport } from './routes/grades'
 import { Route as ForecastingRouteImport } from './routes/forecasting'
 import { Route as CriteriaRouteImport } from './routes/criteria'
 import { Route as ChangelogRouteImport } from './routes/changelog'
-import { Route as AiAnalyserRouteImport } from './routes/ai-analyser'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdvancedRouteImport } from './routes/advanced'
 import { Route as IndexRouteImport } from './routes/index'
@@ -113,11 +112,6 @@ const ChangelogRoute = ChangelogRouteImport.update({
   path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AiAnalyserRoute = AiAnalyserRouteImport.update({
-  id: '/ai-analyser',
-  path: '/ai-analyser',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AiRoute = AiRouteImport.update({
   id: '/ai',
   path: '/ai',
@@ -153,7 +147,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
   '/ai': typeof AiRouteWithChildren
-  '/ai-analyser': typeof AiAnalyserRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -178,7 +171,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
   '/ai': typeof AiRouteWithChildren
-  '/ai-analyser': typeof AiAnalyserRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -204,7 +196,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/advanced': typeof AdvancedRoute
   '/ai': typeof AiRouteWithChildren
-  '/ai-analyser': typeof AiAnalyserRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -231,7 +222,6 @@ export interface FileRouteTypes {
     | '/'
     | '/advanced'
     | '/ai'
-    | '/ai-analyser'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -256,7 +246,6 @@ export interface FileRouteTypes {
     | '/'
     | '/advanced'
     | '/ai'
-    | '/ai-analyser'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -281,7 +270,6 @@ export interface FileRouteTypes {
     | '/'
     | '/advanced'
     | '/ai'
-    | '/ai-analyser'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -307,7 +295,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdvancedRoute: typeof AdvancedRoute
   AiRoute: typeof AiRouteWithChildren
-  AiAnalyserRoute: typeof AiAnalyserRoute
   ChangelogRoute: typeof ChangelogRoute
   CriteriaRoute: typeof CriteriaRoute
   ForecastingRoute: typeof ForecastingRoute
@@ -440,13 +427,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ai-analyser': {
-      id: '/ai-analyser'
-      path: '/ai-analyser'
-      fullPath: '/ai-analyser'
-      preLoaderRoute: typeof AiAnalyserRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/ai': {
       id: '/ai'
       path: '/ai'
@@ -510,7 +490,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdvancedRoute: AdvancedRoute,
   AiRoute: AiRouteWithChildren,
-  AiAnalyserRoute: AiAnalyserRoute,
   ChangelogRoute: ChangelogRoute,
   CriteriaRoute: CriteriaRoute,
   ForecastingRoute: ForecastingRoute,
