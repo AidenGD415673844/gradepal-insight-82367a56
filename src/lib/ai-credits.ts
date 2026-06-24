@@ -40,22 +40,24 @@ export function estimateCost(
   feature: string,
   payload?: { chars?: number; items?: number; depth?: number; hasImage?: boolean },
 ): number {
+  // Pricing tuned per Phase-2 spec: every AI call falls in the 1.5 – 5
+  // credit window, scaling with the volume of work for the model.
   const base: Record<string, number> = {
-    ai_grader: 1.5,
-    ai_deep_generate: 1.0,
-    homework_helper: 0.5,
-    analyser: 0.8,
-    feedback_bullets: 0.7,
-    ai_chat: 0.6,
-    default: 0.5,
+    ai_grader: 2.5,
+    ai_deep_generate: 1.8,
+    homework_helper: 1.8,
+    analyser: 2.0,
+    feedback_bullets: 2.0,
+    ai_chat: 1.8,
+    default: 1.5,
   };
   const b = base[feature] ?? base.default;
   const chars = payload?.chars ?? 0;
   const items = payload?.items ?? 0;
   const depth = payload?.depth ?? 0;
-  const image = payload?.hasImage ? 1.2 : 0;
-  const raw = b + (chars / 500) * 0.5 + items * 0.3 + depth * 0.4 + image;
-  return Math.max(0.5, Math.min(7.5, Math.round(raw * 10) / 10));
+  const image = payload?.hasImage ? 0.8 : 0;
+  const raw = b + (chars / 1200) * 1.0 + items * 0.25 + depth * 0.5 + image;
+  return Math.max(1.5, Math.min(5, Math.round(raw * 10) / 10));
 }
 
 type CreditState = {
