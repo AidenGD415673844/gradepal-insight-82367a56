@@ -18,9 +18,8 @@ import {
   setUnlocked,
   isUnlocked,
 } from "@/lib/teacher-auth";
-import { Lock, KeyRound, Copy } from "lucide-react";
+import { Lock, KeyRound, Copy, Printer } from "lucide-react";
 import { toast } from "sonner";
-import { Printer } from "lucide-react";
 
 type Mode = "login" | "create" | "recover";
 
@@ -39,7 +38,6 @@ export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
   const [showKey, setShowKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [attempts, setAttempts] = useState(0);
-  const [overrideOpen, setOverrideOpen] = useState(false);
   const locked = attempts >= 5;
 
   useEffect(() => {
@@ -93,7 +91,6 @@ export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
       const next = attempts + 1;
       setAttempts(next);
       if (next >= 5) {
-        setOverrideOpen(true);
         toast.error("5 failed attempts — panel frozen. Enter recovery key to override.");
       } else {
         toast.error(`Incorrect password (${next}/5).`);
