@@ -70,7 +70,7 @@ export function LorenzGiniChart({ scores }: { scores: number[] }) {
           <div className="mt-3 rounded-xl border bg-muted/30 p-3 flex items-center gap-4">
             <div className="text-center">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Academic Gini</div>
-              <div className="text-2xl font-extrabold tabular-nums">{gini.toFixed(3)}</div>
+              <div className="text-2xl font-extrabold tabular-nums">{gini.toFixed(1)}</div>
               <div className="text-[10px] text-muted-foreground">0 = equity · 1 = concentration</div>
             </div>
             <p className="text-xs text-muted-foreground leading-snug">{verdict}</p>
