@@ -100,7 +100,7 @@ function PeersPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <MyTokenCard token={token} meName={meName} setMeName={setMeName} />
-          <AddPeerCard />
+          <WebRTCHandshakeCard />
           <div className="lg:col-span-2">
             <SyndicateCanvas
               meName={meName || "You"}
@@ -119,10 +119,10 @@ function PeersPage() {
             />
           </div>
           <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <WebRTCHandshakeCard />
             <GroupChatHub
               me={{ id: me.id, name: meName || "You", color: me.color, bullets: me.bullets }}
             />
+            <GroupInviteCard />
           </div>
         </div>
       )}
@@ -161,35 +161,19 @@ function MyTokenCard({ token, meName, setMeName }: { token: string; meName: stri
   );
 }
 
-// =============== Add Peer Card ===============
-function AddPeerCard() {
-  const [input, setInput] = useState("");
+// =============== Group Invite quick-card ===============
+function GroupInviteCard() {
   return (
-    <Card className="p-5 backdrop-blur-md bg-card/80 shadow-[0_4px_30px_rgba(0,0,0,0.05)]">
-      <div className="flex items-center gap-2 mb-3">
-        <Plus className="h-5 w-5 text-primary" />
-        <h2 className="text-base font-bold">Add Peer via Token</h2>
+    <Card className="p-5">
+      <div className="flex items-center gap-2 mb-2">
+        <Users className="h-4 w-4 text-primary" />
+        <h3 className="font-bold text-sm">Create a Study Group Chat</h3>
       </div>
-      <Textarea
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Paste your friend's base64 connection token here..."
-        className="font-mono text-[10px] h-28 resize-none"
-      />
-      <Button
-        className="w-full mt-3 gap-2"
-        onClick={() => {
-          const result = acceptToken(input);
-          if (!result.ok) {
-            toast.error(result.reason || "Failed to add peer");
-            return;
-          }
-          toast.success(`Peer ${result.peer?.name} added — status: ${result.peer?.status}`);
-          setInput("");
-        }}
-      >
-        <ShieldCheck className="h-4 w-4" /> Establish Peer Connection
-      </Button>
+      <p className="text-[11px] text-muted-foreground">
+        Use the <b>Mesh-Grid Group Chat</b> card on the left to either initialise a hub
+        (you become the routing switchboard) or paste a host invite token to join an
+        existing group. WebRTC handles the real handshake — no signaling server.
+      </p>
     </Card>
   );
 }
