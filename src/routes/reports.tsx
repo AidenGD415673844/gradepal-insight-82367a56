@@ -3,6 +3,7 @@ import { AppShell } from "@/components/grade/AppShell";
 import { AcademicFeedback } from "@/components/grade/AcademicFeedback";
 import { TermManager } from "@/components/grade/TermManager";
 import { SchoolPortalExport } from "@/components/grade/SchoolPortalExport";
+import { ConsultationBrief } from "@/components/grade/ConsultationBrief";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -23,6 +24,7 @@ function ReportsPage() {
     <AppShell title="Report Card Generator" actions={<TermManager />}>
       <div className="space-y-5">
         <SchoolPortalExport />
+        <ConsultationBrief />
         <AcademicFeedback />
       </div>
     </AppShell>

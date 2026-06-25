@@ -12,6 +12,7 @@ import { createAutoSnapshot } from "@/lib/snapshots";
 import { useRef, useState } from "react";
 import { AdminCommandCenter } from "@/components/grade/AdminCommandCenter";
 import { UIDesignStudio } from "@/components/grade/UIDesignStudio";
+import { WalletPassCard } from "@/components/grade/WalletPassCard";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -183,6 +184,7 @@ function SettingsPage() {
       </Card>
       <SnapshotManager />
       <BackupRestore />
+      <WalletPassCard />
       <UIDesignStudio />
       </div>
       <AdminCommandCenter open={adminOpen} onOpenChange={setAdminOpen} />
