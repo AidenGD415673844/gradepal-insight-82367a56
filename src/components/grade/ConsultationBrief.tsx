@@ -31,7 +31,7 @@ export function ConsultationBrief() {
         if (typeof t.score !== "number") continue;
         const k = t.category || "General";
         const cur = catAgg.get(k) || { sum: 0, n: 0 };
-        cur.sum += (t.score / (t.max || 100)) * 100;
+        cur.sum += (t.score / ((t as any).max || 100)) * 100;
         cur.n += 1;
         catAgg.set(k, cur);
       }
