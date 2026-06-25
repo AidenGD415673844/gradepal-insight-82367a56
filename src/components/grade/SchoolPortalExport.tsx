@@ -7,11 +7,12 @@ import { calcAverage, filterByTerm, getLetter } from "@/lib/grade-utils";
 import { applyAStarOverride } from "./a-star-override";
 import { toast } from "sonner";
 
-type Format = "websams" | "classroom" | "excel";
+type Format = "websams" | "classroom" | "managebac" | "excel";
 
 const FORMATS: { id: Format; label: string; hint: string }[] = [
   { id: "websams", label: "WebSAMS Standard (HK)", hint: "HK Education Bureau column schema, comments ≤ 200 chars" },
   { id: "classroom", label: "Google Classroom CSV", hint: "Classroom import schema: Email, Last Name, First Name, Grade" },
+  { id: "managebac", label: "ManageBac IB Export", hint: "ManageBac column schema: Term, Subject, Grade Letter, Mark, Effort, Comment (IB MYP / DP friendly)" },
   { id: "excel", label: "Generic Excel Spreadsheet", hint: "Wide format with attendance & comments columns" },
 ];
 
@@ -149,6 +150,38 @@ export function SchoolPortalExport() {
       ];
       body = headers.join(",") + "\n" + cells.join(",");
       name = `classroom_${today}.csv`;
+    } else if (fmt === "managebac") {
+      // ManageBac IB import schema — Term, Subject, Grade Letter, Mark, Effort, Comment.
+      const headers = [
+        "Term",
+        "Subject",
+        "Grade",
+        "Mark",
+        "Effort",
+        "Comment",
+      ];
+      const lines = [headers.join(",")];
+      for (const r of rows) {
+        // Effort heuristic from attendance band.
+        const effort = r.attendance >= 95 ? "Outstanding" : r.attendance >= 85 ? "Good" : r.attendance >= 70 ? "Satisfactory" : "Needs Improvement";
+        lines.push(
+          [
+            csvEscape(termLabel),
+            csvEscape(r.subject),
+            csvEscape(r.letter),
+            csvEscape(r.avg),
+            csvEscape(effort),
+            csvEscape(
+              clamp(
+                `${r.tasks} tasks logged · attendance ${r.attendance}% · credits ${r.credits}`,
+                500,
+              ),
+            ),
+          ].join(","),
+        );
+      }
+      body = lines.join("\n");
+      name = `managebac_${today}.csv`;
     } else {
       // Generic Excel-friendly wide CSV
       const headers = [
