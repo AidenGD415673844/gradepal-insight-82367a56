@@ -37,6 +37,25 @@ type LogEntry = {
 
 const LOG: LogEntry[] = [
   {
+    version: "v4.1.0",
+    title: "Portal Bridge Tokens · Wallet Pass · Briefing Sheets · Mailto Outbox · 16-Digit Recovery",
+    date: "2026-06-25",
+    category: "feature",
+    bullets: [
+      "Fixed fatal hydration mismatch on PeerErrorToastHost — SSR now matches client first paint.",
+      "vite.config now aliases bare AI_API_KEY / AI_API_KEY_2 secrets into import.meta.env.VITE_AI_API_KEY(_2) so the user no longer has to rename secrets.",
+      "Notebook Vault — Apple-Notes-style always-visible toolbar with New Note / New Folder buttons, plus persistent inline delete affordances on every folder & note row.",
+      "Lorenz Dispersion Curve · Academic Gini now displays to 1 decimal place for cleaner reporting.",
+      "Homework Helper repriced as a true Pro feature (4 – 7.5 credits per call); AI Analyser Pro window lifted to 3 – 7.5 credits.",
+      "ManageBac IB Export added to the School Portal Export — Term, Subject, Grade Letter, Mark, Effort, Comment.",
+      "Digital Hardware ID Registry — canvas-rendered Syndicate ID Card in Settings, exportable as PNG + passkit-shaped wallet manifest.",
+      "Parent-Teacher Night Briefing — one-click black-and-white executive print sheet on the Report Card Generator.",
+      "Local SMTP Mailer — every Inbox card now offers Route Notice to External Outbox; pre-fills a formal academic narrative via the device mail client.",
+      "16-Digit Emergency Recovery — 5 invalid PIN attempts freezes the panel and reveals a hidden override box. Recovery Certificate is now printable.",
+      "WebRTC Card — prominent always-visible Incoming Offer panel; removed the redundant 'Add Peer via Token' card; Group Chat Hub promoted as the primary multi-peer flow.",
+    ],
+  },
+  {
     version: "v4.0.0",
     title: "Phase 2 — OpenRouter AI Hub, PeerJS, Velocity & Sensitivity Engines",
     date: "2026-06-24",

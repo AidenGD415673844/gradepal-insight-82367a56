@@ -45,8 +45,8 @@ export function estimateCost(
   const base: Record<string, number> = {
     ai_grader: 2.5,
     ai_deep_generate: 1.8,
-    homework_helper: 1.8,
-    analyser: 2.0,
+    homework_helper: 4.5,   // Pro feature — premium cost
+    analyser: 3.5,          // Pro analyser baseline (3 – 7.5 window)
     feedback_bullets: 2.0,
     ai_chat: 1.8,
     default: 1.5,
@@ -57,6 +57,13 @@ export function estimateCost(
   const depth = payload?.depth ?? 0;
   const image = payload?.hasImage ? 0.8 : 0;
   const raw = b + (chars / 1200) * 1.0 + items * 0.25 + depth * 0.5 + image;
+  // Per-feature ceilings so the Pro Analyser/Helper genuinely cost more.
+  if (feature === "analyser") {
+    return Math.max(3, Math.min(7.5, Math.round(raw * 10) / 10));
+  }
+  if (feature === "homework_helper") {
+    return Math.max(4, Math.min(7.5, Math.round(raw * 10) / 10));
+  }
   return Math.max(1.5, Math.min(5, Math.round(raw * 10) / 10));
 }
 

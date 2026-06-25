@@ -24,6 +24,7 @@ import {
   RefreshCw,
   ArrowLeft,
   CheckCircle2,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,7 +44,8 @@ export const Route = createFileRoute("/inbox")({
 
 function InboxPage() {
   const { inbox } = usePeerNetwork();
-  const { tasks } = useGrades();
+  const { tasks, courses, settings, students } = useGrades() as any;
+  const studentName = (Array.isArray(students) && students[0]?.name) || "Student";
   const [openReview, setOpenReview] = useState<WeeklyReview | null>(null);
   const [filter, setFilter] = useState<"all" | "unread" | "weekly" | "sync">("all");
 
@@ -139,6 +141,37 @@ function InboxPage() {
                   </div>
                   <p className="text-xs text-muted-foreground truncate">{i.body}</p>
                 </button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  title="Route notice to external outbox"
+                  onClick={() => {
+                    // Build a formal academic narrative & open the device's default mail client.
+                    const subj = encodeURIComponent(`Academic Notice: ${i.title}`);
+                    const courseLine = (i.payload && (i.payload.course || i.payload.subject)) || "[course]";
+                    const body = encodeURIComponent(
+`Dear Sir / Madam,
+
+I am writing to formally route the following academic notice from my local GradePal dashboard to your records office.
+
+Student Name: ${studentName}
+Course / Subject: ${courseLine}
+Notice Title: ${i.title}
+Notice Detail: ${i.body}
+Triggered: ${new Date(i.ts).toISOString()}
+Total tracked subjects: ${courses?.length ?? 0}
+Weighted calculation: ${settings?.weighted ? "ON" : "OFF"}
+
+This notice was compiled entirely client-side. No personal data has been transmitted to any third-party server.
+
+Kind regards,
+${studentName}`,
+                    );
+                    window.location.href = `mailto:?subject=${subj}&body=${body}`;
+                  }}
+                >
+                  <Mail className="h-4 w-4 text-primary" />
+                </Button>
                 <Button size="icon" variant="ghost" onClick={() => deleteInbox(i.id)} title="Delete">
                   <Trash2 className="h-4 w-4 text-rose-500" />
                 </Button>

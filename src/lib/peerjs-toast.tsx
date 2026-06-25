@@ -91,6 +91,8 @@ export function notifyPeerError(typeRaw: unknown, _extra?: unknown) {
  */
 export function PeerErrorToastHost() {
   const [items, setItems] = useState<Banner[]>([]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     const cb = (b: Banner) => {
       setItems((cur) => [...cur, b]);
@@ -102,7 +104,7 @@ export function PeerErrorToastHost() {
     };
   }, []);
   const dismiss = (id: number) => setItems((cur) => cur.filter((x) => x.id !== id));
-  if (typeof window === "undefined") return null;
+  if (!mounted) return null;
   return (
     <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none w-[min(640px,calc(100vw-1.5rem))]">
       {items.map((b) => (

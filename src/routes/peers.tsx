@@ -11,7 +11,6 @@ import { calcAverage } from "@/lib/grade-utils";
 import {
   usePeerNetwork,
   encodeToken,
-  acceptToken,
   updatePeerStatus,
   removePeer,
   setMyProfile,
@@ -100,7 +99,7 @@ function PeersPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <MyTokenCard token={token} meName={meName} setMeName={setMeName} />
-          <AddPeerCard />
+          <WebRTCHandshakeCard />
           <div className="lg:col-span-2">
             <SyndicateCanvas
               meName={meName || "You"}
@@ -119,10 +118,10 @@ function PeersPage() {
             />
           </div>
           <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <WebRTCHandshakeCard />
             <GroupChatHub
               me={{ id: me.id, name: meName || "You", color: me.color, bullets: me.bullets }}
             />
+            <GroupInviteCard />
           </div>
         </div>
       )}
@@ -161,35 +160,19 @@ function MyTokenCard({ token, meName, setMeName }: { token: string; meName: stri
   );
 }
 
-// =============== Add Peer Card ===============
-function AddPeerCard() {
-  const [input, setInput] = useState("");
+// =============== Group Invite quick-card ===============
+function GroupInviteCard() {
   return (
-    <Card className="p-5 backdrop-blur-md bg-card/80 shadow-[0_4px_30px_rgba(0,0,0,0.05)]">
-      <div className="flex items-center gap-2 mb-3">
-        <Plus className="h-5 w-5 text-primary" />
-        <h2 className="text-base font-bold">Add Peer via Token</h2>
+    <Card className="p-5">
+      <div className="flex items-center gap-2 mb-2">
+        <Users className="h-4 w-4 text-primary" />
+        <h3 className="font-bold text-sm">Create a Study Group Chat</h3>
       </div>
-      <Textarea
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Paste your friend's base64 connection token here..."
-        className="font-mono text-[10px] h-28 resize-none"
-      />
-      <Button
-        className="w-full mt-3 gap-2"
-        onClick={() => {
-          const result = acceptToken(input);
-          if (!result.ok) {
-            toast.error(result.reason || "Failed to add peer");
-            return;
-          }
-          toast.success(`Peer ${result.peer?.name} added — status: ${result.peer?.status}`);
-          setInput("");
-        }}
-      >
-        <ShieldCheck className="h-4 w-4" /> Establish Peer Connection
-      </Button>
+      <p className="text-[11px] text-muted-foreground">
+        Use the <b>Mesh-Grid Group Chat</b> card on the left to either initialise a hub
+        (you become the routing switchboard) or paste a host invite token to join an
+        existing group. WebRTC handles the real handshake — no signaling server.
+      </p>
     </Card>
   );
 }
@@ -672,14 +655,45 @@ function WebRTCHandshakeCard() {
       </p>
 
       <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant={mode === "offerer" ? "default" : "outline"} onClick={startOffer} className="gap-1">
-            <Plus className="h-3.5 w-3.5" /> Create Offer
+        {/* INCOMING OFFER — always-visible inbound area so peers can paste & accept anytime */}
+        {mode !== "offerer" && (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Radio className="h-3.5 w-3.5 text-amber-500" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Incoming Offer</span>
+            </div>
+            <Textarea
+              value={offerIn}
+              onChange={(e) => setOfferIn(e.target.value)}
+              placeholder="Paste your peer's offer SDP here, then tap Accept Incoming Offer below…"
+              className="font-mono text-[10px] h-20"
+            />
+            <Button
+              size="sm"
+              className="w-full gap-1"
+              onClick={acceptOffer}
+              disabled={!offerIn.trim()}
+            >
+              <Check className="h-3.5 w-3.5" /> Accept Incoming Offer
+            </Button>
+            {mode === "answerer" && answerOut && (
+              <>
+                <div className="text-[10px] font-semibold text-emerald-600">↓ Send this answer back to your peer</div>
+                <Textarea readOnly value={answerOut} className="font-mono text-[10px] h-20" />
+                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(answerOut); toast.success("Answer copied"); }} className="gap-1 w-full">
+                  <Copy className="h-3.5 w-3.5" /> Copy Answer
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* OUTGOING — single button: create an offer to send to a peer */}
+        {mode !== "answerer" && (
+          <Button variant={mode === "offerer" ? "default" : "outline"} onClick={startOffer} className="gap-1 w-full">
+            <Plus className="h-3.5 w-3.5" /> Create New Offer (initiate connection)
           </Button>
-          <Button variant={mode === "answerer" ? "default" : "outline"} onClick={acceptOffer} className="gap-1">
-            <Check className="h-3.5 w-3.5" /> Accept Offer
-          </Button>
-        </div>
+        )}
 
         {mode === "offerer" && (
           <>
@@ -689,23 +703,6 @@ function WebRTCHandshakeCard() {
             </Button>
             <Textarea value={answerIn} onChange={(e) => setAnswerIn(e.target.value)} placeholder="Paste peer answer SDP here" className="font-mono text-[10px] h-20" />
             <Button size="sm" onClick={finaliseAnswer} className="w-full">Finalise Handshake</Button>
-          </>
-        )}
-
-        {mode === "answerer" && (
-          <>
-            <Textarea value={offerIn} onChange={(e) => setOfferIn(e.target.value)} placeholder="Paste peer offer SDP here" className="font-mono text-[10px] h-20" />
-            <Textarea readOnly value={answerOut} placeholder="Answer SDP (share back)" className="font-mono text-[10px] h-20" />
-            <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(answerOut); toast.success("Answer copied"); }} className="gap-1 w-full">
-              <Copy className="h-3.5 w-3.5" /> Copy Answer
-            </Button>
-          </>
-        )}
-
-        {mode === "idle" && (
-          <>
-            <Textarea value={offerIn} onChange={(e) => setOfferIn(e.target.value)} placeholder="Paste an incoming offer SDP here…" className="font-mono text-[10px] h-20" />
-            <p className="text-[10px] text-muted-foreground">Or click Create Offer above to initiate.</p>
           </>
         )}
 
