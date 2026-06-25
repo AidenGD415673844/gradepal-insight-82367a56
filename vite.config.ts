@@ -8,8 +8,20 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
+// Also alias bare AI_API_KEY / AI_API_KEY_2 secrets to VITE_-prefixed import.meta.env
+// so the client AI module can read them without the user having to rename secrets.
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
+  },
+  vite: {
+    define: {
+      "import.meta.env.VITE_AI_API_KEY": JSON.stringify(
+        process.env.VITE_AI_API_KEY ?? process.env.AI_API_KEY ?? ""
+      ),
+      "import.meta.env.VITE_AI_API_KEY_2": JSON.stringify(
+        process.env.VITE_AI_API_KEY_2 ?? process.env.AI_API_KEY_2 ?? ""
+      ),
+    },
   },
 });
