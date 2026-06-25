@@ -655,14 +655,45 @@ function WebRTCHandshakeCard() {
       </p>
 
       <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant={mode === "offerer" ? "default" : "outline"} onClick={startOffer} className="gap-1">
-            <Plus className="h-3.5 w-3.5" /> Create Offer
+        {/* INCOMING OFFER — always-visible inbound area so peers can paste & accept anytime */}
+        {mode !== "offerer" && (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Radio className="h-3.5 w-3.5 text-amber-500" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Incoming Offer</span>
+            </div>
+            <Textarea
+              value={offerIn}
+              onChange={(e) => setOfferIn(e.target.value)}
+              placeholder="Paste your peer's offer SDP here, then tap Accept Incoming Offer below…"
+              className="font-mono text-[10px] h-20"
+            />
+            <Button
+              size="sm"
+              className="w-full gap-1"
+              onClick={acceptOffer}
+              disabled={!offerIn.trim()}
+            >
+              <Check className="h-3.5 w-3.5" /> Accept Incoming Offer
+            </Button>
+            {mode === "answerer" && answerOut && (
+              <>
+                <div className="text-[10px] font-semibold text-emerald-600">↓ Send this answer back to your peer</div>
+                <Textarea readOnly value={answerOut} className="font-mono text-[10px] h-20" />
+                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(answerOut); toast.success("Answer copied"); }} className="gap-1 w-full">
+                  <Copy className="h-3.5 w-3.5" /> Copy Answer
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* OUTGOING — single button: create an offer to send to a peer */}
+        {mode !== "answerer" && (
+          <Button variant={mode === "offerer" ? "default" : "outline"} onClick={startOffer} className="gap-1 w-full">
+            <Plus className="h-3.5 w-3.5" /> Create New Offer (initiate connection)
           </Button>
-          <Button variant={mode === "answerer" ? "default" : "outline"} onClick={acceptOffer} className="gap-1">
-            <Check className="h-3.5 w-3.5" /> Accept Offer
-          </Button>
-        </div>
+        )}
 
         {mode === "offerer" && (
           <>
@@ -672,23 +703,6 @@ function WebRTCHandshakeCard() {
             </Button>
             <Textarea value={answerIn} onChange={(e) => setAnswerIn(e.target.value)} placeholder="Paste peer answer SDP here" className="font-mono text-[10px] h-20" />
             <Button size="sm" onClick={finaliseAnswer} className="w-full">Finalise Handshake</Button>
-          </>
-        )}
-
-        {mode === "answerer" && (
-          <>
-            <Textarea value={offerIn} onChange={(e) => setOfferIn(e.target.value)} placeholder="Paste peer offer SDP here" className="font-mono text-[10px] h-20" />
-            <Textarea readOnly value={answerOut} placeholder="Answer SDP (share back)" className="font-mono text-[10px] h-20" />
-            <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(answerOut); toast.success("Answer copied"); }} className="gap-1 w-full">
-              <Copy className="h-3.5 w-3.5" /> Copy Answer
-            </Button>
-          </>
-        )}
-
-        {mode === "idle" && (
-          <>
-            <Textarea value={offerIn} onChange={(e) => setOfferIn(e.target.value)} placeholder="Paste an incoming offer SDP here…" className="font-mono text-[10px] h-20" />
-            <p className="text-[10px] text-muted-foreground">Or click Create Offer above to initiate.</p>
           </>
         )}
 
