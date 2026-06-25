@@ -20,6 +20,7 @@ import {
 } from "@/lib/teacher-auth";
 import { Lock, KeyRound, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { Printer } from "lucide-react";
 
 type Mode = "login" | "create" | "recover";
 
@@ -37,6 +38,9 @@ export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
   const [recovery, setRecovery] = useState("");
   const [showKey, setShowKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const locked = attempts >= 5;
 
   useEffect(() => {
     setU(isUnlocked());
@@ -76,16 +80,47 @@ export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
   };
 
   const handleLogin = async () => {
+    if (locked) return;
     setBusy(true);
     const ok = await verifyPassword(password);
     setBusy(false);
     if (ok) {
       setUnlocked(true);
       setU(true);
+      setAttempts(0);
       toast.success("Teacher mode unlocked.");
     } else {
-      toast.error("Incorrect password.");
+      const next = attempts + 1;
+      setAttempts(next);
+      if (next >= 5) {
+        setOverrideOpen(true);
+        toast.error("5 failed attempts — panel frozen. Enter recovery key to override.");
+      } else {
+        toast.error(`Incorrect password (${next}/5).`);
+      }
     }
+  };
+
+  const printCertificate = () => {
+    if (!showKey) return;
+    const w = window.open("", "_blank", "width=720,height=900");
+    if (!w) return;
+    w.document.write(`<!doctype html><html><head><title>Emergency Recovery Certificate</title>
+      <style>
+        body{font-family:Georgia,serif;margin:48px;color:#000;background:#fff}
+        h1{border-bottom:3px double #000;padding-bottom:6pt;margin:0 0 12pt}
+        .key{font-family:ui-monospace,monospace;font-size:22pt;letter-spacing:0.25em;border:2px solid #000;padding:18pt;text-align:center;margin:18pt 0}
+        p{font-size:11pt;line-height:1.55}
+        .seal{margin-top:36pt;font-size:9pt;color:#444;border-top:1px solid #888;padding-top:6pt}
+      </style></head><body>
+      <h1>GradePal — Emergency Recovery Certificate</h1>
+      <p>This certificate stores your one-time 16-digit Master Alpha-Numeric Security Key. It is the sole offline override for your local teacher gradebook vault. Keep it physically secure.</p>
+      <div class="key">${showKey}</div>
+      <p><b>Issued:</b> ${new Date().toLocaleString()}<br/><b>Vault:</b> Teacher Gradebook · local device only</p>
+      <p>To override a frozen login, enter this exact key on the lock screen and choose a new password. A fresh certificate is issued on every reset.</p>
+      <div class="seal">Generated entirely offline · No server transmission · GradePal Local Vault</div>
+      <script>window.print()</script></body></html>`);
+    w.document.close();
   };
 
   const handleRecover = async () => {
@@ -137,7 +172,7 @@ export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
           </>
         )}
 
-        {mode === "login" && (
+        {mode === "login" && !locked && (
           <>
             <div className="space-y-2">
               <Label>Password</Label>
@@ -151,6 +186,11 @@ export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
             <Button onClick={handleLogin} disabled={busy} className="w-full">
               Unlock
             </Button>
+            {attempts > 0 && (
+              <div className="text-[11px] text-rose-500 font-semibold text-center">
+                {attempts}/5 failed attempts
+              </div>
+            )}
             <button
               onClick={() => setMode("recover")}
               className="text-xs text-primary hover:underline w-full text-center"
@@ -158,6 +198,24 @@ export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
               Forgot password?
             </button>
           </>
+        )}
+
+        {mode === "login" && locked && (
+          <div className="space-y-3 rounded-xl border border-rose-500/50 bg-rose-500/10 p-4">
+            <div className="text-xs font-bold text-rose-600 uppercase tracking-wider">
+              Vault frozen — 5 invalid attempts
+            </div>
+            <p className="text-xs text-rose-700 dark:text-rose-300">
+              Inputs are disabled. Enter your 16-digit Emergency Recovery Key below to override and reset credentials offline.
+            </p>
+            <Label>Recovery Key</Label>
+            <Input value={recovery} onChange={(e) => setRecovery(e.target.value)} placeholder="XXXX-XXXX-XXXX-XXXX" />
+            <Label>New Password</Label>
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Button onClick={handleRecover} disabled={busy} className="w-full">
+              Override &amp; Reset
+            </Button>
+          </div>
         )}
 
         {mode === "recover" && (
@@ -212,10 +270,14 @@ export function TeacherAuthGate({ children }: { children: React.ReactNode }) {
             >
               <Copy className="h-4 w-4" /> Copy
             </Button>
+            <Button variant="outline" onClick={printCertificate} className="gap-2">
+              <Printer className="h-4 w-4" /> Print Recovery Certificate
+            </Button>
             <Button
               onClick={() => {
                 setShowKey(null);
                 setMode("login");
+                setAttempts(0);
               }}
             >
               I've saved it
