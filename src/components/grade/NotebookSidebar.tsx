@@ -28,21 +28,37 @@ export function NotebookSidebar({
   onBroadcastFolder: (folderId: string, folderName: string) => void;
 }) {
   const tree = buildTree(state);
+  const rootFolderId =
+    tree[0]?.id ?? state.folders[0]?.id ?? null;
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between px-1 mb-1">
-        <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-          Folders
-        </div>
+      {/* Apple-Notes-style top toolbar — always visible, big tap targets */}
+      <div className="flex items-center gap-1 mb-2 p-1.5 rounded-lg border bg-muted/30">
         <Button
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7"
+          size="sm"
+          variant="default"
+          className="flex-1 gap-1.5 h-8"
+          title="New note in first folder"
+          onClick={() => {
+            const target = rootFolderId ?? addFolder("Notes", null).id;
+            const n = addNote(target);
+            onSelectNote(n.id);
+          }}
+        >
+          <FilePlus className="h-3.5 w-3.5" /> New Note
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1.5 h-8"
           title="New root folder"
           onClick={() => addFolder("New Folder", null)}
         >
-          <FolderPlus className="h-4 w-4" />
+          <FolderPlus className="h-3.5 w-3.5" /> Folder
         </Button>
+      </div>
+      <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground px-1 mb-1">
+        Folders
       </div>
       {tree.map((node) => (
         <FolderRow
@@ -55,6 +71,11 @@ export function NotebookSidebar({
           onBroadcastFolder={onBroadcastFolder}
         />
       ))}
+      {tree.length === 0 && (
+        <p className="text-xs text-muted-foreground px-2 py-4 text-center">
+          No folders yet — tap <b>+ Folder</b> above.
+        </p>
+      )}
     </div>
   );
 }
@@ -135,7 +156,7 @@ function FolderRow({
             </span>
           </button>
         )}
-        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition">
+        <div className="flex items-center gap-0.5 transition opacity-60 hover:opacity-100">
           <button
             type="button"
             title="New subfolder"
@@ -172,8 +193,7 @@ function FolderRow({
           >
             Cast
           </button>
-          {node.parentId !== null && (
-            <button
+          <button
               type="button"
               title="Delete folder and its notes"
               onClick={() => {
@@ -183,7 +203,6 @@ function FolderRow({
             >
               <Trash2 className="h-3 w-3" />
             </button>
-          )}
         </div>
       </div>
       {colorOpen && (
@@ -270,7 +289,7 @@ function NoteRow({
           e.stopPropagation();
           if (confirm("Delete this note?")) deleteNote(note.id);
         }}
-        className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded hover:bg-rose-500/15 text-rose-500 flex items-center justify-center"
+        className="h-5 w-5 rounded hover:bg-rose-500/15 text-rose-500 flex items-center justify-center opacity-60 hover:opacity-100"
         title="Delete note"
       >
         <Trash2 className="h-3 w-3" />
