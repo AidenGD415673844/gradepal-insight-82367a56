@@ -11,7 +11,6 @@ import { calcAverage } from "@/lib/grade-utils";
 import {
   usePeerNetwork,
   encodeToken,
-  acceptToken,
   updatePeerStatus,
   removePeer,
   setMyProfile,
