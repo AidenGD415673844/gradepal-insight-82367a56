@@ -15,6 +15,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import { useUIPrefs } from "@/lib/ui-prefs";
 
 const NAV_GROUPS = [
   {
@@ -40,7 +41,7 @@ const NAV_GROUPS = [
     items: [
       { to: "/shop", label: "Shop", Icon: Crown },
       { to: "/criteria", label: "Criteria", Icon: ListChecks },
-      { to: "/forecasting", label: "Forecast", Icon: BarChart3 },
+      { to: "/forecasting", label: "Forecast", Icon: BarChart3, advanced: true },
       { to: "/teacher", label: "Teacher", Icon: Lock },
       { to: "/settings", label: "Settings", Icon: Settings },
       { to: "/changelog", label: "Updates", Icon: History },
@@ -50,6 +51,7 @@ const NAV_GROUPS = [
 
 export function WorkspaceNav({ compact = false }: { compact?: boolean }) {
   const location = useLocation();
+  const [prefs] = useUIPrefs();
   return (
     <nav aria-label="Workspace navigation" className={compact ? "overflow-x-auto" : "space-y-2"}>
       <div className={compact ? "flex min-w-max items-center gap-1" : "grid grid-cols-1 gap-2 md:grid-cols-3"}>
@@ -57,7 +59,7 @@ export function WorkspaceNav({ compact = false }: { compact?: boolean }) {
           <div key={group.label} className={compact ? "contents" : "rounded-lg border bg-card/50 p-2"}>
             {!compact && <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{group.label}</div>}
             <div className={compact ? "flex items-center gap-1" : "grid grid-cols-2 gap-1"}>
-              {group.items.map(({ to, label, Icon }) => {
+              {group.items.filter((item) => !("advanced" in item && item.advanced) || prefs.advancedStatsMode).map(({ to, label, Icon }) => {
                 const active = location.pathname === to || location.pathname.startsWith(`${to}/`);
                 return (
                   <Link
