@@ -30,16 +30,25 @@ export class OpenRouterError extends Error {
 // renders normally on first paint; the real value resolves shortly after mount.
 let _keyPresent = true;
 let _keyChecked = false;
+let _keyCheckListeners: Array<(present: boolean) => void> = [];
 export function hasOpenRouterKey(): boolean {
   if (!_keyChecked && typeof window !== "undefined") {
     _keyChecked = true;
     hasOpenRouterKeyFn()
       .then((v) => {
         _keyPresent = !!v;
+        _keyCheckListeners.forEach((fn) => fn(_keyPresent));
       })
       .catch(() => {});
   }
   return _keyPresent;
+}
+
+export function onOpenRouterKeyCheck(fn: (present: boolean) => void): () => void {
+  _keyCheckListeners.push(fn);
+  return () => {
+    _keyCheckListeners = _keyCheckListeners.filter((x) => x !== fn);
+  };
 }
 
 export async function callOpenRouter(opts: {

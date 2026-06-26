@@ -84,7 +84,7 @@ function GraderTab() {
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
           <h2 className="font-bold">AI Grader</h2>
-          <span className="ml-auto text-[10px] text-muted-foreground">Llama-3-8B · ~{cost.toFixed(1)} cr</span>
+          <span className="ml-auto text-[10px] text-muted-foreground">OpenRouter verified router · ~{cost.toFixed(1)} cr</span>
         </div>
         <div>
           <Label>Rubric (optional)</Label>

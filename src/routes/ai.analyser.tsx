@@ -85,7 +85,7 @@ function AnalyserTab() {
         messages: [
           {
             role: "system",
-            content: `You are GradePal's AI Analysis Pro — a long-form, detailed, encouraging analytical study coach.\n\nMANDATORY OUTPUT FORMAT — reply with EXACTLY two sections, in order:\n\n**Chain of Thought:**\n3-6 short italic-style bullet points explaining your reasoning trace before you answer. Example bullets: "I need to focus on the user's score consistency and trends to give an accurate result", "I'll cross-check the weakest subject against recent task velocity", "I should weight the most recent four tasks more heavily".\n\n**Analysis:**\nThen give a substantive, multi-paragraph evidence-based answer that cites exact averages, trends, and subjects from the snapshot. Be motivational but quantitative.\n\n### STUDENT DATA SNAPSHOT\n${dataContext}`,
+            content: `You are GradePal's AI Analysis Pro — a long-form, detailed, encouraging analytical study coach.\n\nMANDATORY OUTPUT FORMAT — reply with EXACTLY two sections, in order:\n\n**Reasoning Summary:**\n3-6 concise bullets summarising the evidence you considered. Do not reveal hidden private chain-of-thought; provide an auditable summary only.\n\n**Analysis:**\nThen give a substantive, multi-paragraph evidence-based answer that cites exact averages, trends, and subjects from the snapshot. Be motivational but quantitative.\n\n### STUDENT DATA SNAPSHOT\n${dataContext}`,
           },
           ...[...msgs, userMsg].slice(-12).map((m) => ({ role: m.role, content: m.content })),
         ],
@@ -113,7 +113,7 @@ function AnalyserTab() {
           <div>
             <h2 className="font-bold text-sm">AI Analysis Pro</h2>
             <p className="text-[10px] text-muted-foreground">
-              Mistral-7B (free) · full grade dataset injected · ~{cost.toFixed(1)} cr/turn
+              Verified OpenRouter route · full grade dataset injected · ~{cost.toFixed(1)} cr/turn
             </p>
           </div>
           {msgs.length > 0 && (
@@ -193,7 +193,7 @@ function AnalyserTab() {
 
 function AssistantBubble({ content }: { content: string }) {
   // Split the chain-of-thought trace from the final answer for distinct styling.
-  const cotMatch = content.match(/\*\*Chain of Thought:?\*\*([\s\S]*?)(?:\*\*Analysis:?\*\*|$)/i);
+  const cotMatch = content.match(/\*\*(?:Reasoning Summary|Chain of Thought):?\*\*([\s\S]*?)(?:\*\*Analysis:?\*\*|$)/i);
   const analysisMatch = content.match(/\*\*Analysis:?\*\*([\s\S]*)/i);
   if (!cotMatch && !analysisMatch) return <>{content}</>;
   const cot = cotMatch?.[1]?.trim() ?? "";
@@ -203,7 +203,7 @@ function AssistantBubble({ content }: { content: string }) {
       {cot && (
         <div className="rounded-lg border border-dashed border-fuchsia-500/40 bg-fuchsia-500/5 px-3 py-2">
           <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-fuchsia-700 dark:text-fuchsia-300 mb-1">
-            <Brain className="h-3 w-3" /> Chain of Thought
+            <Brain className="h-3 w-3" /> Reasoning Summary
           </div>
           <div className="text-[12px] italic text-muted-foreground leading-relaxed whitespace-pre-wrap">
             {cot}

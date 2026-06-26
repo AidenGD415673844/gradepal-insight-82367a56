@@ -2,15 +2,16 @@ import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-rout
 import { AppShell } from "@/components/grade/AppShell";
 import { Card } from "@/components/ui/card";
 import { Brain, Sparkles, BookOpen } from "lucide-react";
-import { hasOpenRouterKey } from "@/lib/openrouter";
+import { hasOpenRouterKey, onOpenRouterKeyCheck } from "@/lib/openrouter";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/ai")({
   head: () => ({
     meta: [
       { title: "AI Hub — GradePal" },
-      { name: "description", content: "Unified AI hub: pro analyser, AI grader, and homework helper — three free OpenRouter models." },
+      { name: "description", content: "Unified AI hub: pro analyser, AI grader, and homework helper with server-side OpenRouter routing." },
       { property: "og:title", content: "AI Hub — GradePal" },
-      { property: "og:description", content: "Three specialised free AI models combined into one workspace: grading, analysis and homework help." },
+      { property: "og:description", content: "Three specialised AI tools combined into one workspace: grading, analysis and homework help." },
       { property: "og:url", content: "https://gradepal-insight.lovable.app/ai" },
     ],
     links: [{ rel: "canonical", href: "https://gradepal-insight.lovable.app/ai" }],
@@ -26,14 +27,16 @@ const TABS = [
 
 function AIHub() {
   const loc = useLocation();
+  const [keyPresent, setKeyPresent] = useState(() => hasOpenRouterKey());
+  useEffect(() => onOpenRouterKeyCheck(setKeyPresent), []);
   const onIndex = loc.pathname === "/ai" || loc.pathname === "/ai/";
   return (
     <AppShell title="AI Hub">
       <div className="space-y-4">
-        {!hasOpenRouterKey() && (
+        {!keyPresent && (
           <Card className="p-4 border-amber-500/40 bg-amber-500/10 text-xs">
-            <b>AI key not configured.</b> Add <code className="font-mono">VITE_AI_API_KEY</code> (and optionally{" "}
-            <code className="font-mono">VITE_AI_API_KEY_2</code> as a fallback) in Project Settings → Secrets and reload.
+            <b>AI key not configured.</b> Add <code className="font-mono">AI_API_KEY</code> (and optionally{" "}
+            <code className="font-mono">AI_API_KEY_2</code> as a fallback) in Project Settings → Secrets and reload.
           </Card>
         )}
         <Card className="p-2 flex flex-wrap gap-1">

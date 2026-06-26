@@ -4,9 +4,27 @@
 import { createServerFn } from "@tanstack/react-start";
 
 export const OR_MODELS = {
-  grader: "google/gemini-flash-1.5-8b:free",
-  analyser: "google/gemini-flash-1.5-8b:free",
-  helper: "google/gemini-flash-1.5-8b:free",
+  grader: "openrouter/free",
+  analyser: "openrouter/free",
+  helper: "openrouter/free",
+} as const;
+
+const OR_MODEL_CANDIDATES = {
+  grader: [
+    { id: "openrouter/free", label: "Free Vision Router", vision: true },
+    { id: "google/gemma-4-26b-a4b-it:free", label: "Gemma 4 26B Vision", vision: true },
+    { id: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B", vision: false },
+  ],
+  analyser: [
+    { id: "openrouter/free", label: "Free Analysis Router", vision: true },
+    { id: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B", vision: false },
+    { id: "openai/gpt-oss-120b:free", label: "GPT OSS 120B", vision: false },
+  ],
+  helper: [
+    { id: "openrouter/free", label: "Free Homework Router", vision: true },
+    { id: "google/gemma-4-26b-a4b-it:free", label: "Gemma 4 26B", vision: true },
+    { id: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B", vision: false },
+  ],
 } as const;
 
 export type ORFeature = keyof typeof OR_MODELS;
@@ -27,8 +45,16 @@ export type ORProxyInput = {
 };
 
 export type ORProxyResult =
-  | { ok: true; content: string }
+  | { ok: true; content: string; model: string; modelLabel: string }
   | { ok: false; status: number; busy: boolean; message: string };
+
+function hasImagePayload(messages: ORMessage[]): boolean {
+  return messages.some((m) => Array.isArray(m.content) && m.content.some((b) => b.type === "image_url"));
+}
+
+function hasInlineImageInText(messages: ORMessage[]): boolean {
+  return messages.some((m) => typeof m.content === "string" && /data:image\/[a-z0-9.+-]+;base64,/i.test(m.content));
+}
 
 function getServerKeys(): string[] {
   const k1 =
@@ -63,72 +89,115 @@ export const openrouterProxy = createServerFn({ method: "POST" })
         message: "AI key missing. Add AI_API_KEY in project secrets.",
       };
     }
-    const model = OR_MODELS[data.feature];
+    if (hasInlineImageInText(data.messages)) {
+      return {
+        ok: false,
+        status: 400,
+        busy: false,
+        message: "Image uploads must be sent as image blocks, not pasted into the text prompt.",
+      };
+    }
+    const needsVision = hasImagePayload(data.messages);
+    const candidates = OR_MODEL_CANDIDATES[data.feature].filter((m) => !needsVision || m.vision);
     let last: ORProxyResult | null = null;
     for (let i = 0; i < keys.length; i++) {
-      try {
-        const res = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${keys[i]}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://gradepal-insight.lovable.app",
-              "X-Title": "GradePal",
+      for (const candidate of candidates) {
+        try {
+          const res = await fetch(
+            "https://openrouter.ai/api/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${keys[i]}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://gradepal-insight.lovable.app",
+                "X-Title": "GradePal",
+              },
+              body: JSON.stringify({
+                model: candidate.id,
+                messages: data.messages,
+                max_tokens: data.maxTokens ?? 1200,
+                temperature: data.temperature ?? 0.7,
+              }),
             },
-            body: JSON.stringify({
-              model,
-              messages: data.messages,
-              max_tokens: data.maxTokens ?? 1200,
-              temperature: data.temperature ?? 0.7,
-            }),
-          },
-        );
-        if (!res.ok) {
-          const txt = await res.text().catch(() => "");
-          const busy = res.status === 429 || res.status === 503 || res.status === 502;
-          if ((busy || res.status === 401 || res.status === 402) && i < keys.length - 1) {
-            last = { ok: false, status: res.status, busy, message: txt.slice(0, 200) };
-            continue;
-          }
-          if (busy) {
+          );
+          if (!res.ok) {
+            const txt = await res.text().catch(() => "");
+            const lower = txt.toLowerCase();
+            const modelMissing = res.status === 404 || lower.includes("no endpoints found") || lower.includes("model not found");
+            const busy = res.status === 429 || res.status === 503 || res.status === 502;
+            if (modelMissing && candidate !== candidates[candidates.length - 1]) {
+              last = {
+                ok: false,
+                status: res.status,
+                busy: false,
+                message: `${candidate.id} is unavailable; trying fallback model.`,
+              };
+              continue;
+            }
+            if ((busy || res.status === 401 || res.status === 402) && i < keys.length - 1) {
+              last = { ok: false, status: res.status, busy, message: txt.slice(0, 200) };
+              break;
+            }
+            if (busy) {
+              return {
+                ok: false,
+                status: res.status,
+                busy: true,
+                message:
+                  "This AI model's free server is busy right now. Please retry in a few seconds.",
+              };
+            }
+            if (modelMissing) {
+              return {
+                ok: false,
+                status: res.status,
+                busy: false,
+                message:
+                  "No currently available OpenRouter endpoint could handle this request. Try again shortly or switch to a text-only prompt.",
+              };
+            }
             return {
               ok: false,
               status: res.status,
-              busy: true,
-              message:
-                "This AI model's free server is busy right now. Please retry in a few seconds.",
+              busy: false,
+              message: `OpenRouter ${res.status} — ${txt.slice(0, 260) || "no response body"}`,
             };
           }
-          return {
-            ok: false,
-            status: res.status,
-            busy: false,
-            message: `OpenRouter ${res.status} — ${txt.slice(0, 200) || "no response body"}`,
+          const json = (await res.json()) as {
+            choices?: { message?: { content?: string | { text?: string }[] } }[];
           };
-        }
-        const json = (await res.json()) as {
-          choices?: { message?: { content?: string } }[];
-        };
-        const content = json?.choices?.[0]?.message?.content ?? "";
-        return { ok: true, content: String(content) };
-      } catch (e) {
-        if (i < keys.length - 1) {
-          last = {
+          const rawContent = json?.choices?.[0]?.message?.content ?? "";
+          const content = Array.isArray(rawContent)
+            ? rawContent.map((part) => part.text ?? "").join("\n")
+            : rawContent;
+          return { ok: true, content: String(content), model: candidate.id, modelLabel: candidate.label };
+        } catch (e) {
+          if (candidate !== candidates[candidates.length - 1]) {
+            last = {
+              ok: false,
+              status: 0,
+              busy: false,
+              message: e instanceof Error ? e.message : "request failed",
+            };
+            continue;
+          }
+          if (i < keys.length - 1) {
+            last = {
+              ok: false,
+              status: 0,
+              busy: false,
+              message: e instanceof Error ? e.message : "request failed",
+            };
+            break;
+          }
+          return {
             ok: false,
             status: 0,
             busy: false,
             message: e instanceof Error ? e.message : "request failed",
           };
-          continue;
         }
-        return {
-          ok: false,
-          status: 0,
-          busy: false,
-          message: e instanceof Error ? e.message : "request failed",
-        };
       }
     }
     return last ?? { ok: false, status: 0, busy: false, message: "OpenRouter request failed." };

@@ -40,6 +40,14 @@ export function AIGraderDialog({
   const { scale } = useGrades();
 
   const handleFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Upload an image file only.");
+      return;
+    }
+    if (file.size > 1_500_000) {
+      toast.error("Image is too large (max 1.5 MB).");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => setImageDataUrl(reader.result as string);
     reader.readAsDataURL(file);

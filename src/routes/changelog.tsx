@@ -43,7 +43,7 @@ const LOG: LogEntry[] = [
     category: "feature",
     bullets: [
       "Fixed fatal hydration mismatch on PeerErrorToastHost — SSR now matches client first paint.",
-      "vite.config now aliases bare AI_API_KEY / AI_API_KEY_2 secrets into import.meta.env.VITE_AI_API_KEY(_2) so the user no longer has to rename secrets.",
+      "AI secrets now stay server-side only; AI_API_KEY / AI_API_KEY_2 are read through the secure OpenRouter proxy and are never bundled into browser code.",
       "Notebook Vault — Apple-Notes-style always-visible toolbar with New Note / New Folder buttons, plus persistent inline delete affordances on every folder & note row.",
       "Lorenz Dispersion Curve · Academic Gini now displays to 1 decimal place for cleaner reporting.",
       "Homework Helper repriced as a true Pro feature (4 – 7.5 credits per call); AI Analyser Pro window lifted to 3 – 7.5 credits.",
@@ -62,8 +62,8 @@ const LOG: LogEntry[] = [
     category: "feature",
     bullets: [
       "AI features unified under a single /ai nav with sub-tabs: AI Analysis Pro, AI Grader, Homework Helper.",
-      "Multi-model OpenRouter wiring — Llama-3-8B (grader), Mistral-7B (analyser), Gemini-Flash-1.5-8B (helper) — all free tiers.",
-      "Direct frontend fetch using VITE_AI_API_KEY (+ VITE_AI_API_KEY_2 fallback) — no raw keys in component source.",
+      "Multi-model OpenRouter wiring now uses verified live router/model fallbacks for grading, analysis and homework help.",
+      "AI calls route through a server-side proxy with AI_API_KEY (+ AI_API_KEY_2 fallback); raw keys are never exposed to components.",
       "Top-down sliding dark-red PeerJS error toast banner with 7 mapped error codes (122–126, 121, 6x001002x).",
       "PeerJS package wired against the free public PeerJS cloud server (handshake only — grade data still 100% localStorage).",
       "Variable AI costs tightened to a 1.5–5 credit window; 75-credit top-up pack repriced to $67.5 HKD.",
