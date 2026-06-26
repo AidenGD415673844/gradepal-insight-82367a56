@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useGrades } from "@/lib/grade-store";
 import { spendCredits, estimateCost } from "@/lib/ai-credits";
 import { Link } from "@tanstack/react-router";
-import { callOpenRouter, OpenRouterError } from "@/lib/openrouter";
+import { callOpenRouter, OpenRouterError, type ORMessage } from "@/lib/openrouter";
 
 type Result = {
   score: number;
@@ -71,7 +71,18 @@ export function AIGraderDialog({
     try {
       const sorted = [...scale].sort((a, b) => b.min - a.min);
       const scaleStr = sorted.map((s) => `${s.min}+ → ${s.letter}`).join(", ");
-      const userPart = text ? `Student work:\n${text}` : `Image attached (described to you separately).`;
+      // CRITICAL: keep base64 image data OUT of the text prompt string so the
+      // JSON-extraction regex below never sees megabytes of pixel data.
+      // Vision goes through an image_url content block instead.
+      const textBlock = text
+        ? `Student work (transcribed by student):\n${text}`
+        : "Grade the attached image of the student's work.";
+      const userContent: ORMessage["content"] = imageDataUrl
+        ? [
+            { type: "text", text: textBlock },
+            { type: "image_url", image_url: { url: imageDataUrl } },
+          ]
+        : textBlock;
       const raw = await callOpenRouter({
         feature: "grader",
         maxTokens: 700,
@@ -81,7 +92,7 @@ export function AIGraderDialog({
             role: "system",
             content: `You are a strict but fair teacher. Reply ONLY with JSON: {"score": int 0-100, "letter": string, "summary": string, "strengths": string[], "improvements": string[]}. Use exactly these letters: ${scaleStr}. ${rubric ? "Rubric: " + rubric : ""}`,
           },
-          { role: "user", content: userPart + (imageDataUrl ? "\n[An image was provided; the free Llama-3-8B model is text-only — base grading on the text.]" : "") },
+          { role: "user", content: userContent },
         ],
       });
       const cleaned = raw.replace(/```json|```/gi, "").trim();

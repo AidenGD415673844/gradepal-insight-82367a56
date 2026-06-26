@@ -162,6 +162,13 @@ body.transcript-print-mode > *:not(.transcript-sheet-portal):not(.transcript-she
 .transcript-sheet .transcript-table th { text-transform: uppercase; font-size: 10px; letter-spacing: 1px; border-bottom-width: 2px; }
 .transcript-sheet .transcript-table .bold { font-weight: 700; }
 .transcript-sheet .transcript-table .right { text-align: right; }
+/* Bug fix v3.1: first subject row was being clipped under repeating <thead>
+   during print pagination. Force header-group repeat + extra top padding on
+   the first body row. */
+.transcript-sheet .transcript-table thead { display: table-header-group; }
+.transcript-sheet .transcript-table tfoot { display: table-row-group; }
+.transcript-sheet .transcript-table tr { page-break-inside: avoid; break-inside: avoid; }
+.transcript-sheet .transcript-table tbody tr:first-child td { padding-top: 16px; }
 .transcript-sheet .transcript-footer { margin-top: 36px; }
 .transcript-sheet .transcript-sig-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #444; }
 .transcript-sheet .transcript-sig-img { height: 64px; }
