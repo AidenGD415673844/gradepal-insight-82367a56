@@ -89,6 +89,12 @@ export function ConsultationBrief() {
             #consultation-brief-print table { width: 100%; border-collapse: collapse; font-size: 10pt; }
             #consultation-brief-print th, #consultation-brief-print td { border: 1px solid #000; padding: 4pt 6pt; text-align: left; }
             #consultation-brief-print th { background: #000; color: #fff; }
+            /* Bug fix v3.1: print pagination was clipping the first subject row
+               under the repeating <thead>. Force repeat + avoid row breaks. */
+            #consultation-brief-print thead { display: table-header-group; }
+            #consultation-brief-print tfoot { display: table-row-group; }
+            #consultation-brief-print tr { page-break-inside: avoid; break-inside: avoid; }
+            #consultation-brief-print tbody tr:first-child td { padding-top: 10pt; }
             #consultation-brief-print .meta { display: flex; justify-content: space-between; font-size: 10pt; margin-bottom: 8pt; }
             #consultation-brief-print ol { padding-left: 18pt; font-size: 10pt; }
             #consultation-brief-print .checklist li { margin-bottom: 2pt; }
