@@ -1,38 +1,20 @@
 // =============================================================================
-// OpenRouter client — direct frontend fetch with VITE_AI_API_KEY + fallback to
-// VITE_AI_API_KEY_2. Multi-model architecture per feature.
-// All keys are pulled from import.meta.env so raw values never appear in
-// component source. Use this module everywhere instead of hard-coding fetch.
+// Client-side OpenRouter façade. The actual API key lives ONLY on the server
+// inside `openrouter.functions.ts`; this module just forwards requests to the
+// `openrouterProxy` server function so the key is never bundled into the
+// client JavaScript.
 // =============================================================================
+import {
+  OR_MODELS,
+  openrouterProxy,
+  hasOpenRouterKeyFn,
+  type ORMessage as _ORMessage,
+  type ORFeature,
+} from "./openrouter.functions";
 
-export const OR_MODELS = {
-  // All three mapped to vision-capable free models so photo uploads work
-  // end-to-end (Llama-3-8B and Mistral-7B are text-only and would silently
-  // ignore image_url blocks).
-  grader: "google/gemini-flash-1.5-8b:free",
-  analyser: "google/gemini-flash-1.5-8b:free",
-  helper: "google/gemini-flash-1.5-8b:free",
-} as const;
-
-export type ORModel = keyof typeof OR_MODELS;
-
-type ORContentBlock =
-  | { type: "text"; text: string }
-  | { type: "image_url"; image_url: { url: string } };
-export type ORMessage = {
-  role: "system" | "user" | "assistant";
-  content: string | ORContentBlock[];
-};
-
-function getKeys(): string[] {
-  const k1 = (import.meta.env.VITE_AI_API_KEY as string | undefined)?.trim();
-  const k2 = (import.meta.env.VITE_AI_API_KEY_2 as string | undefined)?.trim();
-  return [k1, k2].filter((x): x is string => !!x && x.length > 8);
-}
-
-export function hasOpenRouterKey(): boolean {
-  return getKeys().length > 0;
-}
+export { OR_MODELS };
+export type ORMessage = _ORMessage;
+export type ORModel = ORFeature;
 
 export class OpenRouterError extends Error {
   status: number;
@@ -44,73 +26,31 @@ export class OpenRouterError extends Error {
   }
 }
 
-/**
- * Call OpenRouter directly from the browser. Tries the primary key, then
- * automatically retries on the fallback key for rate-limit / auth failures.
- * Throws OpenRouterError on hard failure.
- */
+// Cached server-side key presence check. Defaults to `true` so the AI hub UI
+// renders normally on first paint; the real value resolves shortly after mount.
+let _keyPresent = true;
+let _keyChecked = false;
+export function hasOpenRouterKey(): boolean {
+  if (!_keyChecked && typeof window !== "undefined") {
+    _keyChecked = true;
+    hasOpenRouterKeyFn()
+      .then((v) => {
+        _keyPresent = !!v;
+      })
+      .catch(() => {});
+  }
+  return _keyPresent;
+}
+
 export async function callOpenRouter(opts: {
   feature: ORModel;
   messages: ORMessage[];
   maxTokens?: number;
   temperature?: number;
 }): Promise<string> {
-  const keys = getKeys();
-  if (!keys.length) {
-    throw new OpenRouterError(
-      "AI key missing. Add VITE_AI_API_KEY in project secrets.",
-      0,
-    );
+  const res = await openrouterProxy({ data: opts });
+  if (!res.ok) {
+    throw new OpenRouterError(res.message, res.status, res.busy);
   }
-  const model = OR_MODELS[opts.feature];
-  let lastErr: OpenRouterError | null = null;
-  for (let i = 0; i < keys.length; i++) {
-    try {
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${keys[i]}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": typeof window !== "undefined" ? window.location.origin : "https://gradepal-insight.lovable.app",
-          "X-Title": "GradePal",
-        },
-        body: JSON.stringify({
-          model,
-          messages: opts.messages,
-          max_tokens: opts.maxTokens ?? 1200,
-          temperature: opts.temperature ?? 0.7,
-        }),
-      });
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        const busy = res.status === 429 || res.status === 503 || res.status === 502;
-        // Retry on next key if rate-limited or auth/credit error
-        if ((busy || res.status === 401 || res.status === 402) && i < keys.length - 1) {
-          lastErr = new OpenRouterError(`${res.status}: ${txt.slice(0, 200)}`, res.status, busy);
-          continue;
-        }
-        if (busy) {
-          throw new OpenRouterError(
-            "This AI model's free server is busy right now. Please retry in a few seconds.",
-            res.status,
-            true,
-          );
-        }
-        throw new OpenRouterError(
-          `OpenRouter ${res.status} — ${txt.slice(0, 200) || "no response body"}`,
-          res.status,
-        );
-      }
-      const json = await res.json();
-      const content = json?.choices?.[0]?.message?.content ?? "";
-      return String(content);
-    } catch (e) {
-      if (e instanceof OpenRouterError && i < keys.length - 1) {
-        lastErr = e;
-        continue;
-      }
-      throw e;
-    }
-  }
-  throw lastErr ?? new OpenRouterError("OpenRouter request failed.", 0);
+  return res.content;
 }
