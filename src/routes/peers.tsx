@@ -11,6 +11,7 @@ import { calcAverage } from "@/lib/grade-utils";
 import {
   usePeerNetwork,
   encodeToken,
+  acceptToken,
   updatePeerStatus,
   removePeer,
   setMyProfile,
@@ -38,8 +39,11 @@ import {
   Trophy,
   LogOut,
   Hash,
+  UserPlus,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { RTCPeerLink, type RTCHealth, type RTCEnvelope } from "@/lib/webrtc-peer";
 import {
   useGroupChat,
@@ -47,6 +51,7 @@ import {
   joinGroupAsMember,
   hostAddMemberByToken,
   buildMemberToken,
+  updateGroupDisplayName,
   sendGroupMessage,
   leaveGroup,
 } from "@/lib/group-chat";
@@ -131,6 +136,14 @@ function PeersPage() {
 
 // =============== My Token Card ===============
 function MyTokenCard({ token, meName, setMeName }: { token: string; meName: string; setMeName: (s: string) => void }) {
+  const [incoming, setIncoming] = useState("");
+  const connect = () => {
+    const r = acceptToken(incoming);
+    if (!r.ok) return toast.error(r.reason || "Could not import peer token.");
+    toast.success(`${r.peer?.name ?? "Peer"} imported — accept the pending request below.`);
+    setIncoming("");
+  };
+
   return (
     <Card className="p-5 backdrop-blur-md bg-card/80 shadow-[0_4px_30px_rgba(0,0,0,0.05)]">
       <div className="flex items-center gap-2 mb-3">
@@ -154,6 +167,20 @@ function MyTokenCard({ token, meName, setMeName }: { token: string; meName: stri
           className="w-full gap-2"
         >
           <Copy className="h-4 w-4" /> Copy Token
+        </Button>
+      </div>
+      <div className="mt-4 rounded-lg border bg-muted/20 p-3 space-y-2">
+        <div className="flex items-center gap-2 text-xs font-bold">
+          <UserPlus className="h-3.5 w-3.5 text-primary" /> Add peer by token
+        </div>
+        <Textarea
+          value={incoming}
+          onChange={(e) => setIncoming(e.target.value)}
+          placeholder="Paste another student's base64 connection token…"
+          className="font-mono text-[10px] h-20 resize-none"
+        />
+        <Button size="sm" variant="outline" onClick={connect} disabled={!incoming.trim()} className="w-full gap-1.5">
+          <Plus className="h-3.5 w-3.5" /> Import Peer Token
         </Button>
       </div>
     </Card>
@@ -276,7 +303,7 @@ function Avatar({ peer }: { peer: { name: string; color: string } }) {
   const initial = peer.name?.[0]?.toUpperCase() || "?";
   return (
     <div
-      className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+      className="h-9 w-9 rounded-full flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0"
       style={{ background: peer.color || "#3b82f6" }}
     >
       {initial}

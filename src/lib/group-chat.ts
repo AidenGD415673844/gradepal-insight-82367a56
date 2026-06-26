@@ -150,6 +150,17 @@ export function buildMemberToken(me: { id: string; name: string; color: string; 
   return encode(node);
 }
 
+export function updateGroupDisplayName(name: string) {
+  const clean = name.trim().slice(0, 32);
+  if (!clean) return;
+  const session = getSession();
+  if (!session) return;
+  const nodes = getNodes().map((n) => (n.id === session.myId ? { ...n, name: clean } : n));
+  write(K_SESSION, { ...session, myName: clean, nodes });
+  write(K_NODES, nodes);
+  channel()?.postMessage({ type: "roster", groupId: session.groupId, nodes });
+}
+
 export function sendGroupMessage(text: string) {
   const session = getSession();
   if (!session) return;
