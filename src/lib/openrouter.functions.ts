@@ -57,10 +57,8 @@ function hasInlineImageInText(messages: ORMessage[]): boolean {
 }
 
 function getServerKeys(): string[] {
-  const k1 =
-    (process.env.VITE_AI_API_KEY ?? process.env.AI_API_KEY ?? "").trim();
-  const k2 =
-    (process.env.VITE_AI_API_KEY_2 ?? process.env.AI_API_KEY_2 ?? "").trim();
+  const k1 = (process.env.AI_API_KEY ?? "").trim();
+  const k2 = (process.env.AI_API_KEY_2 ?? "").trim();
   return [k1, k2].filter((x) => x.length > 8);
 }
 

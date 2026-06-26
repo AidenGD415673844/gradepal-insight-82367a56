@@ -58,7 +58,7 @@ const ALL_CORE_CARDS = [
   { to: "/reports", title: "Official Report Card", desc: "Multi-term filter & 10 bullet feedback", Icon: ClipboardCheck, accent: "from-rose-500/20 to-pink-500/10" },
   { to: "/peers", title: "Peer Network Hub", desc: "Decentralised base64 peer tokens, academic sync grid & FIFO chat", Icon: Users, accent: "from-blue-500/20 to-cyan-500/10" },
   { to: "/notebook", title: "Academic Notebook Vault", desc: "Hierarchical folders, rich-text editor, KaTeX equations & base64 media", Icon: BookOpen, accent: "from-violet-500/20 to-fuchsia-500/10" },
-  { to: "/ai", title: "AI Hub", desc: "Analysis Pro, AI Grader & Homework Helper — three free OpenRouter models in one place", Icon: Brain, accent: "from-pink-500/20 to-rose-500/10" },
+  { to: "/ai", title: "AI Hub", desc: "Analysis Pro, AI Grader & Homework Helper with verified server-side AI routing", Icon: Brain, accent: "from-pink-500/20 to-rose-500/10" },
   { to: "/inbox", title: "Local Inbox", desc: "Weekly performance reviews and peer sync notices", Icon: InboxIcon, accent: "from-amber-500/20 to-yellow-500/10" },
   { to: "/shop", title: "GradePal Pro Shop", desc: "Subscription tiers, referral wallet checkout & promo codes", Icon: Crown, accent: "from-amber-500/20 to-orange-500/10" },
   { to: "/forecasting", title: "Strategic Forecasting Hub", desc: "Cone of uncertainty, Monte Carlo, GPA velocity & burnout thermometer", Icon: LineChart, accent: "from-fuchsia-500/20 to-purple-500/10", advanced: true },
