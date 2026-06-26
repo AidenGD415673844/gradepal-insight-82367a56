@@ -16,7 +16,7 @@ type Result = { score: number; letter: string; summary: string; strengths: strin
 export const Route = createFileRoute("/ai/grader")({ component: GraderTab });
 
 function safeParseJSON(s: string): Result | null {
-  // Llama models sometimes wrap JSON in ```json fences or trailing prose.
+  // Free routed models sometimes wrap JSON in ```json fences or trailing prose.
   const cleaned = s.replace(/```json|```/gi, "").trim();
   const m = cleaned.match(/\{[\s\S]*\}/);
   if (!m) return null;
@@ -84,7 +84,7 @@ function GraderTab() {
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
           <h2 className="font-bold">AI Grader</h2>
-          <span className="ml-auto text-[10px] text-muted-foreground">Llama-3-8B · ~{cost.toFixed(1)} cr</span>
+          <span className="ml-auto text-[10px] text-muted-foreground">OpenRouter verified router · ~{cost.toFixed(1)} cr</span>
         </div>
         <div>
           <Label>Rubric (optional)</Label>

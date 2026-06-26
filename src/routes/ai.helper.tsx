@@ -92,7 +92,7 @@ function HelperTab() {
         <div className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-primary" />
           <h2 className="font-bold">Homework Helper</h2>
-          <span className="ml-auto text-[10px] text-muted-foreground">Gemini-Flash-1.5-8B · ~{cost.toFixed(1)} cr</span>
+          <span className="ml-auto text-[10px] text-muted-foreground">OpenRouter verified router · ~{cost.toFixed(1)} cr</span>
         </div>
         <div>
           <Label>Subject (optional)</Label>

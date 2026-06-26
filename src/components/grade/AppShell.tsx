@@ -5,6 +5,7 @@ import { type ReactNode } from "react";
 import { SandboxFrame, SandboxToggle } from "@/components/grade/SandboxToggle";
 import { AICreditChip } from "@/components/grade/AICreditChip";
 import { StreakBadge } from "@/components/grade/StreakBadge";
+import { WorkspaceNav } from "@/components/grade/WorkspaceNav";
 
 export function AppShell({
   title,
@@ -21,7 +22,8 @@ export function AppShell({
     <SandboxFrame>
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-5">
-        <header className="bg-card rounded-2xl shadow-soft p-3 md:p-4 flex items-center gap-3 justify-between flex-wrap">
+        <header className="bg-card rounded-2xl shadow-soft p-3 md:p-4 space-y-3">
+          <div className="flex items-center gap-3 justify-between flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <Button
               variant="ghost"
@@ -50,6 +52,8 @@ export function AppShell({
               </Link>
             </Button>
           </div>
+          </div>
+          <WorkspaceNav compact />
         </header>
         <main>{children}</main>
       </div>
