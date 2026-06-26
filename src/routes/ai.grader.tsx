@@ -16,7 +16,7 @@ type Result = { score: number; letter: string; summary: string; strengths: strin
 export const Route = createFileRoute("/ai/grader")({ component: GraderTab });
 
 function safeParseJSON(s: string): Result | null {
-  // Llama models sometimes wrap JSON in ```json fences or trailing prose.
+  // Free routed models sometimes wrap JSON in ```json fences or trailing prose.
   const cleaned = s.replace(/```json|```/gi, "").trim();
   const m = cleaned.match(/\{[\s\S]*\}/);
   if (!m) return null;
