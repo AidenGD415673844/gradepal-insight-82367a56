@@ -135,7 +135,7 @@ function AnalyserTab() {
                 m.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "bg-muted/60"
               }`}
             >
-              {m.content}
+              {m.role === "assistant" ? <AssistantBubble content={m.content} /> : m.content}
             </div>
           ))}
           {loading && (
@@ -187,6 +187,30 @@ function AnalyserTab() {
           <Badge variant="outline" className="mt-2 text-[9px]">Auto-sent with every message</Badge>
         </Card>
       </div>
+    </div>
+  );
+}
+
+function AssistantBubble({ content }: { content: string }) {
+  // Split the chain-of-thought trace from the final answer for distinct styling.
+  const cotMatch = content.match(/\*\*Chain of Thought:?\*\*([\s\S]*?)(?:\*\*Analysis:?\*\*|$)/i);
+  const analysisMatch = content.match(/\*\*Analysis:?\*\*([\s\S]*)/i);
+  if (!cotMatch && !analysisMatch) return <>{content}</>;
+  const cot = cotMatch?.[1]?.trim() ?? "";
+  const analysis = analysisMatch?.[1]?.trim() ?? content;
+  return (
+    <div className="space-y-2">
+      {cot && (
+        <div className="rounded-lg border border-dashed border-fuchsia-500/40 bg-fuchsia-500/5 px-3 py-2">
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-fuchsia-700 dark:text-fuchsia-300 mb-1">
+            <Brain className="h-3 w-3" /> Chain of Thought
+          </div>
+          <div className="text-[12px] italic text-muted-foreground leading-relaxed whitespace-pre-wrap">
+            {cot}
+          </div>
+        </div>
+      )}
+      <div className="whitespace-pre-wrap">{analysis}</div>
     </div>
   );
 }
