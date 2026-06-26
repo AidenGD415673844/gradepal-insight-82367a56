@@ -34,6 +34,7 @@ import {
   BookOpen,
   Brain,
 } from "lucide-react";
+import { WorkspaceNav } from "@/components/grade/WorkspaceNav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -103,18 +104,21 @@ function Home() {
         <BurnoutRadar />
         <GPAFireAlarm />
         <LeitnerCram />
-        <header className="bg-card rounded-2xl shadow-soft p-4 md:p-5 flex items-center gap-3 justify-between flex-wrap">
-          <div className="flex items-center gap-3">
+        <header className="bg-card rounded-2xl shadow-soft p-4 md:p-5 space-y-4">
+          <div className="flex items-center gap-3 justify-between flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="h-11 w-11 rounded-xl bg-primary flex items-center justify-center shadow-soft">
               <GraduationCap className="h-6 w-6 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">GradeCalc — Local School Dashboard</h1>
+            <h1 className="text-2xl font-bold tracking-tight truncate">GradeCalc — Local School Dashboard</h1>
           </div>
           <Button variant="outline" size="sm" asChild className="gap-2">
             <Link to="/timetable">
               <CalendarRange className="h-4 w-4" /> Calendar
             </Link>
           </Button>
+          </div>
+          <WorkspaceNav />
         </header>
 
         {!prefs.welcomeDismissed && (
