@@ -6,14 +6,23 @@
 // =============================================================================
 
 export const OR_MODELS = {
-  grader: "meta-llama/llama-3-8b-instruct:free",
-  analyser: "mistralai/mistral-7b-instruct:free",
+  // All three mapped to vision-capable free models so photo uploads work
+  // end-to-end (Llama-3-8B and Mistral-7B are text-only and would silently
+  // ignore image_url blocks).
+  grader: "google/gemini-flash-1.5-8b:free",
+  analyser: "google/gemini-flash-1.5-8b:free",
   helper: "google/gemini-flash-1.5-8b:free",
 } as const;
 
 export type ORModel = keyof typeof OR_MODELS;
 
-type ORMessage = { role: "system" | "user" | "assistant"; content: string };
+type ORContentBlock =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+export type ORMessage = {
+  role: "system" | "user" | "assistant";
+  content: string | ORContentBlock[];
+};
 
 function getKeys(): string[] {
   const k1 = (import.meta.env.VITE_AI_API_KEY as string | undefined)?.trim();

@@ -85,7 +85,7 @@ function AnalyserTab() {
         messages: [
           {
             role: "system",
-            content: `You are GradePal's AI Analysis Pro — a long-form, detailed, encouraging analytical study coach. Use the full student data snapshot below to cite exact averages, trends and subjects. Give substantive, multi-paragraph answers with concrete numbers. Be motivational but evidence-based.\n\n### STUDENT DATA SNAPSHOT\n${dataContext}`,
+            content: `You are GradePal's AI Analysis Pro — a long-form, detailed, encouraging analytical study coach.\n\nMANDATORY OUTPUT FORMAT — reply with EXACTLY two sections, in order:\n\n**Chain of Thought:**\n3-6 short italic-style bullet points explaining your reasoning trace before you answer. Example bullets: "I need to focus on the user's score consistency and trends to give an accurate result", "I'll cross-check the weakest subject against recent task velocity", "I should weight the most recent four tasks more heavily".\n\n**Analysis:**\nThen give a substantive, multi-paragraph evidence-based answer that cites exact averages, trends, and subjects from the snapshot. Be motivational but quantitative.\n\n### STUDENT DATA SNAPSHOT\n${dataContext}`,
           },
           ...[...msgs, userMsg].slice(-12).map((m) => ({ role: m.role, content: m.content })),
         ],
