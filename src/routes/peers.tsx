@@ -473,6 +473,8 @@ function StudyBlockPlanner({ peerId, peerName }: { peerId: string; peerName: str
 function ChatCanvas({ peerId, peerName }: { peerId: string; peerName: string }) {
   const [msgs, setMsgs] = useState<ChatMsg[]>(() => getChat(peerId));
   const [input, setInput] = useState("");
+  const [compact, setCompact] = useState(false);
+  const [showReceipts, setShowReceipts] = useState(true);
 
   useEffect(() => {
     const tick = () => setMsgs(getChat(peerId));
@@ -503,6 +505,14 @@ function ChatCanvas({ peerId, peerName }: { peerId: string; peerName: string }) 
         <span className="text-sm font-bold">Chat — {peerName}</span>
         <span className="text-[10px] text-muted-foreground ml-auto">{msgs.length}/100 (FIFO)</span>
       </div>
+      <div className="border-b px-3 py-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+        <label className="flex items-center gap-1.5">
+          <Checkbox checked={compact} onCheckedChange={(v) => setCompact(Boolean(v))} /> Compact
+        </label>
+        <label className="flex items-center gap-1.5">
+          <Checkbox checked={showReceipts} onCheckedChange={(v) => setShowReceipts(Boolean(v))} /> Receipts
+        </label>
+      </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-muted/20">
         {msgs.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-4">No messages yet — say hi.</p>
@@ -511,11 +521,11 @@ function ChatCanvas({ peerId, peerName }: { peerId: string; peerName: string }) 
           const mine = m.from === "me";
           return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-blue-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100"}`}>
+              <div className={`max-w-[80%] rounded-2xl px-3 ${compact ? "py-1.5 text-xs" : "py-2 text-sm"} ${mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
                 <div className="whitespace-pre-wrap break-words">{m.text}</div>
-                <div className={`mt-1 flex items-center gap-1 text-[10px] ${mine ? "text-blue-100" : "text-slate-500"}`}>
+                <div className={`mt-1 flex items-center gap-1 text-[10px] ${mine ? "text-primary-foreground/75" : "text-muted-foreground"}`}>
                   <span>{new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                  {mine && <Ticks msg={m} />}
+                  {mine && showReceipts && <Ticks msg={m} />}
                 </div>
               </div>
             </div>
@@ -763,6 +773,10 @@ function GroupChatHub({ me }: { me: { id: string; name: string; color: string; b
   const [text, setText] = useState("");
   const [stealth, setStealth] = useState(false);
   const [tab, setTab] = useState<"chat" | "leaderboard">("chat");
+  const [compact, setCompact] = useState(false);
+  const [showScores, setShowScores] = useState(true);
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(me.name);
 
   if (!session) {
     return (
@@ -813,6 +827,16 @@ function GroupChatHub({ me }: { me: { id: string; name: string; color: string; b
         <span className="text-sm font-bold">Group · {session.groupId.slice(-6)}</span>
         <Badge variant="outline" className="text-[10px]">{session.isHost ? "Host" : "Member"}</Badge>
         <Badge variant="outline" className="text-[10px]">{nodes.length} nodes</Badge>
+        {editingName ? (
+          <div className="flex items-center gap-1">
+            <Input value={draftName} onChange={(e) => setDraftName(e.target.value)} className="h-8 w-32 text-xs" maxLength={32} />
+            <Button size="sm" className="h-8" onClick={() => { updateGroupDisplayName(draftName); setEditingName(false); toast.success("Group name updated"); }}>Save</Button>
+          </div>
+        ) : (
+          <Button size="icon" variant="ghost" onClick={() => { setDraftName(session.myName); setEditingName(true); }} title="Edit group display name">
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
         <Button size="icon" variant="ghost" onClick={() => setStealth((s) => !s)} title="Stealth Blur">
           {stealth ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </Button>
@@ -827,6 +851,14 @@ function GroupChatHub({ me }: { me: { id: string; name: string; color: string; b
             <Trophy className="h-3 w-3" /> Leaderboard
           </Button>
         </div>
+        <div className="basis-full flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+          <label className="flex items-center gap-1.5">
+            <Checkbox checked={compact} onCheckedChange={(v) => setCompact(Boolean(v))} /> Compact chat
+          </label>
+          <label className="flex items-center gap-1.5">
+            <Checkbox checked={showScores} onCheckedChange={(v) => setShowScores(Boolean(v))} /> Show leaderboard scores
+          </label>
+        </div>
       </div>
 
       {tab === "chat" ? (
@@ -839,9 +871,9 @@ function GroupChatHub({ me }: { me: { id: string; name: string; color: string; b
               return (
                 <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"} flex-col`}>
                   {!mine && <div className="text-[10px] font-bold text-muted-foreground mb-0.5 px-2">{name}</div>}
-                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-blue-600 text-white self-end" : "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 self-start"}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-3 ${compact ? "py-1.5 text-xs" : "py-2 text-sm"} ${mine ? "bg-primary text-primary-foreground self-end" : "bg-muted text-foreground self-start"}`}>
                     <div className="whitespace-pre-wrap break-words">{m.text}</div>
-                    <div className={`mt-1 text-[10px] ${mine ? "text-blue-100" : "text-slate-500"}`}>
+                    <div className={`mt-1 text-[10px] ${mine ? "text-primary-foreground/75" : "text-muted-foreground"}`}>
                       {new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
@@ -873,10 +905,10 @@ function GroupChatHub({ me }: { me: { id: string; name: string; color: string; b
               <thead>
                 <tr className="text-[10px] uppercase text-muted-foreground">
                   <th className="text-left py-1.5">Member</th>
-                  {Array.from({ length: 10 }).map((_, i) => (
+                  {showScores && Array.from({ length: 10 }).map((_, i) => (
                     <th key={i} className="text-right py-1.5 px-1">B{i + 1}</th>
                   ))}
-                  <th className="text-right py-1.5 px-1">Avg</th>
+                  {showScores && <th className="text-right py-1.5 px-1">Avg</th>}
                 </tr>
               </thead>
               <tbody>
@@ -887,7 +919,7 @@ function GroupChatHub({ me }: { me: { id: string; name: string; color: string; b
                   return (
                     <tr key={n.id} className="border-t">
                       <td className="py-1.5 font-semibold">{display}</td>
-                      {Array.from({ length: 10 }).map((_, i) => {
+                      {showScores && Array.from({ length: 10 }).map((_, i) => {
                         const v = n.bullets[i];
                         return (
                           <td key={i} className="text-right tabular-nums px-1">
@@ -895,7 +927,7 @@ function GroupChatHub({ me }: { me: { id: string; name: string; color: string; b
                           </td>
                         );
                       })}
-                      <td className="text-right tabular-nums font-bold text-primary px-1">{avg.toFixed(1)}</td>
+                      {showScores && <td className="text-right tabular-nums font-bold text-primary px-1">{avg.toFixed(1)}</td>}
                     </tr>
                   );
                 })}
