@@ -35,6 +35,7 @@ import {
   Brain,
 } from "lucide-react";
 import { WorkspaceNav } from "@/components/grade/WorkspaceNav";
+import { PinVaultGate } from "@/components/grade/PinVaultGate";
 
 export const Route = createFileRoute("/")({
   head: () => ({
