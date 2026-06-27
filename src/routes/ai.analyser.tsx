@@ -11,6 +11,8 @@ import { Send, Loader2, Trash2, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { callOpenRouter, OpenRouterError } from "@/lib/openrouter";
+import { MarkdownMath } from "@/components/grade/MarkdownMath";
+import { sanitizeAIOutput, isTrivialGreeting, FORMAL_GREETING } from "@/lib/ai-sanitize";
 
 type Msg = { role: "user" | "assistant"; content: string; ts: number };
 const K = "gradecalc_ai_pro_chat_v1";
@@ -51,16 +53,25 @@ function AnalyserTab() {
     lines.push(`Grade scale: ${scale.map((s) => `${s.letter}≥${s.min}`).join(", ")}`);
     lines.push("");
     for (const c of courses) {
-      const ct = filterByTerm(tasks.filter((t) => t.courseId === c.id), activeTerm ?? null).filter((t) => !t.pending);
-      const avg = calcAverage(ct, settings.weighted);
-      lines.push(`SUBJECT ${c.name} — avg ${avg.toFixed(1)}% across ${ct.length} task(s)`);
-      const recent = [...ct].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
-      for (const t of recent) {
+      // FULL chronological dump — every recorded task across the entire academic
+      // year (Aug→June). No slicing, no truncation. Earlier entries for tracking
+      // subjects (Chinese, humanities, etc.) must reach the model.
+      const ct = tasks
+        .filter((t) => t.courseId === c.id && !t.pending)
+        .sort((a, b) => a.date.localeCompare(b.date));
+      const ctTerm = filterByTerm(ct, activeTerm ?? null);
+      const avgAll = calcAverage(ct, settings.weighted);
+      const avgTerm = calcAverage(ctTerm, settings.weighted);
+      lines.push(
+        `SUBJECT ${c.name} — all-time avg ${avgAll.toFixed(1)}% across ${ct.length} task(s); active-term avg ${avgTerm.toFixed(1)}% across ${ctTerm.length} task(s)`,
+      );
+      for (const t of ct) {
         const pct = t.maxScore > 0 ? ((t.score / t.maxScore) * 100).toFixed(1) : "?";
         lines.push(`  · ${t.date} · ${t.name} (${t.category}) → ${pct}%`);
       }
+      lines.push("");
     }
-    return lines.join("\n").slice(0, 7800);
+    return lines.join("\n");
   }, [courses, tasks, scale, settings, terms, activeTermId]);
 
   const cost = estimateCost("analyser", { chars: input.length + dataContext.length, items: msgs.length });
@@ -68,6 +79,12 @@ function AnalyserTab() {
   const send = async (text: string) => {
     const content = text.trim();
     if (!content || loading) return;
+    if (isTrivialGreeting(content)) {
+      const userMsg: Msg = { role: "user", content, ts: Date.now() };
+      setMsgs((m) => [...m, userMsg, { role: "assistant", content: FORMAL_GREETING, ts: Date.now() + 1 }]);
+      setInput("");
+      return;
+    }
     const spend = spendCredits("analyser", { chars: content.length + dataContext.length, items: msgs.length });
     if (!spend.ok) {
       toast.error(`Need ${spend.need.toFixed(1)} credits, have ${spend.have.toFixed(1)}. Top up in Pro Shop.`);
@@ -80,17 +97,32 @@ function AnalyserTab() {
     try {
       const reply = await callOpenRouter({
         feature: "analyser",
-        maxTokens: 1400,
+        maxTokens: 900,
         temperature: 0.6,
         messages: [
           {
             role: "system",
-            content: `You are GradePal's AI Analysis Pro — a long-form, detailed, encouraging analytical study coach.\n\nMANDATORY OUTPUT FORMAT — reply with EXACTLY two sections, in order:\n\n**Reasoning Summary:**\n3-6 concise bullets summarising the evidence you considered. Do not reveal hidden private chain-of-thought; provide an auditable summary only.\n\n**Analysis:**\nThen give a substantive, multi-paragraph evidence-based answer that cites exact averages, trends, and subjects from the snapshot. Be motivational but quantitative.\n\n### STUDENT DATA SNAPSHOT\n${dataContext}`,
+            content: `You are GradePal's AI Analysis Pro — a concise, formal, evidence-based academic study coach.
+
+STRICT OUTPUT RULES — your reply MUST contain EXACTLY these two sections and nothing else:
+
+**Reasoning Summary:**
+- 3 to 6 short bullets summarising the evidence considered.
+- Bullets are auditable evidence ONLY (e.g. "Chinese trending +2.4pp over last 4 tasks"). Never dump raw sums, intermediate calculations, or running totals like "Sum x = 46", "Sum xy = 4075", "SST = ...". Never print loose brackets.
+
+**Analysis:**
+- 2 to 4 short paragraphs of clean narrative analysis. Reference exact averages, trends and subjects from the snapshot.
+- For any equation, use LaTeX delimiters $...$ for inline math and $$...$$ for display math (KaTeX renders them). Do NOT paste raw scratchpad calculations into prose; describe pacing and trajectory in words and use math only where it adds clarity.
+- Do NOT include "User Safety: safe", "Response Safety: safe", or any other safety/system flags in the visible output.
+- Per subject, give at most one short paragraph. Do not produce multi-paragraph reviews for a single subject.
+
+### STUDENT DATA SNAPSHOT (authoritative — covers Aug→Jun, every recorded task)
+${dataContext}`,
           },
           ...[...msgs, userMsg].slice(-12).map((m) => ({ role: m.role, content: m.content })),
         ],
       });
-      setMsgs((m) => [...m, { role: "assistant", content: reply, ts: Date.now() }]);
+      setMsgs((m) => [...m, { role: "assistant", content: sanitizeAIOutput(reply), ts: Date.now() }]);
     } catch (e) {
       const msg =
         e instanceof OpenRouterError && e.busy
@@ -139,9 +171,7 @@ function AnalyserTab() {
             </div>
           ))}
           {loading && (
-            <div className="bg-muted/60 max-w-[85%] rounded-2xl px-4 py-2.5 text-sm flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Analysing your data…
-            </div>
+            <ThinkingBubble />
           )}
         </div>
         <div className="border-t p-3 space-y-2">
