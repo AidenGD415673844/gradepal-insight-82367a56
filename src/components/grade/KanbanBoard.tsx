@@ -4,6 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useGrades, type Task } from "@/lib/grade-store";
 import { recordKanbanProgress } from "@/lib/study-streak";
+import { calcAverage, getLetter } from "@/lib/grade-utils";
+import {
+  runRemediationScan,
+  useRemediationQueue,
+  markRemediationDone,
+  clearRemediation,
+  type SubjectScanInput,
+} from "@/lib/auto-remediation";
+import { Shield, Check, X } from "lucide-react";
 
 const KANBAN_KEY = "gradecalc-kanban-status-v1";
 const COLS = ["To-Do", "In Progress", "Submitted", "Graded"] as const;
@@ -14,8 +23,9 @@ function defaultCol(t: Task): Col {
 }
 
 export function KanbanBoard() {
-  const { tasks, courses, updateTask } = useGrades();
+  const { tasks, courses, updateTask, scale, settings } = useGrades();
   const [statuses, setStatuses] = useState<Record<string, Col>>({});
+  const remediation = useRemediationQueue().filter((c) => !c.done);
   useEffect(() => {
     if (typeof window === "undefined") return;
     try { setStatuses(JSON.parse(localStorage.getItem(KANBAN_KEY) ?? "{}")); } catch {}
@@ -24,6 +34,41 @@ export function KanbanBoard() {
     if (typeof window === "undefined") return;
     localStorage.setItem(KANBAN_KEY, JSON.stringify(statuses));
   }, [statuses]);
+
+  // Background remediation scan — idempotent (12h window). Reads syllabus
+  // mastery directly from localStorage so this module stays decoupled.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const id = window.setTimeout(() => {
+      let syllabus: Record<string, { name: string; level: "red" | "amber" | "green" }[]> = {};
+      try {
+        syllabus = JSON.parse(localStorage.getItem("syllabus-mastery-v1") || "{}");
+      } catch { /* ignore */ }
+      const inputs: SubjectScanInput[] = courses.map((c) => {
+        const ct = tasks
+          .filter((t) => t.courseId === c.id && !t.pending)
+          .sort((a, b) => a.date.localeCompare(b.date));
+        const recentAverages = ct.slice(-6).map((t) => (t.maxScore > 0 ? (t.score / t.maxScore) * 100 : 0));
+        const avg = calcAverage(ct, settings.weighted);
+        const row = getLetter(avg, scale);
+        const sortedScale = [...scale].sort((a, b) => a.min - b.min);
+        const nextDown = sortedScale.filter((r) => r.min < (row?.min ?? 0)).pop();
+        const buffer = avg - (nextDown?.min ?? 0);
+        const units = syllabus[c.id] ?? [];
+        const red = units.find((u) => u.level === "red") ?? units.find((u) => u.level === "amber");
+        inputs.push;
+        return {
+          subjectId: c.id,
+          subjectName: c.name,
+          recentAverages,
+          buffer,
+          redTopic: red?.name ?? null,
+        };
+      });
+      runRemediationScan(inputs);
+    }, 1500);
+    return () => window.clearTimeout(id);
+  }, [courses, tasks, scale, settings.weighted]);
 
   const [dragId, setDragId] = useState<string | null>(null);
   const [modal, setModal] = useState<{ task: Task; pct: string } | null>(null);
@@ -61,6 +106,34 @@ export function KanbanBoard() {
   return (
     <Card className="p-3 md:p-4">
       <h3 className="text-sm font-semibold mb-3">Assignment Kanban</h3>
+      {remediation.length > 0 && (
+        <div className="mb-3 space-y-2">
+          {remediation.map((r) => (
+            <div
+              key={r.id}
+              className="rounded-lg border-2 border-amber-500/50 bg-amber-500/5 p-2.5"
+            >
+              <div className="flex items-start gap-2">
+                <Shield className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                    {r.title}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{r.body}</p>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button size="sm" variant="outline" className="h-6 px-2 gap-1 text-[10px]" onClick={() => markRemediationDone(r.id)}>
+                    <Check className="h-3 w-3" /> Done
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-6 px-1.5" onClick={() => clearRemediation(r.id)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {COLS.map((col) => (
           <div
