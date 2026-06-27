@@ -17,6 +17,7 @@ import {
   getMasters,
   redeemCode,
   WALLET_CAP,
+  downgradeToFree,
 } from "@/lib/premium";
 import { grantCredits } from "@/lib/ai-credits";
 import {
@@ -259,6 +260,18 @@ function ShopPage() {
               <div className="text-[11px] text-muted-foreground">
                 Expires {new Date(tier.expiresAt).toLocaleDateString()}
               </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-2 text-[11px] h-7"
+                onClick={() => {
+                  if (!confirm("Switch back to the Free Plan? Your remaining paid days will be forfeited (no wallet refund). Your wallet balance and credits stay intact.")) return;
+                  downgradeToFree();
+                  toast.success("Switched to Free Plan — no charge.");
+                }}
+              >
+                Switch to Free Plan
+              </Button>
             </div>
           )}
         </Card>
