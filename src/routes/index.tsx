@@ -35,6 +35,7 @@ import {
   Brain,
 } from "lucide-react";
 import { WorkspaceNav } from "@/components/grade/WorkspaceNav";
+import { PinVaultGate } from "@/components/grade/PinVaultGate";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -100,6 +101,7 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PinVaultGate />
       <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-5">
         <BurnoutRadar />
         <GPAFireAlarm />

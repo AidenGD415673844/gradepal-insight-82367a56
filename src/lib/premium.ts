@@ -88,6 +88,15 @@ export function clearTier() {
   fire();
 }
 
+/**
+ * Switch back to the free plan with zero cost. Any remaining paid time is
+ * forfeited gracefully (no wallet refund, but the wallet itself is preserved).
+ */
+export function downgradeToFree(): void {
+  localStorage.removeItem(K_TIER);
+  fire();
+}
+
 // ===== Wallet ==================================================================
 export const WALLET_CAP = 50;
 export function getWallet(): number {
@@ -138,16 +147,18 @@ export function checkPurchase(targetTier: Tier): PurchaseCheck {
     }
     return { kind: "charge" };
   }
-  // Cross-family swaps (Pro ↔ Student) are blocked. Avoids the bug where a
-  // Pro-Monthly holder could lateral-jump into Student-Annual for free.
-  if (curMeta.family !== tarMeta.family) {
+  // Cross-family: only block when an upmarket Pro tier is active and the user
+  // tries to slide laterally into a Student tier of greater or equal monetary
+  // value (prevents free upgrade via the Student ladder).
+  if (curMeta.family === "pro" && tarMeta.family === "student" && tarMeta.hkd >= curMeta.hkd) {
     return {
       kind: "block",
-      reason: `You're on ${curMeta.label}. Cannot cross over to a different plan family — wait for it to expire or contact the developer.`,
+      reason: `You're on ${curMeta.label}. Student tiers of equal or greater value require a wait-out or a new purchase.`,
     };
   }
+  // Same family OR cross-family downgrade — allow a free, value-proportionate switch.
   if (tierRank(cur.tier) >= tierRank(targetTier)) {
-    return { kind: "free", reason: "Free switch within your current plan family." };
+    return { kind: "free", reason: "Free switch — remaining value carries over proportionally." };
   }
   return { kind: "charge" };
 }
@@ -162,11 +173,18 @@ export function switchTierFree(target: Tier, source: string) {
   }
   const cm = TIERS.find((t) => t.id === cur.tier)!;
   const remainingMs = Math.max(0, cur.expiresAt - Date.now());
+  // Convert remaining time into "currency value" then re-denominate against
+  // the target tier's daily rate. Clamp the carry-over so a downgrade never
+  // blows past the target's natural duration (prevents the 174↔200 marker
+  // leakage bug where mismatched daily rates produced runaway expiry dates).
   const dailyCur = cm.hkd / cm.durationDays;
   const dailyTarget = tm.hkd / tm.durationDays;
-  const ratio = dailyTarget > 0 ? dailyCur / dailyTarget : 1;
-  const carry = remainingMs * Math.max(0.1, ratio);
-  write(K_TIER, { tier: target, expiresAt: Date.now() + carry, source });
+  const remainingDays = remainingMs / 86400_000;
+  const remainingValue = remainingDays * dailyCur;
+  const targetDays = dailyTarget > 0 ? remainingValue / dailyTarget : remainingDays;
+  const clampedDays = Math.max(0, Math.min(targetDays, tm.durationDays));
+  const carryMs = clampedDays * 86400_000;
+  write(K_TIER, { tier: target, expiresAt: Date.now() + carryMs, source });
 }
 
 // ===== Cipher (mathematical scrambler) =========================================

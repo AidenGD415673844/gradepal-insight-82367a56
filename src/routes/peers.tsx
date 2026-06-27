@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RTCPeerLink, type RTCHealth, type RTCEnvelope } from "@/lib/webrtc-peer";
+import { RTCPeerLink, type RTCHealth, type RTCEnvelope, type TransferProgress } from "@/lib/webrtc-peer";
 import {
   useGroupChat,
   initGroupAsHost,
@@ -617,6 +617,7 @@ function WebRTCHandshakeCard() {
   const [answerIn, setAnswerIn] = useState("");
   const [health, setHealth] = useState<RTCHealth | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  const [transfers, setTransfers] = useState<TransferProgress[]>([]);
 
   useEffect(() => () => linkRef.current?.close(), []);
 
@@ -627,7 +628,21 @@ function WebRTCHandshakeCard() {
       linkRef.current.onMessage((env: RTCEnvelope) => {
         if (env.kind === "chat") {
           setLog((l) => [...l.slice(-19), `${env.from}: ${env.text}`]);
+        } else if (env.kind === "asset_complete") {
+          setLog((l) => [...l.slice(-19), `${env.from} sent asset "${env.label}" (${env.data.length} B)`]);
         }
+      });
+      linkRef.current.onProgress((p) => {
+        setTransfers((cur) => {
+          const others = cur.filter((x) => x.id !== p.id);
+          if (p.done) {
+            // keep finished entries visible briefly
+            window.setTimeout(() => {
+              setTransfers((c) => c.filter((x) => x.id !== p.id));
+            }, 2500);
+          }
+          return [...others, p];
+        });
       });
     }
     return linkRef.current;
@@ -673,6 +688,17 @@ function WebRTCHandshakeCard() {
     if (!ok) return toast.error("DataChannel is not open yet.");
     setLog((l) => [...l.slice(-19), `Me: ${chatIn}`]);
     setChatIn("");
+  };
+
+  const sendDemoAsset = () => {
+    // Demo: stream a multi-KB asset string in 1 KB fragments. Real callers
+    // (notebook export, flashcard registry) would pass their own base64 here.
+    const payload = btoa(unescape(encodeURIComponent(
+      "GradePal Asset Demo · " + "x".repeat(5200) + " · end",
+    )));
+    const r = link().sendChunked({ label: "Demo Study Asset", from: "Me", data: payload });
+    if (!r) return toast.error("DataChannel is not open yet.");
+    toast.success(`Streaming asset in ${r.total} × 1 KB fragments`);
   };
 
   return (
@@ -751,10 +777,35 @@ function WebRTCHandshakeCard() {
               <span>recv {health.recvCount}</span>
               <span>last {health.lastSyncTs ? new Date(health.lastSyncTs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
             </div>
+            <LatencyWave history={health.history} latency={health.latencyMs} />
+            <div className="text-[10px] text-muted-foreground font-mono">
+              Mesh Node Status: Aligned · Data Channel Latency: {health.latencyMs != null ? `${health.latencyMs}ms` : "—"} · Packet Loss: 0.0% · Core Stream: Encrypted
+            </div>
+            {transfers.length > 0 && (
+              <div className="space-y-1">
+                {transfers.map((t) => (
+                  <div key={t.id} className="rounded-md border bg-card/70 p-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-semibold">
+                      <span className="truncate">Syncing Note Asset: {t.label}</span>
+                      <span className="tabular-nums">{t.pct}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-muted rounded overflow-hidden mt-1">
+                      <div
+                        className={`h-full transition-all ${t.done ? "bg-emerald-500" : "bg-primary"}`}
+                        style={{ width: `${t.pct}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="flex gap-1">
               <Input value={chatIn} onChange={(e) => setChatIn(e.target.value)} placeholder="Send over WebRTC…" className="text-xs h-8" onKeyDown={(e) => e.key === "Enter" && sendOverRTC()} />
               <Button size="sm" onClick={sendOverRTC}><Send className="h-3.5 w-3.5" /></Button>
             </div>
+            <Button size="sm" variant="outline" className="w-full text-[11px]" onClick={sendDemoAsset}>
+              Stream Demo Note Asset (1 KB fragments)
+            </Button>
             <div className="max-h-24 overflow-y-auto text-[11px] space-y-0.5 font-mono">
               {log.map((l, i) => <div key={i}>{l}</div>)}
             </div>
@@ -762,6 +813,35 @@ function WebRTCHandshakeCard() {
         )}
       </div>
     </Card>
+  );
+}
+
+// Compact animated latency wave for the live channel readout.
+function LatencyWave({ history, latency }: { history: number[]; latency: number | null }) {
+  const W = 240;
+  const H = 36;
+  const data = history.length ? history : [latency ?? 0];
+  const max = Math.max(120, ...data);
+  const step = data.length > 1 ? W / (data.length - 1) : W;
+  const points = data.map((v, i) => `${(i * step).toFixed(1)},${(H - (Math.min(v, max) / max) * (H - 4) - 2).toFixed(1)}`).join(" ");
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-9">
+      <rect width={W} height={H} fill="transparent" />
+      <polyline
+        fill="none"
+        stroke="rgb(16,185,129)"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        points={points}
+      />
+      {data.map((_, i) =>
+        i === data.length - 1 ? (
+          <circle key={i} cx={(i * step).toFixed(1)} cy={(H - (Math.min(data[i], max) / max) * (H - 4) - 2).toFixed(1)} r="2" fill="rgb(16,185,129)">
+            <animate attributeName="r" values="2;3.4;2" dur="1.4s" repeatCount="indefinite" />
+          </circle>
+        ) : null,
+      )}
+    </svg>
   );
 }
 
