@@ -225,22 +225,40 @@ function AssistantBubble({ content }: { content: string }) {
   // Split the chain-of-thought trace from the final answer for distinct styling.
   const cotMatch = content.match(/\*\*(?:Reasoning Summary|Chain of Thought):?\*\*([\s\S]*?)(?:\*\*Analysis:?\*\*|$)/i);
   const analysisMatch = content.match(/\*\*Analysis:?\*\*([\s\S]*)/i);
-  if (!cotMatch && !analysisMatch) return <>{content}</>;
+  if (!cotMatch && !analysisMatch) return <MarkdownMath content={content} />;
   const cot = cotMatch?.[1]?.trim() ?? "";
   const analysis = analysisMatch?.[1]?.trim() ?? content;
+  const [open, setOpen] = useState(false);
   return (
     <div className="space-y-2">
       {cot && (
-        <div className="rounded-lg border border-dashed border-fuchsia-500/40 bg-fuchsia-500/5 px-3 py-2">
-          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-fuchsia-700 dark:text-fuchsia-300 mb-1">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="w-full text-left rounded-lg border border-dashed border-fuchsia-500/40 bg-fuchsia-500/5 px-3 py-2 hover:bg-fuchsia-500/10 transition"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-fuchsia-700 dark:text-fuchsia-300">
             <Brain className="h-3 w-3" /> Reasoning Summary
+            <span className="ml-auto normal-case tracking-normal text-[10px] text-muted-foreground">
+              {open ? "Hide ▴" : "Show ▾"}
+            </span>
           </div>
-          <div className="text-[12px] italic text-muted-foreground leading-relaxed whitespace-pre-wrap">
-            {cot}
-          </div>
-        </div>
+          {open && (
+            <div className="mt-1.5 text-[12px] text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              {cot}
+            </div>
+          )}
+        </button>
       )}
-      <div className="whitespace-pre-wrap">{analysis}</div>
+      <MarkdownMath content={analysis} />
+    </div>
+  );
+}
+
+function ThinkingBubble() {
+  return (
+    <div className="bg-muted/60 max-w-[85%] rounded-2xl px-4 py-2.5 text-sm flex items-center gap-2">
+      <Loader2 className="h-4 w-4 animate-spin" /> Analysing your data…
     </div>
   );
 }
