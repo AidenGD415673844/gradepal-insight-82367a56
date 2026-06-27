@@ -1,7 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import remarkGfm from "remark-gfm";
 
 // Normalises common LaTeX forms LLMs emit so remark-math can parse them:
 //   - \( ... \)  -> $ ... $
@@ -16,7 +15,7 @@ export function MarkdownMath({ content, className = "" }: { content: string; cla
   return (
     <div className={`prose prose-sm dark:prose-invert max-w-none leading-relaxed ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
+        remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
       >
         {normaliseMath(content)}
