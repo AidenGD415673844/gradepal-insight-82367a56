@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, getLetter } from "@/lib/grade-utils";
 import { applyAStarOverride } from "./a-star-override";
+import { Link } from "@tanstack/react-router";
 import {
   Plane,
   AlertTriangle,
@@ -158,6 +159,15 @@ export function FlightSimulator() {
   const [log, setLog] = useState<{ title: string; note: string; delta: number }[]>([]);
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [input, setInput] = useState<number>(0);
+  const [debrief, setDebrief] = useState<null | {
+    blocked: number;
+    total: number;
+    finalAvg: number;
+    finalLetter: string;
+    onMission: boolean;
+    missionLabel: string;
+    threshold: number;
+  }>(null);
 
   // Reset when the live ledger baseline changes meaningfully.
   useEffect(() => {
@@ -207,6 +217,19 @@ export function FlightSimulator() {
     if (series.length >= 9) {
       setScenario(null);
       setRunning(false);
+      // Compose debriefing. `series` is stale here; recompute from next + prior.
+      const finalSeries = [...series, next];
+      const blocked = finalSeries.filter((v) => v >= mission.threshold).length;
+      const baseFinalLetter = getLetter(next, scale)?.letter ?? "—";
+      setDebrief({
+        blocked,
+        total: finalSeries.length,
+        finalAvg: next,
+        finalLetter: applyAStarOverride(next, baseFinalLetter),
+        onMission: next >= mission.threshold,
+        missionLabel: mission.label,
+        threshold: mission.threshold,
+      });
       return;
     }
     nextScenario();
@@ -356,7 +379,106 @@ export function FlightSimulator() {
           </div>
         </div>
       )}
+      {debrief && (
+        <MissionDebriefingOverlay debrief={debrief} onClose={() => setDebrief(null)} />
+      )}
     </Card>
+  );
+}
+
+function MissionDebriefingOverlay({
+  debrief,
+  onClose,
+}: {
+  debrief: {
+    blocked: number;
+    total: number;
+    finalAvg: number;
+    finalLetter: string;
+    onMission: boolean;
+    missionLabel: string;
+    threshold: number;
+  };
+  onClose: () => void;
+}) {
+  const success = debrief.onMission;
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <Card
+        className={`relative max-w-2xl w-full p-8 border-2 shadow-2xl animate-in zoom-in-95 duration-300 ${
+          success
+            ? "border-emerald-500/60 bg-gradient-to-br from-emerald-500/15 via-card to-card"
+            : "border-rose-500/60 bg-gradient-to-br from-rose-500/15 via-card to-card"
+        }`}
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div
+            className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
+              success ? "bg-emerald-500/20 text-emerald-500" : "bg-rose-500/20 text-rose-500"
+            }`}
+          >
+            <Plane className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground">
+              Academic Flight Simulator
+            </div>
+            <h3 className="text-2xl font-extrabold leading-tight">Mission Flight Debriefing</h3>
+          </div>
+        </div>
+        <div className="text-sm text-muted-foreground mb-5">
+          Mission objective: <span className="font-bold text-foreground">{debrief.missionLabel}</span> · floor {debrief.threshold}%
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <DebriefMetric label="Disruptions blocked" value={`${debrief.blocked} / ${debrief.total}`} tone={success ? "good" : "bad"} />
+          <DebriefMetric label="Protected average" value={`${debrief.finalAvg.toFixed(1)}%`} tone={success ? "good" : "bad"} />
+          <DebriefMetric label="Final letter tier" value={debrief.finalLetter} />
+          <DebriefMetric
+            label="Verdict"
+            value={success ? "Mission complete" : "Mission compromised"}
+            tone={success ? "good" : "bad"}
+          />
+        </div>
+        <div
+          className={`rounded-xl border p-4 mb-5 text-sm leading-relaxed ${
+            success
+              ? "border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-200"
+              : "border-rose-500/40 bg-rose-500/5 text-rose-700 dark:text-rose-200"
+          }`}
+        >
+          {success
+            ? `You defended the ${debrief.missionLabel.toLowerCase()} across ${debrief.total - 1} randomised macro-disruption${debrief.total - 1 === 1 ? "" : "s"}. The protected sandbox average closed at ${debrief.finalAvg.toFixed(1)}% — clear of the ${debrief.threshold}% mission floor.`
+            : `The protected sandbox average closed at ${debrief.finalAvg.toFixed(1)}% — below the ${debrief.threshold}% mission floor. Replay with tighter defensive inputs to restore the runway.`}
+        </div>
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button variant="outline" onClick={onClose} className="gap-2">
+            <RotateCcw className="h-4 w-4" /> Close Debriefing
+          </Button>
+          <Link to="/">
+            <Button onClick={onClose} className="gap-2">
+              <Shield className="h-4 w-4" /> Return to Dashboard
+            </Button>
+          </Link>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function DebriefMetric({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
+  const toneClass =
+    tone === "good" ? "text-emerald-500" : tone === "bad" ? "text-rose-500" : "text-foreground";
+  return (
+    <div className="rounded-xl border p-3 bg-card/60 backdrop-blur">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+        {label}
+      </div>
+      <div className={`mt-1 text-xl font-extrabold tabular-nums ${toneClass}`}>{value}</div>
+    </div>
   );
 }
 
