@@ -9,6 +9,8 @@ import { BookOpen, Upload, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { spendCredits, estimateCost } from "@/lib/ai-credits";
 import { callOpenRouter, OpenRouterError } from "@/lib/openrouter";
+import { MarkdownMath } from "@/components/grade/MarkdownMath";
+import { sanitizeAIOutput } from "@/lib/ai-sanitize";
 
 type Attachment = { name: string; size: number; preview: string };
 
@@ -64,7 +66,7 @@ function HelperTab() {
           {
             role: "system",
             content:
-              "You are GradePal's Homework Helper. Walk the student through their problem step by step, show working clearly, cite formulas, then conclude with the final answer. Be patient and explanatory. Never just give the answer without reasoning.",
+              "You are GradePal's Homework Helper. Walk the student through their problem step by step, show working clearly, cite formulas, then conclude with the final answer. Use LaTeX inside $...$ (inline) or $$...$$ (display) for any equation so KaTeX can render it. Do not include 'User Safety: safe', 'Response Safety: safe', or any internal scratchpad lines such as 'Sum x = …', 'SST sum = …'. Be patient and explanatory. Never just give the answer without reasoning.",
           },
           {
             role: "user",
@@ -72,7 +74,7 @@ function HelperTab() {
           },
         ],
       });
-      setAnswer(out);
+      setAnswer(sanitizeAIOutput(out));
     } catch (e) {
       const msg =
         e instanceof OpenRouterError && e.busy
@@ -151,7 +153,7 @@ function HelperTab() {
         )}
         {loading && <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Thinking…</div>}
         {answer && (
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">{answer}</div>
+          <MarkdownMath content={answer} />
         )}
       </Card>
     </div>
