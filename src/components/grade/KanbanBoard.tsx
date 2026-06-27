@@ -56,7 +56,6 @@ export function KanbanBoard() {
         const buffer = avg - (nextDown?.min ?? 0);
         const units = syllabus[c.id] ?? [];
         const red = units.find((u) => u.level === "red") ?? units.find((u) => u.level === "amber");
-        inputs.push;
         return {
           subjectId: c.id,
           subjectName: c.name,
