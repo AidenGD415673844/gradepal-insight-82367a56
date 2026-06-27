@@ -13,6 +13,7 @@ import { useRef, useState } from "react";
 import { AdminCommandCenter } from "@/components/grade/AdminCommandCenter";
 import { UIDesignStudio } from "@/components/grade/UIDesignStudio";
 import { WalletPassCard } from "@/components/grade/WalletPassCard";
+import { PinVaultPanel } from "@/components/grade/PinVaultPanel";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -185,6 +186,7 @@ function SettingsPage() {
       <SnapshotManager />
       <BackupRestore />
       <WalletPassCard />
+      <PinVaultPanel />
       <UIDesignStudio />
       </div>
       <AdminCommandCenter open={adminOpen} onOpenChange={setAdminOpen} />
