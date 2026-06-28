@@ -15,7 +15,6 @@ import {
 import {
   TIERS,
   type Tier,
-  generateCipherToken,
   getMasters,
   getLocalMasters,
   parseMasterRegistry,
@@ -27,12 +26,9 @@ import {
   clearRedeemed,
   K_SYSOP,
 } from "@/lib/premium";
+import { generateCipherTokenFn, verifyAdminGateFn } from "@/lib/premium.functions";
 import { Shield, Copy, KeyRound, Lock, ScrollText, Megaphone, History, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
-
-const REQUIRED_TOKEN = "SYSOP-LO6130-99X72-GLOBAL";
-const REQUIRED_PASS = "grADecaLC-2026-aiden63-smart";
-const REQUIRED_PIN = "8752948803";
 
 export function AdminCommandCenter({
   open,
@@ -47,33 +43,32 @@ export function AdminCommandCenter({
   );
   const [pass, setPass] = useState("");
   const [pin, setPin] = useState("");
+  const [creds, setCreds] = useState<{ token: string; pass: string; pin: string } | null>(null);
 
   const closeSelfDestruct = () => {
     setStage("gate");
     setPass("");
     setPin("");
+    setCreds(null);
     onOpenChange(false);
   };
 
-  const tryUnlock = () => {
-    // Persist token if user typed one
+  const tryUnlock = async () => {
     if (tokenInput) localStorage.setItem(K_SYSOP, tokenInput);
     const stored = localStorage.getItem(K_SYSOP) ?? "";
-    if (stored !== REQUIRED_TOKEN) {
-      toast.error("Self-destruct: invalid sysop token.");
+    try {
+      const r = await verifyAdminGateFn({ data: { token: stored, pass, pin } });
+      if (!r?.ok) {
+        toast.error("Self-destruct: admin verification failed.");
+        closeSelfDestruct();
+        return;
+      }
+    } catch {
+      toast.error("Self-destruct: server unreachable.");
       closeSelfDestruct();
       return;
     }
-    if (pass !== REQUIRED_PASS) {
-      toast.error("Self-destruct: invalid developer password.");
-      closeSelfDestruct();
-      return;
-    }
-    if (pin !== REQUIRED_PIN) {
-      toast.error("Self-destruct: invalid master PIN.");
-      closeSelfDestruct();
-      return;
-    }
+    setCreds({ token: stored, pass, pin });
     setStage("open");
   };
 
@@ -150,7 +145,7 @@ export function AdminCommandCenter({
             </TabsList>
 
             <TabsContent value="cipher" className="mt-4">
-              <CipherTab />
+              <CipherTab creds={creds} />
             </TabsContent>
             <TabsContent value="master" className="mt-4">
               <MasterTab />
