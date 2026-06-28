@@ -10,12 +10,12 @@ import { spendCredits, estimateCost } from "@/lib/ai-credits";
 import { Send, Loader2, Trash2, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { callOpenRouter, OpenRouterError } from "@/lib/openrouter";
 import { MarkdownMath } from "@/components/grade/MarkdownMath";
 import { sanitizeAIOutput, isTrivialGreeting, FORMAL_GREETING } from "@/lib/ai-sanitize";
+import { runAnalyserTurn, getPending, subscribeInflight, INFLIGHT_STORE_KEY } from "@/lib/ai-inflight";
 
 type Msg = { role: "user" | "assistant"; content: string; ts: number };
-const K = "gradecalc_ai_pro_chat_v1";
+const K = INFLIGHT_STORE_KEY;
 
 const SUGGESTIONS = [
   "Based on my data, how long would it take to reach an A grade?",
@@ -35,8 +35,25 @@ function AnalyserTab() {
   const { courses, tasks, scale, settings, terms, activeTermId } = useGrades();
   const [msgs, setMsgs] = useState<Msg[]>(() => loadMsgs());
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(() => !!getPending());
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Re-hydrate timeline + inflight state from localStorage whenever the
+  // background worker, another tab, or a visibility wake fires an event.
+  useEffect(() => {
+    const sync = () => {
+      setMsgs(loadMsgs());
+      setLoading(!!getPending());
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      });
+    };
+    sync();
+    const off = subscribeInflight(sync);
+    const onVis = () => { if (!document.hidden) sync(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { off(); document.removeEventListener("visibilitychange", onVis); };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(K, JSON.stringify(msgs));
@@ -90,19 +107,27 @@ function AnalyserTab() {
       toast.error(`Need ${spend.need.toFixed(1)} credits, have ${spend.have.toFixed(1)}. Top up in Pro Shop.`);
       return;
     }
+    const cost = estimateCost("analyser", { chars: content.length + dataContext.length, items: msgs.length });
     const userMsg: Msg = { role: "user", content, ts: Date.now() };
-    setMsgs((m) => [...m, userMsg]);
+    const baseHistory = [...msgs, userMsg];
+    // Persist the user turn IMMEDIATELY so a navigation/tab switch never
+    // loses the prompt.
+    localStorage.setItem(K, JSON.stringify(baseHistory));
+    setMsgs(baseHistory);
     setInput("");
     setLoading(true);
-    try {
-      const reply = await callOpenRouter({
-        feature: "analyser",
-        maxTokens: 900,
-        temperature: 0.6,
-        messages: [
+    // Slice the most recent 3 user/assistant exchanges (6 rows) so the model
+    // never forgets task variables split across two prompts.
+    const recentTurns = baseHistory.slice(-6).map((m) => ({ role: m.role, content: m.content }));
+    const result = await runAnalyserTurn({
+      feature: "analyser",
+      cost,
+      maxTokens: 6000,
+      temperature: 0.6,
+      messages: [
           {
             role: "system",
-            content: `You are GradePal's AI Analysis Pro — a concise, formal, evidence-based academic study coach.
+            content: `You are GradePal's AI Analysis Pro — a formal, evidence-based academic study coach.
 
 STRICT OUTPUT RULES — your reply MUST contain EXACTLY these two sections and nothing else:
 
@@ -111,7 +136,8 @@ STRICT OUTPUT RULES — your reply MUST contain EXACTLY these two sections and n
 - Bullets are auditable evidence ONLY (e.g. "Chinese trending +2.4pp over last 4 tasks"). Never dump raw sums, intermediate calculations, or running totals like "Sum x = 46", "Sum xy = 4075", "SST = ...". Never print loose brackets.
 
 **Analysis:**
-- 2 to 4 short paragraphs of clean narrative analysis. Reference exact averages, trends and subjects from the snapshot.
+- 3 to 6 short, complete paragraphs of clean narrative analysis. Reference exact averages, trends and subjects from the snapshot. Finish every sentence — never cut off mid-thought.
+- Favour concise, narrative sentence structures over long lists, so the analysis stays inside the response window while still answering the user completely.
 - For any equation, use LaTeX delimiters $...$ for inline math and $$...$$ for display math (KaTeX renders them). Do NOT paste raw scratchpad calculations into prose; describe pacing and trajectory in words and use math only where it adds clarity.
 - Do NOT include "User Safety: safe", "Response Safety: safe", or any other safety/system flags in the visible output.
 - Per subject, give at most one short paragraph. Do not produce multi-paragraph reviews for a single subject.
@@ -119,22 +145,16 @@ STRICT OUTPUT RULES — your reply MUST contain EXACTLY these two sections and n
 ### STUDENT DATA SNAPSHOT (authoritative — covers Aug→Jun, every recorded task)
 ${dataContext}`,
           },
-          ...[...msgs, userMsg].slice(-12).map((m) => ({ role: m.role, content: m.content })),
-        ],
-      });
-      setMsgs((m) => [...m, { role: "assistant", content: sanitizeAIOutput(reply), ts: Date.now() }]);
-    } catch (e) {
-      const msg =
-        e instanceof OpenRouterError && e.busy
-          ? "The AI Analysis Pro server is busy. Please try again in a few seconds — the request was not charged twice."
-          : e instanceof Error
-            ? e.message
-            : "Request failed";
-      toast.error(msg);
-      setMsgs((m) => m.slice(0, -1));
-    } finally {
-      setLoading(false);
+        ...recentTurns,
+      ],
+    });
+    if (!result.ok) {
+      toast.error(result.reason);
     }
+    // Hydrate from localStorage regardless of outcome — the worker has already
+    // appended the assistant reply (if any) and handled the refund.
+    setMsgs(loadMsgs());
+    setLoading(!!getPending());
   };
 
   return (

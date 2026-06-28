@@ -10,12 +10,19 @@ import {
   ListChecks,
   Image as ImageIcon,
   Sigma,
+  Download,
 } from "lucide-react";
-import { updateNote, type NotebookNote } from "@/lib/notebook-store";
+import { updateNote, getNotebook, type NotebookNote } from "@/lib/notebook-store";
 import { toast } from "sonner";
 
 /** Compile every $...$ and $$...$$ in `src` into KaTeX HTML. */
 function compileLatex(src: string): string {
+  return _compileLatex(src);
+}
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function _compileLatex(src: string): string {
   if (!src) return "";
   // Escape <, >, & so plain text renders safely; KaTeX output is already HTML.
   const escape = (s: string) =>
@@ -103,6 +110,50 @@ export function NotebookEditor({ note }: { note: NotebookNote }) {
 
   const preview = useMemo(() => compileLatex(html), [html]);
 
+  const exportPreview = () => {
+    const state = getNotebook();
+    const folder = state.folders.find((f) => f.id === note.folderId);
+    // Walk up to build the full folder path (e.g. "My Notebook / Maths / IB HL").
+    const segments: string[] = [];
+    let cur = folder;
+    while (cur) {
+      segments.unshift(cur.name);
+      cur = state.folders.find((f) => f.id === cur!.parentId) ?? undefined;
+    }
+    const path = segments.join(" / ") || "Notebook";
+    const safe = (title || "Untitled").replace(/[^\w\d-]+/g, "_").slice(0, 60);
+    const compiled = compileLatex(html);
+    const stamp = new Date().toLocaleString();
+    const css = `body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:780px;margin:2rem auto;padding:0 1.25rem;color:#111;line-height:1.55}h1{font-size:1.7rem;margin:0 0 .25rem}h2{font-size:1.05rem;color:#555;font-weight:600;margin:.25rem 0 1.5rem}hr{border:none;border-top:1px solid #e2e2e2;margin:1.5rem 0}.katex{font-size:1.05em}.katex-block{margin:.9rem 0;text-align:center}.checklist{list-style:none;padding-left:0}img,video{max-width:100%;border-radius:8px}pre{background:#f4f4f6;padding:.6rem .8rem;border-radius:6px;overflow:auto}.foot{margin-top:2.5rem;color:#888;font-size:.78rem;text-align:center}`;
+    const html5 = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>${escapeHtml(title || "Untitled note")}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+<style>${css}</style>
+</head>
+<body>
+  <h1>${escapeHtml(title || "Untitled note")}</h1>
+  <h2>${escapeHtml(path)}</h2>
+  <hr />
+  <article>${compiled || "<p><em>Empty note.</em></p>"}</article>
+  <div class="foot">Exported from GradePal Academic Notebook Vault · ${escapeHtml(stamp)}</div>
+</body>
+</html>`;
+    const blob = new Blob([html5], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${safe || "notebook"}.html`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    toast.success("Preview document exported · ready to save or print");
+  };
+
   return (
     <div className="space-y-2">
       <Input
@@ -129,6 +180,16 @@ export function NotebookEditor({ note }: { note: NotebookNote }) {
           />
         </label>
         <div className="ml-auto flex items-center gap-2 text-[10px]">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 gap-1.5 text-[11px] font-semibold"
+            onClick={exportPreview}
+            title="Compile and download a standalone HTML preview"
+          >
+            <Download className="h-3.5 w-3.5" /> Export Preview Document
+          </Button>
           <button
             type="button"
             onClick={() => setShowMathPreview((v) => !v)}

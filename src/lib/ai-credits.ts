@@ -11,11 +11,9 @@ const K_STATE = "gradecalc_ai_credits_v1";
 const EVT = "gradecalc-ai-credits-change";
 
 const FREE_DAILY = 10;        // free baseline tokens added per day (catch up)
-const FREE_WEEK_CAP = 20;     // free baseline soft-cap (cannot accumulate past)
-const PRO_TOPUP = 50;         // one-shot grant on Pro activation
-const STUDENT_TOPUP = 25;     // one-shot grant on Student activation
-const PRO_WEEKLY = 35;        // weekly auto-refill while Pro
-const STUDENT_WEEKLY = 15;    // weekly auto-refill while Student
+const FREE_CAP = 10;          // free baseline hard ceiling (never exceeded by free refills)
+const PRO_DAILY = 10;         // +10 credits added to active rolling balance every midnight
+const STUDENT_DAILY = 20;     // +20 credits added to active rolling balance every midnight
 const PAID_CAP = 200;         // hard cap including top-ups
 
 export const AI_COST: Record<string, number> = {
@@ -79,7 +77,7 @@ type CreditState = {
 };
 
 const DEFAULTS: CreditState = {
-  balance: FREE_WEEK_CAP, // start friendly
+  balance: FREE_CAP, // start friendly
   lastDailyRefill: "",
   lastWeeklyRefill: "",
   lastTopupTier: null,
@@ -119,36 +117,35 @@ function reconcile(): CreditState {
   const s = read();
   let changed = false;
 
-  // ---- Daily free refill ----
+  // ---- Daily midnight refill — strictly incremental, no bulk top-ups ----
   const today = todayKey();
   if (s.lastDailyRefill !== today) {
-    // Top free portion up to FREE_WEEK_CAP — but never reduce above-cap balance.
-    if (s.balance < FREE_WEEK_CAP) {
-      s.balance = Math.min(FREE_WEEK_CAP, s.balance + FREE_DAILY);
+    const active = getActiveTier();
+    if (!active) {
+      // Free tier baseline: stays fixed at FREE_CAP daily tokens max.
+      if (s.balance < FREE_CAP) {
+        s.balance = Math.min(FREE_CAP, s.balance + FREE_DAILY);
+      }
+    } else {
+      const daily = active.tier.startsWith("pro_") ? PRO_DAILY : STUDENT_DAILY;
+      s.balance = Math.min(PAID_CAP, Math.round((s.balance + daily) * 100) / 100);
+      // Track the active tier handle so a fresh purchase does NOT trigger a bulk dump.
+      s.lastTopupTier = active.tier;
+      s.lastTopupExpiresAt = active.expiresAt;
     }
     s.lastDailyRefill = today;
     changed = true;
   }
 
-  // ---- Tier activation top-up (once per (tier, expiresAt) tuple) ----
+  // When a new tier activates we deliberately do NOT dump bulk credits — the
+  // incremental daily loop above handles all paid refills.
   const active = getActiveTier();
   if (active) {
     const key = `${active.tier}|${active.expiresAt}`;
     const cur = `${s.lastTopupTier}|${s.lastTopupExpiresAt}`;
     if (key !== cur) {
-      const bonus = active.tier.startsWith("pro_") ? PRO_TOPUP : STUDENT_TOPUP;
-      s.balance = Math.min(PAID_CAP, s.balance + bonus);
       s.lastTopupTier = active.tier;
       s.lastTopupExpiresAt = active.expiresAt;
-      changed = true;
-    }
-
-    // ---- Weekly tier auto-refill ----
-    const wk = weekKey();
-    if (s.lastWeeklyRefill !== wk) {
-      const bonus = active.tier.startsWith("pro_") ? PRO_WEEKLY : STUDENT_WEEKLY;
-      s.balance = Math.min(PAID_CAP, s.balance + bonus);
-      s.lastWeeklyRefill = wk;
       changed = true;
     }
   }
@@ -181,6 +178,16 @@ export function spendCredits(
 
 /** Admin/dev: grant credits directly. */
 export function grantCredits(n: number) {
+  const s = reconcile();
+  s.balance = Math.min(PAID_CAP, Math.round((s.balance + n) * 100) / 100);
+  write(s);
+}
+
+/**
+ * Refund a failed/empty AI turn. Bypasses the daily/tier caps so a clean
+ * server failure can never silently reduce the user's wallet.
+ */
+export function refundCredits(n: number) {
   const s = reconcile();
   s.balance = Math.min(PAID_CAP, Math.round((s.balance + n) * 100) / 100);
   write(s);

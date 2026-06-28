@@ -129,7 +129,7 @@ export const openrouterProxy = createServerFn({ method: "POST" })
               body: JSON.stringify({
                 model: candidate.id,
                 messages: data.messages,
-                max_tokens: data.maxTokens ?? 1200,
+                max_tokens: Math.min(data.maxTokens ?? 4000, 8000),
                 temperature: data.temperature ?? 0.7,
               }),
             },
