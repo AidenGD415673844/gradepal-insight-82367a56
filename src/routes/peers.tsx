@@ -57,6 +57,7 @@ import {
 } from "@/lib/group-chat";
 import { SyndicateCanvas } from "@/components/grade/SyndicateCanvas";
 import { SyndicateBulletin } from "@/components/grade/SyndicateBulletin";
+import { SyndicateKanban } from "@/components/grade/SyndicateKanban";
 
 export const Route = createFileRoute("/peers")({
   head: () => ({
@@ -618,6 +619,7 @@ function WebRTCHandshakeCard() {
   const [health, setHealth] = useState<RTCHealth | null>(null);
   const [log, setLog] = useState<string[]>([]);
   const [transfers, setTransfers] = useState<TransferProgress[]>([]);
+  const [showKanban, setShowKanban] = useState(false);
 
   useEffect(() => () => linkRef.current?.close(), []);
 
@@ -806,10 +808,26 @@ function WebRTCHandshakeCard() {
             <Button size="sm" variant="outline" className="w-full text-[11px]" onClick={sendDemoAsset}>
               Stream Demo Note Asset (1 KB fragments)
             </Button>
+            <Button
+              size="sm"
+              variant={showKanban ? "default" : "outline"}
+              className="w-full text-[11px] gap-1"
+              onClick={() => setShowKanban((v) => !v)}
+            >
+              {showKanban ? "Hide" : "Open"} Syndicate Shared Kanban
+            </Button>
             <div className="max-h-24 overflow-y-auto text-[11px] space-y-0.5 font-mono">
               {log.map((l, i) => <div key={i}>{l}</div>)}
             </div>
           </div>
+        )}
+        {showKanban && (
+          <SyndicateKanban
+            link={linkRef.current}
+            meName="Me"
+            peerName="Peer"
+            connected={health?.state === "connected"}
+          />
         )}
       </div>
     </Card>
