@@ -163,15 +163,27 @@ export function AdminCommandCenter({
   );
 }
 
-function CipherTab() {
+function CipherTab({ creds }: { creds: { token: string; pass: string; pin: string } | null }) {
   const [tier, setTier] = useState<Tier>("pro_monthly");
   const [out, setOut] = useState<string[]>([]);
 
-  const gen = () => {
-    const token = generateCipherToken(tier);
-    setOut((prev) => [token, ...prev].slice(0, 12));
-    navigator.clipboard?.writeText(token).catch(() => undefined);
-    toast.success("Token generated & copied");
+  const gen = async () => {
+    if (!creds) {
+      toast.error("Admin session expired — reopen the panel.");
+      return;
+    }
+    try {
+      const r = await generateCipherTokenFn({ data: { tier, ...creds } });
+      if (!r.ok) {
+        toast.error(r.message);
+        return;
+      }
+      setOut((prev) => [r.token, ...prev].slice(0, 12));
+      navigator.clipboard?.writeText(r.token).catch(() => undefined);
+      toast.success("Token generated & copied");
+    } catch {
+      toast.error("Token generation failed.");
+    }
   };
 
   return (
