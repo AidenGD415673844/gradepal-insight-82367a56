@@ -68,7 +68,7 @@ export function SyndicateKanban({
         window.setTimeout(() => setAnimatingId(null), 450);
       }
     });
-    return off;
+    return () => { off(); };
   }, [link]);
 
   // On connect, push our current snapshot so both ends start aligned.
