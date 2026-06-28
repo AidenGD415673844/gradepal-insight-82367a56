@@ -17,7 +17,9 @@ export type RTCEnvelope =
   | { kind: "pong"; ts: number }
   | { kind: "notes_payload"; folderName: string; from: string; ts: number; data: string }
   | { kind: "chunk"; id: string; label: string; from: string; idx: number; total: number; data: string }
-  | { kind: "asset_complete"; id: string; label: string; from: string; ts: number; data: string };
+  | { kind: "asset_complete"; id: string; label: string; from: string; ts: number; data: string }
+  | { kind: "kanban_state"; from: string; ts: number; cards: { id: string; label: string; column: "todo" | "submitted" | "graded"; owner: string; order: number }[] }
+  | { kind: "kanban_move"; from: string; ts: number; cardId: string; column: "todo" | "submitted" | "graded"; order: number };
 
 type Listener = (env: RTCEnvelope) => void;
 
