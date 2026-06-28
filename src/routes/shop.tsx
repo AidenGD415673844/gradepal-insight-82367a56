@@ -13,9 +13,9 @@ import {
   activateTier,
   switchTierFree,
   checkPurchase,
-  verifyCipherToken,
   getMasters,
   redeemCode,
+  looksLikeCipherToken,
   WALLET_CAP,
   downgradeToFree,
 } from "@/lib/premium";
@@ -127,20 +127,20 @@ function TierCard({ meta }: { meta: TierMeta }) {
 function DeveloperCodeBox() {
   const [code, setCode] = useState("");
 
-  const apply = () => {
+  const apply = async () => {
     const raw = code.trim().toUpperCase();
     if (!raw) {
       toast.error("Enter the code your developer gave you.");
       return;
     }
-    // Accept only cipher tokens + master keys (no public promo words here).
-    const cipher = verifyCipherToken(raw);
+    // Accept only cipher tokens (shape) + master keys (no public promo words here).
+    const cipherShape = looksLikeCipherToken(raw);
     const master = getMasters().find((m) => m.key.toUpperCase() === raw);
-    if (!cipher && !master) {
+    if (!cipherShape && !master) {
       toast.error("This input only accepts developer-issued subscription codes.");
       return;
     }
-    const r = redeemCode(raw);
+    const r = await redeemCode(raw);
     if (r.ok) {
       toast.success(r.message);
       setCode("");
@@ -179,8 +179,8 @@ function CodeBox() {
   const [code, setCode] = useState("");
   const [flash, setFlash] = useState<null | { ok: boolean; msg: string }>(null);
 
-  const apply = () => {
-    const r = redeemCode(code);
+  const apply = async () => {
+    const r = await redeemCode(code);
     setFlash({ ok: r.ok, msg: r.message });
     if (r.ok) {
       toast.success(r.message);
