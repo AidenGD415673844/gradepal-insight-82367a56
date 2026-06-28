@@ -17,6 +17,12 @@ import { toast } from "sonner";
 
 /** Compile every $...$ and $$...$$ in `src` into KaTeX HTML. */
 function compileLatex(src: string): string {
+  return _compileLatex(src);
+}
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function _compileLatex(src: string): string {
   if (!src) return "";
   // Escape <, >, & so plain text renders safely; KaTeX output is already HTML.
   const escape = (s: string) =>
