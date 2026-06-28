@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { GLOBAL_PROMOS, type GlobalPromo } from "./premium-codes";
 import { BROADCAST_MASTERS, BROADCAST_PROMOS } from "./premium-broadcast";
+import { verifyCipherTokenFn } from "./premium.functions";
 
 // ===== Storage keys ============================================================
 const K_TIER = "gradecalc_premium_v1";
@@ -187,41 +188,23 @@ export function switchTierFree(target: Tier, source: string) {
   write(K_TIER, { tier: target, expiresAt: Date.now() + carryMs, source });
 }
 
-// ===== Cipher (mathematical scrambler) =========================================
-// FNV-1a 32-bit hash → 8 hex chars. Deterministic, client-side, no crypto.
-const SALT = "SYSOP-LO6130-99X72-GLOBAL";
-function fnv1a(str: string): string {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+// ===== Cipher token =============================================================
+// Verification happens server-side; the SALT lives only in
+// `premium.functions.ts` and never reaches the client bundle.
+const CIPHER_SHAPE = /^GP-(PW|PM|PA|SW|SM|SA)-[A-Z0-9]{4,10}-[A-F0-9]{4}$/;
+/** Cheap client-side shape check (does NOT validate authenticity). */
+export function looksLikeCipherToken(raw: string): boolean {
+  return CIPHER_SHAPE.test(raw.trim().toUpperCase());
+}
+/** Async, server-verified cipher check. Returns the unlocked Tier or null. */
+export async function verifyCipherToken(raw: string): Promise<Tier | null> {
+  if (!looksLikeCipherToken(raw)) return null;
+  try {
+    const r = await verifyCipherTokenFn({ data: { code: raw } });
+    return (r?.tier as Tier | null) ?? null;
+  } catch {
+    return null;
   }
-  return h.toString(16).padStart(8, "0").toUpperCase();
-}
-function checkChars(prefix: string, body: string): string {
-  return fnv1a(`${SALT}|${prefix}|${body}`).slice(0, 4);
-}
-function rand36(len: number): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let s = "";
-  for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
-}
-
-export function generateCipherToken(tier: Tier): string {
-  const meta = TIERS.find((t) => t.id === tier)!;
-  const body = rand36(6);
-  const check = checkChars(meta.code, body);
-  return `GP-${meta.code}-${body}-${check}`;
-}
-
-export function verifyCipherToken(raw: string): Tier | null {
-  const s = raw.trim().toUpperCase();
-  const m = /^GP-(PW|PM|PA|SW|SM|SA)-([A-Z0-9]{4,10})-([A-F0-9]{4})$/.exec(s);
-  if (!m) return null;
-  const [, code, body, check] = m;
-  if (checkChars(code, body) !== check) return null;
-  return (TIERS.find((t) => t.code === code)?.id) ?? null;
 }
 
 // ===== Master license registry (admin Tab B) ===================================
@@ -306,12 +289,12 @@ export type RedeemResult =
   | { ok: true; kind: "wallet"; hkd: number; message: string }
   | { ok: false; message: string };
 
-export function redeemCode(raw: string): RedeemResult {
+export async function redeemCode(raw: string): Promise<RedeemResult> {
   const code = raw.trim().toUpperCase();
   if (!code) return { ok: false, message: "Enter a code." };
 
   // 1) Cipher token (one-shot per device)
-  const cipherTier = verifyCipherToken(code);
+  const cipherTier = await verifyCipherToken(code);
   if (cipherTier) {
     if (getRedeemed().includes(code))
       return { ok: false, message: "Invalid code or already redeemed." };

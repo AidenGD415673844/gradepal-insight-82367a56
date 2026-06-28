@@ -75,6 +75,21 @@ export const openrouterProxy = createServerFn({ method: "POST" })
     if (!Array.isArray(input.messages) || input.messages.length === 0) {
       throw new Error("messages required");
     }
+    // Reject any image_url that isn't an inline data: URI. Forwarding arbitrary
+    // external URLs would let callers proxy fetches through OpenRouter and
+    // consume image-processing quota against external hosts.
+    for (const m of input.messages) {
+      if (Array.isArray(m.content)) {
+        for (const block of m.content) {
+          if (block && block.type === "image_url") {
+            const url = block.image_url?.url;
+            if (typeof url !== "string" || !/^data:image\/[a-z0-9.+-]+;base64,/i.test(url)) {
+              throw new Error("image_url must be an inline data:image/* base64 URI");
+            }
+          }
+        }
+      }
+    }
     return input;
   })
   .handler(async ({ data }): Promise<ORProxyResult> => {
