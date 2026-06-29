@@ -7,7 +7,6 @@ import { AICreditChip } from "@/components/grade/AICreditChip";
 import { StreakBadge } from "@/components/grade/StreakBadge";
 import { WorkspaceNav } from "@/components/grade/WorkspaceNav";
 import { PinVaultGate } from "@/components/grade/PinVaultGate";
-import { EndOfYearArchive } from "@/components/grade/EndOfYearArchive";
 
 export function AppShell({
   title,
@@ -23,7 +22,6 @@ export function AppShell({
   return (
     <SandboxFrame>
     <PinVaultGate />
-    <EndOfYearArchive />
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-5">
         <header className="bg-card rounded-2xl shadow-soft p-3 md:p-4 space-y-3">

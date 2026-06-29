@@ -14,7 +14,6 @@ import { AdminCommandCenter } from "@/components/grade/AdminCommandCenter";
 import { UIDesignStudio } from "@/components/grade/UIDesignStudio";
 import { WalletPassCard } from "@/components/grade/WalletPassCard";
 import { PinVaultPanel } from "@/components/grade/PinVaultPanel";
-import { TimeCapsulePanel } from "@/components/grade/EndOfYearArchive";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -189,7 +188,6 @@ function SettingsPage() {
       <WalletPassCard />
       <PinVaultPanel />
       <UIDesignStudio />
-      <TimeCapsulePanel />
       </div>
       <AdminCommandCenter open={adminOpen} onOpenChange={setAdminOpen} />
     </AppShell>
