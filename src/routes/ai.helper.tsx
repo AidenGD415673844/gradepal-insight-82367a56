@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRef, useState } from "react";
-import { BookOpen, Upload, Loader2, FileText } from "lucide-react";
+import { BookOpen, Upload, Loader2, FileText, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { spendCredits, estimateCost } from "@/lib/ai-credits";
 import { callOpenRouter, OpenRouterError } from "@/lib/openrouter";
@@ -66,7 +66,7 @@ function HelperTab() {
           {
             role: "system",
             content:
-              "You are GradePal's Homework Helper. Walk the student through their problem step by step, show working clearly, cite formulas, then conclude with the final answer. Use LaTeX inside $...$ (inline) or $$...$$ (display) for any equation so KaTeX can render it. Do not include 'User Safety: safe', 'Response Safety: safe', or any internal scratchpad lines such as 'Sum x = …', 'SST sum = …'. Be patient and explanatory. Never just give the answer without reasoning.",
+              "You are GradePal's Homework Helper. Reply with EXACTLY two sections:\n\n**Reasoning Summary:**\n- 3 to 5 short narrative chain-of-thought bullets describing the strategy you are about to use (e.g. 'Identifying the integration technique that fits this integrand…'). This is the visible AI Analysis Logic Track the student can expand.\n\n**Analysis:**\n- A clean, step-by-step solution with working shown and the final answer at the end. Use LaTeX inside $...$ (inline) or $$...$$ (display) for any equation so KaTeX can render it.\n\nDo not include 'User Safety: safe', 'Response Safety: safe', or any internal scratchpad lines such as 'Sum x = …', 'SST sum = …'. Never just give the answer without reasoning.",
           },
           {
             role: "user",
@@ -153,9 +153,42 @@ function HelperTab() {
         )}
         {loading && <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Thinking…</div>}
         {answer && (
-          <MarkdownMath content={answer} />
+          <HelperAnswer content={answer} />
         )}
       </Card>
+    </div>
+  );
+}
+
+function HelperAnswer({ content }: { content: string }) {
+  const cotMatch = content.match(/\*\*(?:Reasoning Summary|Chain of Thought):?\*\*([\s\S]*?)(?:\*\*Analysis:?\*\*|$)/i);
+  const analysisMatch = content.match(/\*\*Analysis:?\*\*([\s\S]*)/i);
+  const [open, setOpen] = useState(false);
+  if (!cotMatch && !analysisMatch) return <MarkdownMath content={content} />;
+  const cot = cotMatch?.[1]?.trim() ?? "";
+  const analysis = analysisMatch?.[1]?.trim() ?? content;
+  return (
+    <div className="space-y-2">
+      {cot && (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="w-full text-left rounded-lg border border-dashed border-fuchsia-500/40 bg-fuchsia-500/5 px-3 py-2 hover:bg-fuchsia-500/10 transition"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-fuchsia-700 dark:text-fuchsia-300">
+            <Brain className="h-3 w-3" /> View AI Analysis Logic Track
+            <span className="ml-auto normal-case tracking-normal text-[10px] text-muted-foreground">
+              {open ? "Hide ▴" : "Show ▾"}
+            </span>
+          </div>
+          {open && (
+            <div className="mt-1.5 text-[12px] text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              {cot}
+            </div>
+          )}
+        </button>
+      )}
+      <MarkdownMath content={analysis} />
     </div>
   );
 }
