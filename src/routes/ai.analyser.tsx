@@ -6,13 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGrades } from "@/lib/grade-store";
 import { calcAverage, calcGPA, filterByTerm } from "@/lib/grade-utils";
-import { spendCredits, estimateCost } from "@/lib/ai-credits";
+import { startGradualSpend, estimateCost, getCredits } from "@/lib/ai-credits";
 import { Send, Loader2, Trash2, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { MarkdownMath } from "@/components/grade/MarkdownMath";
 import { sanitizeAIOutput, isTrivialGreeting, FORMAL_GREETING } from "@/lib/ai-sanitize";
 import { runAnalyserTurn, getPending, subscribeInflight, INFLIGHT_STORE_KEY } from "@/lib/ai-inflight";
+import { AILogicTrack } from "@/components/grade/AILogicTrack";
+import { stepBegin, stepTo, stepFail, stepReset } from "@/lib/process-stepper";
 
 type Msg = { role: "user" | "assistant"; content: string; ts: number };
 const K = INFLIGHT_STORE_KEY;
@@ -102,12 +104,21 @@ function AnalyserTab() {
       setInput("");
       return;
     }
-    const spend = spendCredits("analyser", { chars: content.length + dataContext.length, items: msgs.length });
-    if (!spend.ok) {
-      toast.error(`Need ${spend.need.toFixed(1)} credits, have ${spend.have.toFixed(1)}. Top up in Pro Shop.`);
+    const cost = estimateCost("analyser", { chars: content.length + dataContext.length, items: msgs.length });
+    const have = getCredits();
+    if (have < cost) {
+      // Out-of-credits is surfaced INSIDE the conversation, not as a popup.
+      const userMsg: Msg = { role: "user", content, ts: Date.now() };
+      const oos: Msg = {
+        role: "assistant",
+        ts: Date.now() + 1,
+        content:
+          `**Analysis:**\n\nYou've run out of AI credits — this turn would need about **${cost.toFixed(1)}** credits and your wallet currently holds **${have.toFixed(1)}**.\n\nVisit the **[Pro Shop](/shop)** to top up with a credit pack or upgrade to a Pro / Student plan for daily refills. Your conversation history is preserved.`,
+      };
+      setMsgs((m) => [...m, userMsg, oos]);
+      setInput("");
       return;
     }
-    const cost = estimateCost("analyser", { chars: content.length + dataContext.length, items: msgs.length });
     const userMsg: Msg = { role: "user", content, ts: Date.now() };
     const baseHistory = [...msgs, userMsg];
     // Persist the user turn IMMEDIATELY so a navigation/tab switch never
@@ -116,12 +127,23 @@ function AnalyserTab() {
     setMsgs(baseHistory);
     setInput("");
     setLoading(true);
+    // Live process-stepper sequence (drives the AI Logic Track UI).
+    stepBegin();
+    setTimeout(() => stepTo("parse"), 60);
+    setTimeout(() => stepTo("crawl"), 380);
+    setTimeout(() => stepTo("weights"), 760);
+    setTimeout(() => stepTo("encrypt"), 1200);
+    setTimeout(() => stepTo("regress"), 1750);
+    // Gradual wallet drain — visible accrual, not a single deduction.
+    const ticker = startGradualSpend(cost, 11_000);
     // Slice the most recent 3 user/assistant exchanges (6 rows) so the model
     // never forgets task variables split across two prompts.
     const recentTurns = baseHistory.slice(-6).map((m) => ({ role: m.role, content: m.content }));
     const result = await runAnalyserTurn({
       feature: "analyser",
-      cost,
+      // Cost is handled by the gradual ticker on the client; suppress the
+      // inflight worker's own debit/refund logic.
+      cost: 0,
       maxTokens: 6000,
       temperature: 0.6,
       messages: [
@@ -132,8 +154,8 @@ function AnalyserTab() {
 STRICT OUTPUT RULES — your reply MUST contain EXACTLY these two sections and nothing else:
 
 **Reasoning Summary:**
-- 3 to 6 short bullets summarising the evidence considered.
-- Bullets are auditable evidence ONLY (e.g. "Chinese trending +2.4pp over last 4 tasks"). Never dump raw sums, intermediate calculations, or running totals like "Sum x = 46", "Sum xy = 4075", "SST = ...". Never print loose brackets.
+- 3 to 6 short bullets written as a narrative AI tutor chain-of-thought (e.g. "Analyzing trajectory slope parameters to locate the terminal A-band intersect point...", "Isolating Science exam variances to differentiate conceptual mastery from motivational consistency...").
+- This section IS the visible AI Analysis Logic Track that the student expands to inspect your reasoning path. Stay strategic and narrative — never dump raw sums, intermediate calculations, or running totals like "Sum x = 46", "Sum xy = 4075", "SST = ...". Never print loose brackets.
 
 **Analysis:**
 - 3 to 6 short, complete paragraphs of clean narrative analysis. Reference exact averages, trends and subjects from the snapshot. Finish every sentence — never cut off mid-thought.
@@ -149,7 +171,15 @@ ${dataContext}`,
       ],
     });
     if (!result.ok) {
-      toast.error(result.reason);
+      ticker.refund();
+      stepFail("OpenRouter", result.reason);
+    } else {
+      stepTo("hydrate");
+      setTimeout(() => stepTo("katex"), 120);
+      setTimeout(() => stepTo("wallet"), 280);
+      setTimeout(() => stepTo("polish"), 460);
+      setTimeout(() => { stepTo("done"); stepReset(); }, 900);
+      ticker.commit();
     }
     // Hydrate from localStorage regardless of outcome — the worker has already
     // appended the assistant reply (if any) and handled the refund.
@@ -191,7 +221,7 @@ ${dataContext}`,
             </div>
           ))}
           {loading && (
-            <ThinkingBubble />
+            <AILogicTrack onRetry={() => { stepReset(); send(msgs[msgs.length - 1]?.content ?? ""); }} />
           )}
         </div>
         <div className="border-t p-3 space-y-2">
@@ -258,7 +288,7 @@ function AssistantBubble({ content }: { content: string }) {
           className="w-full text-left rounded-lg border border-dashed border-fuchsia-500/40 bg-fuchsia-500/5 px-3 py-2 hover:bg-fuchsia-500/10 transition"
         >
           <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-fuchsia-700 dark:text-fuchsia-300">
-            <Brain className="h-3 w-3" /> Reasoning Summary
+            <Brain className="h-3 w-3" /> View AI Analysis Logic Track
             <span className="ml-auto normal-case tracking-normal text-[10px] text-muted-foreground">
               {open ? "Hide ▴" : "Show ▾"}
             </span>
@@ -271,14 +301,6 @@ function AssistantBubble({ content }: { content: string }) {
         </button>
       )}
       <MarkdownMath content={analysis} />
-    </div>
-  );
-}
-
-function ThinkingBubble() {
-  return (
-    <div className="bg-muted/60 max-w-[85%] rounded-2xl px-4 py-2.5 text-sm flex items-center gap-2">
-      <Loader2 className="h-4 w-4 animate-spin" /> Analysing your data…
     </div>
   );
 }

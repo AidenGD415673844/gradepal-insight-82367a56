@@ -193,6 +193,70 @@ export function refundCredits(n: number) {
   write(s);
 }
 
+/**
+ * Begin a gradual debit. Instead of dumping the full cost the instant a
+ * request fires, the wallet ticks down in tiny increments over `durationMs`
+ * so users can visibly watch credits accrue against an in-flight AI turn.
+ *
+ *   const ticker = startGradualSpend(2.4, 12_000);
+ *   ...
+ *   if (ok) ticker.commit();   // ensures the full `total` is debited
+ *   else    ticker.refund();   // refunds whatever portion already drained
+ */
+export function startGradualSpend(total: number, durationMs = 10_000) {
+  const target = Math.max(0, Math.round(total * 100) / 100);
+  if (target <= 0) return { commit() {}, refund() {}, drained: () => 0 };
+  const stepMs = 220;
+  const steps = Math.max(4, Math.round(durationMs / stepMs));
+  const inc = target / steps;
+  let drained = 0;
+  let done = false;
+  const id = setInterval(() => {
+    if (done) return;
+    if (drained + inc >= target) {
+      const remaining = target - drained;
+      if (remaining > 0) {
+        const s = reconcile();
+        s.balance = Math.max(0, Math.round((s.balance - remaining) * 100) / 100);
+        write(s);
+        drained = target;
+      }
+      clearInterval(id);
+      done = true;
+      return;
+    }
+    const s = reconcile();
+    s.balance = Math.max(0, Math.round((s.balance - inc) * 100) / 100);
+    write(s);
+    drained += inc;
+  }, stepMs);
+  return {
+    commit() {
+      if (done) return;
+      clearInterval(id);
+      done = true;
+      const remaining = target - drained;
+      if (remaining > 0) {
+        const s = reconcile();
+        s.balance = Math.max(0, Math.round((s.balance - remaining) * 100) / 100);
+        write(s);
+        drained = target;
+      }
+    },
+    refund() {
+      if (done) return;
+      clearInterval(id);
+      done = true;
+      if (drained > 0) {
+        const s = reconcile();
+        s.balance = Math.min(PAID_CAP, Math.round((s.balance + drained) * 100) / 100);
+        write(s);
+      }
+    },
+    drained: () => drained,
+  };
+}
+
 export function useAICredits() {
   const [bal, setBal] = useState<number>(0);
   const [tierLabel, setTierLabel] = useState<string>("Free");

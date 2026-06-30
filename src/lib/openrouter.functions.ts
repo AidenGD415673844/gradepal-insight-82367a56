@@ -59,7 +59,8 @@ function hasInlineImageInText(messages: ORMessage[]): boolean {
 function getServerKeys(): string[] {
   const k1 = (process.env.AI_API_KEY ?? "").trim();
   const k2 = (process.env.AI_API_KEY_2 ?? "").trim();
-  return [k1, k2].filter((x) => x.length > 8);
+  const k3 = (process.env.AI_API_KEY_3 ?? "").trim();
+  return [k1, k2, k3].filter((x) => x.length > 8);
 }
 
 export const hasOpenRouterKeyFn = createServerFn({ method: "GET" }).handler(
