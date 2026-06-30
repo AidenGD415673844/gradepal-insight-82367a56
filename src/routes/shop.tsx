@@ -78,6 +78,7 @@ function TierCard({ meta }: { meta: TierMeta }) {
     toast.success(`${meta.label} activated!`);
   };
 
+  const checklist = buildTierChecklist(meta);
   return (
     <Card
       className={`p-5 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
@@ -105,6 +106,14 @@ function TierCard({ meta }: { meta: TierMeta }) {
         {meta.durationDays === 30 && "Billed monthly · 30-day access."}
         {meta.durationDays === 365 && "Best value · full 365 days."}
       </div>
+      <ul className="space-y-1.5 text-[12px] leading-snug">
+        {checklist.map((line, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <CheckCircle2 className={`h-4 w-4 shrink-0 mt-0.5 ${meta.family === "student" ? "text-emerald-600" : "text-amber-600"}`} />
+            <span className="text-foreground/90 font-medium">{line}</span>
+          </li>
+        ))}
+      </ul>
       {isBlocked && (
         <div className="text-[11px] rounded-md bg-warning/10 border border-warning/30 text-warning-foreground p-1.5">
           {check.reason}
@@ -122,6 +131,28 @@ function TierCard({ meta }: { meta: TierMeta }) {
       </Button>
     </Card>
   );
+}
+
+function buildTierChecklist(meta: TierMeta): string[] {
+  const isPro = meta.family === "pro";
+  const period =
+    meta.durationDays === 7 ? "weekly" : meta.durationDays === 30 ? "monthly" : "annual";
+  if (isPro) {
+    return [
+      "+10 daily credits added at midnight HKT",
+      "Cheaper AI credit prices with on-demand token bundle top-ups",
+      "Chain-of-Thought AI Chat Companion unlocked",
+      "Unlimited Saved Reports & PDF exports",
+      `Pro ${period} licence with full Syndicate Hub access`,
+    ];
+  }
+  return [
+    "+20 daily credits added at midnight",
+    "Unlocks Third-Moment Skewness Profile Curve graph",
+    "Activates Category Weight Sensitivity Heat-Mapped Stress Test Grid",
+    "Includes everything in the Pro tier",
+    `Student ${period} licence — verified academic discount`,
+  ];
 }
 
 function DeveloperCodeBox() {
