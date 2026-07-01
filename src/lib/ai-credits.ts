@@ -10,11 +10,16 @@ import { getActiveTier, isPro, isStudent, TIERS } from "./premium";
 const K_STATE = "gradecalc_ai_credits_v1";
 const EVT = "gradecalc-ai-credits-change";
 
-const FREE_DAILY = 10;        // free baseline tokens added per day (catch up)
-const FREE_CAP = 10;          // free baseline hard ceiling (never exceeded by free refills)
-const PRO_DAILY = 10;         // +10 credits added to active rolling balance every midnight
-const STUDENT_DAILY = 20;     // +20 credits added to active rolling balance every midnight
-const PAID_CAP = 200;         // hard cap including top-ups
+// Unified 135-token daily framework — every tier (free/pro/student) shares
+// the exact same 135.0 credit ceiling and midnight refresh. No monthly caps,
+// no rolling top-up pools, no bulk dumps: the pool resets cleanly to 135.0
+// at the start of every local calendar day.
+const DAILY_TOKENS = 135;
+const FREE_DAILY = DAILY_TOKENS;
+const FREE_CAP = DAILY_TOKENS;
+const PRO_DAILY = DAILY_TOKENS;
+const STUDENT_DAILY = DAILY_TOKENS;
+const PAID_CAP = DAILY_TOKENS;
 
 export const AI_COST: Record<string, number> = {
   ai_grader: 6.5,
@@ -117,23 +122,21 @@ function reconcile(): CreditState {
   const s = read();
   let changed = false;
 
-  // ---- Daily midnight refill — strictly incremental, no bulk top-ups ----
+  // ---- Daily midnight refresh — hard reset to exactly DAILY_TOKENS ----
   const today = todayKey();
   if (s.lastDailyRefill !== today) {
+    s.balance = DAILY_TOKENS;
     const active = getActiveTier();
-    if (!active) {
-      // Free tier baseline: stays fixed at FREE_CAP daily tokens max.
-      if (s.balance < FREE_CAP) {
-        s.balance = Math.min(FREE_CAP, s.balance + FREE_DAILY);
-      }
-    } else {
-      const daily = active.tier.startsWith("pro_") ? PRO_DAILY : STUDENT_DAILY;
-      s.balance = Math.min(PAID_CAP, Math.round((s.balance + daily) * 100) / 100);
-      // Track the active tier handle so a fresh purchase does NOT trigger a bulk dump.
+    if (active) {
       s.lastTopupTier = active.tier;
       s.lastTopupExpiresAt = active.expiresAt;
     }
     s.lastDailyRefill = today;
+    changed = true;
+  }
+  // Never let the balance drift above the shared cap for any reason.
+  if (s.balance > PAID_CAP) {
+    s.balance = PAID_CAP;
     changed = true;
   }
 
