@@ -10,9 +10,33 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { useEffect, useState } from "react";
 import { useStepper, STEP_TABLE, type LogicEntry } from "@/lib/process-stepper";
 
+const MOTIVATIONAL_QUOTES = [
+  "Grades are markers of progress, not your personal worth — keep breathing, you've got this!",
+  "Mistakes are just steps on the ladder of learning. Let's look at this together.",
+  "Your potential is limitless, no matter what a report card says.",
+  "Small consistent effort compounds into big wins — you're already showing up.",
+  "One paper doesn't define you. The trend line does, and it's yours to shape.",
+  "Kind mind first, sharp analysis second. Both matter.",
+  "You are a whole human — the number I'm analysing is just today's snapshot.",
+  "Rest is part of the plan. A tired brain can't compound learning.",
+];
+
+function useRotatingQuote(active: boolean) {
+  const [i, setI] = useState(() => Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length));
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => {
+      setI((p) => (p + 1) % MOTIVATIONAL_QUOTES.length);
+    }, 6500);
+    return () => clearInterval(id);
+  }, [active]);
+  return MOTIVATIONAL_QUOTES[i];
+}
+
 export function AILogicTrack({ onRetry }: { onRetry?: () => void }) {
   const state = useStepper();
   const [open, setOpen] = useState(false);
+  const quote = useRotatingQuote(state.busy);
 
   if (!state.busy && !state.error && state.key === "idle") return null;
 
@@ -49,6 +73,14 @@ export function AILogicTrack({ onRetry }: { onRetry?: () => void }) {
             style={{ width: `${state.pct}%` }}
           />
         </div>
+        {!state.error && (
+          <div
+            key={quote}
+            className="mt-2 text-[11px] leading-snug text-fuchsia-700 dark:text-fuchsia-300 animate-fade-in"
+          >
+            💜 {quote}
+          </div>
+        )}
       </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
