@@ -5,10 +5,28 @@
 // =============================================================================
 import { createServerFn } from "@tanstack/react-start";
 
-const SALT = (process.env.PREMIUM_CIPHER_SALT ?? "SYSOP-LO6130-99X72-GLOBAL").trim();
-const ADMIN_TOKEN = (process.env.ADMIN_SYSOP_TOKEN ?? "SYSOP-LO6130-99X72-GLOBAL").trim();
-const ADMIN_PASS = (process.env.ADMIN_DEV_PASSWORD ?? "grADecaLC-2026-aiden63-smart").trim();
-const ADMIN_PIN = (process.env.ADMIN_MASTER_PIN ?? "8752948803").trim();
+function requiredEnv(name: string): string {
+  const v = (process.env[name] ?? "").trim();
+  if (!v) {
+    throw new Error(
+      `Premium/admin secret ${name} is not configured. Set it in project secrets.`,
+    );
+  }
+  return v;
+}
+
+function getSalt() {
+  return requiredEnv("PREMIUM_CIPHER_SALT");
+}
+function getAdminToken() {
+  return requiredEnv("ADMIN_SYSOP_TOKEN");
+}
+function getAdminPass() {
+  return requiredEnv("ADMIN_DEV_PASSWORD");
+}
+function getAdminPin() {
+  return requiredEnv("ADMIN_MASTER_PIN");
+}
 
 const TIER_CODES = ["PW", "PM", "PA", "SW", "SM", "SA"] as const;
 type TierCode = (typeof TIER_CODES)[number];
@@ -30,7 +48,7 @@ function fnv1a(str: string): string {
   return h.toString(16).padStart(8, "0").toUpperCase();
 }
 function checkChars(prefix: string, body: string): string {
-  return fnv1a(`${SALT}|${prefix}|${body}`).slice(0, 4);
+  return fnv1a(`${getSalt()}|${prefix}|${body}`).slice(0, 4);
 }
 function rand36(len: number): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -40,7 +58,7 @@ function rand36(len: number): string {
 }
 
 function adminOk(t: string, p: string, n: string): boolean {
-  return t === ADMIN_TOKEN && p === ADMIN_PASS && n === ADMIN_PIN;
+  return t === getAdminToken() && p === getAdminPass() && n === getAdminPin();
 }
 
 /** Server-side cipher verification — SALT never leaves the server. */
