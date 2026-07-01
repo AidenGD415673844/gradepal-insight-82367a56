@@ -9,7 +9,10 @@
 import { useEffect, useState } from "react";
 
 const PROMPT_FLAG_KEY = "gradepal_eoy_prompted_year";
-const ARCHIVE_PREFIX = "gradecalc_archive_";
+// New canonical vault key. The old `gradecalc_archive_` prefix is still read
+// on listing for backward compatibility.
+const ARCHIVE_PREFIX = "gradecalc_vault_archive_";
+const LEGACY_ARCHIVE_PREFIX = "gradecalc_archive_";
 const EVT = "gradepal-archive-change";
 
 // Active-data keys that get cloned + reset on rollover.
@@ -131,7 +134,7 @@ export function listArchives(): ArchiveEntry[] {
   const out: ArchiveEntry[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (!k || !k.startsWith(ARCHIVE_PREFIX)) continue;
+    if (!k || (!k.startsWith(ARCHIVE_PREFIX) && !k.startsWith(LEGACY_ARCHIVE_PREFIX))) continue;
     try { out.push(JSON.parse(localStorage.getItem(k) || "")); } catch { /* skip */ }
   }
   return out.sort((a, b) => b.year - a.year);
@@ -139,6 +142,7 @@ export function listArchives(): ArchiveEntry[] {
 
 export function deleteArchive(year: number) {
   localStorage.removeItem(ARCHIVE_PREFIX + year);
+  localStorage.removeItem(LEGACY_ARCHIVE_PREFIX + year);
   fire();
 }
 

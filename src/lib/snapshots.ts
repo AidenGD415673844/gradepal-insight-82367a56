@@ -1,7 +1,7 @@
 // Local-only snapshot / time-machine archive. Everything lives in localStorage.
 
 export const SNAPSHOT_KEY = "gradecalc_snapshot_registry";
-export const SNAPSHOT_MAX = 15;
+export const SNAPSHOT_MAX = 30;
 export const SNAPSHOT_EVT = "gradecalc-snapshot-change";
 
 // Any localStorage key that should be captured as part of "app state".

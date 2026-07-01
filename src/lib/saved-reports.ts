@@ -1,7 +1,7 @@
 // Local-only Saved Reports History Hub. Hard cap of 15 entries in localStorage.
 
 export const SAVED_REPORTS_KEY = "gradecalc-saved-reports";
-export const SAVED_REPORTS_MAX = 15;
+export const SAVED_REPORTS_MAX = 30;
 export const SAVED_REPORTS_EVT = "gradecalc-saved-reports-change";
 
 export type SavedReportRow = {

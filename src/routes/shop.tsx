@@ -139,17 +139,21 @@ function buildTierChecklist(meta: TierMeta): string[] {
     meta.durationDays === 7 ? "weekly" : meta.durationDays === 30 ? "monthly" : "annual";
   if (isPro) {
     return [
-      "+10 daily credits added at midnight HKT",
-      "Cheaper AI credit prices with on-demand token bundle top-ups",
+      "135 daily AI credits refreshed at midnight HKT",
+      "30 local Time Machine Save-Data slots",
+      "30 Saved Reports PDF transcript rows",
       "Chain-of-Thought AI Chat Companion unlocked",
-      "Unlimited Saved Reports & PDF exports",
+      "Notebook Vault Preview Document HTML export",
+      "Full Syndicate WebRTC mesh & infinite cloud-redirect backups",
       `Pro ${period} licence with full Syndicate Hub access`,
     ];
   }
   return [
-    "+20 daily credits added at midnight",
-    "Unlocks Third-Moment Skewness Profile Curve graph",
-    "Activates Category Weight Sensitivity Heat-Mapped Stress Test Grid",
+    "135 daily AI credits refreshed at midnight",
+    "30 local Time Machine Save-Data slots",
+    "30 Saved Reports PDF transcript rows",
+    "Third-Moment Skewness Profile Curve unlocked",
+    "Category Weight Sensitivity Heat-Map Grid unlocked",
     "Includes everything in the Pro tier",
     `Student ${period} licence — verified academic discount`,
   ];
