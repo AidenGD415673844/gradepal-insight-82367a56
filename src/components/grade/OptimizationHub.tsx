@@ -1889,6 +1889,7 @@ export function StudyStreakCalendar() {
 /* ===================== Container ===================== */
 import { AttendanceTimetable } from "./AttendanceTimetable";
 import { MicroTrendDrawer } from "./MicroTrendDrawer";
+import { SlipCorrectionAssistant } from "./SlipCorrectionAssistant";
 
 export function OptimizationHub() {
   return (
@@ -1896,6 +1897,7 @@ export function OptimizationHub() {
       <div className="lg:col-span-2">
         <MicroTrendDrawer />
       </div>
+      <SlipCorrectionAssistant />
       <AttendanceTimetable />
       <FinalExamCountdown />
       <StudyStreakCalendar />
