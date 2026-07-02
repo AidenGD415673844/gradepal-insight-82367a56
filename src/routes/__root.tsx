@@ -14,6 +14,7 @@ import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
 import { useEffect } from "react";
 import { applyThemeProfile, getThemeProfile } from "@/lib/theme-profiles";
 import { PeerErrorToastHost } from "@/lib/peerjs-toast";
+import { PageEntryLoader } from "@/components/PageEntryLoader";
 
 import appCss from "../styles.css?url";
 import katexCss from "katex/dist/katex.min.css?url";
@@ -117,6 +118,7 @@ function RootComponent() {
           <Outlet />
           <Toaster richColors position="top-right" />
           <PeerErrorToastHost />
+          <PageEntryLoader />
         </GlobalErrorBoundary>
       </GradeProvider>
     </QueryClientProvider>
