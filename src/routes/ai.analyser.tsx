@@ -11,10 +11,12 @@ import { Send, Loader2, Trash2, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { MarkdownMath } from "@/components/grade/MarkdownMath";
-import { sanitizeAIOutput, isTrivialGreeting, FORMAL_GREETING } from "@/lib/ai-sanitize";
+import { inspectAiPrompt } from "@/components/AiThought";
 import { runAnalyserTurn, getPending, subscribeInflight, INFLIGHT_STORE_KEY } from "@/lib/ai-inflight";
 import { AILogicTrack } from "@/components/grade/AILogicTrack";
 import { stepBegin, stepTo, stepFail, stepReset } from "@/lib/process-stepper";
+import { simulateThoughtStream, stripThoughtBlock, resetThought } from "@/lib/thought-stream";
+import { DevSandboxBreakout } from "@/components/grade/DevSandboxBreakout";
 
 type Msg = { role: "user" | "assistant"; content: string; ts: number };
 const K = INFLIGHT_STORE_KEY;
@@ -39,6 +41,7 @@ function AnalyserTab() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState<boolean>(() => !!getPending());
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [breakoutOpen, setBreakoutOpen] = useState(false);
 
   // Re-hydrate timeline + inflight state from localStorage whenever the
   // background worker, another tab, or a visibility wake fires an event.
@@ -98,9 +101,13 @@ function AnalyserTab() {
   const send = async (text: string) => {
     const content = text.trim();
     if (!content || loading) return;
-    if (isTrivialGreeting(content)) {
+    // Decoupled AI middleware — blocks gibberish + trivial greetings before
+    // any credits are debited or any network request fires.
+    const verdict = inspectAiPrompt(content);
+    if (!verdict.ok) {
       const userMsg: Msg = { role: "user", content, ts: Date.now() };
-      setMsgs((m) => [...m, userMsg, { role: "assistant", content: FORMAL_GREETING, ts: Date.now() + 1 }]);
+      if (verdict.reason === "empty") { setMsgs((m) => [...m, userMsg]); setInput(""); return; }
+      setMsgs((m) => [...m, userMsg, { role: "assistant", content: verdict.reply, ts: Date.now() + 1 }]);
       setInput("");
       return;
     }
@@ -129,6 +136,7 @@ function AnalyserTab() {
     setLoading(true);
     // Live process-stepper sequence (drives the AI Logic Track UI).
     stepBegin();
+    resetThought();
     setTimeout(() => stepTo("parse"), 60);
     setTimeout(() => stepTo("crawl"), 380);
     setTimeout(() => stepTo("weights"), 760);
@@ -151,6 +159,12 @@ function AnalyserTab() {
             role: "system",
             content: `You are GradePal's AI Analysis Pro — a warm, encouraging, evidence-based academic study coach who treats each student as a whole human being first and a data point second.
 
+MANDATORY OUTPUT WRAPPER — YOUR RESPONSE MUST BEGIN WITH:
+<thought_process>
+…your un-scripted step-by-step math, per-subject reasoning, weight recalculations, and pacing thoughts…
+</thought_process>
+…followed by the formal reply below.
+
 TONE RULES:
 - Speak like a supportive tutor who genuinely cares about the student's wellbeing.
 - Prioritise the student's mental health, self-worth, and personal growth alongside the numbers.
@@ -158,7 +172,7 @@ TONE RULES:
 - Never shame low scores. Frame gaps as "next opportunities", not failures.
 - Celebrate effort and upward trends. Name specific wins from the snapshot.
 
-STRICT OUTPUT RULES — your reply MUST contain EXACTLY these two sections and nothing else:
+STRICT OUTPUT RULES — after the </thought_process> tag, your reply MUST contain EXACTLY these two sections and nothing else:
 
 **Reasoning Summary:**
 - 3 to 6 short narrative bullets showing your tutor chain-of-thought (e.g. "I'm looking at the Chinese trajectory to see whether the recent dip is a one-off or a pattern...").
@@ -182,6 +196,10 @@ ${dataContext}`,
       stepFail("OpenRouter", result.reason);
     } else {
       stepTo("hydrate");
+      // Fire the live <thought_process> stream into the reasoning sidebar,
+      // then strip the wrapper from the visible bubble.
+      simulateThoughtStream(result.content).catch(() => {});
+      cleanLatestAssistantBubble();
       setTimeout(() => stepTo("katex"), 120);
       setTimeout(() => stepTo("wallet"), 280);
       setTimeout(() => stepTo("polish"), 460);
@@ -198,10 +216,21 @@ ${dataContext}`,
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
       <Card className="p-0 overflow-hidden flex flex-col h-[74vh]">
         <div className="flex items-center gap-2 px-4 py-3 border-b bg-gradient-to-r from-primary/10 to-fuchsia-500/10">
-          <Brain className="h-5 w-5 text-primary" />
+          <button
+            type="button"
+            onDoubleClick={() => setBreakoutOpen(true)}
+            title="Focus tool"
+            aria-label="Focus tool"
+            className="p-0 m-0 bg-transparent border-0 outline-none"
+          >
+            <Brain className="h-5 w-5 text-primary" />
+          </button>
           <div>
             <h2 className="font-bold text-sm">AI Analysis Pro</h2>
-            <p className="text-[10px] text-muted-foreground">
+            <p
+              className="text-[10px] text-muted-foreground select-none"
+              onDoubleClick={() => setBreakoutOpen(true)}
+            >
               Verified OpenRouter route · full grade dataset injected · ~{cost.toFixed(1)} cr/turn
             </p>
           </div>
@@ -274,17 +303,21 @@ ${dataContext}`,
           <Badge variant="outline" className="mt-2 text-[9px]">Auto-sent with every message</Badge>
         </Card>
       </div>
+      <DevSandboxBreakout open={breakoutOpen} onOpenChange={setBreakoutOpen} />
     </div>
   );
 }
 
 function AssistantBubble({ content }: { content: string }) {
+  // Always strip the raw <thought_process> wrapper from the visible bubble —
+  // it lives exclusively in the AI Reasoning Core sidebar stream.
+  const stripped = stripThoughtBlock(content);
   // Split the chain-of-thought trace from the final answer for distinct styling.
-  const cotMatch = content.match(/\*\*(?:Reasoning Summary|Chain of Thought):?\*\*([\s\S]*?)(?:\*\*Analysis:?\*\*|$)/i);
-  const analysisMatch = content.match(/\*\*Analysis:?\*\*([\s\S]*)/i);
-  if (!cotMatch && !analysisMatch) return <MarkdownMath content={content} />;
+  const cotMatch = stripped.match(/\*\*(?:Reasoning Summary|Chain of Thought):?\*\*([\s\S]*?)(?:\*\*Analysis:?\*\*|$)/i);
+  const analysisMatch = stripped.match(/\*\*Analysis:?\*\*([\s\S]*)/i);
+  if (!cotMatch && !analysisMatch) return <MarkdownMath content={stripped} />;
   const cot = cotMatch?.[1]?.trim() ?? "";
-  const analysis = analysisMatch?.[1]?.trim() ?? content;
+  const analysis = analysisMatch?.[1]?.trim() ?? stripped;
   const [open, setOpen] = useState(false);
   return (
     <div className="space-y-2">
@@ -310,4 +343,21 @@ function AssistantBubble({ content }: { content: string }) {
       <MarkdownMath content={analysis} />
     </div>
   );
+}
+
+// Rewrite the most recent assistant message in localStorage so the persisted
+// history stores the cleaned (no-<thought_process>) form.
+function cleanLatestAssistantBubble() {
+  try {
+    const raw = localStorage.getItem(INFLIGHT_STORE_KEY);
+    if (!raw) return;
+    const list: Msg[] = JSON.parse(raw);
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (list[i].role === "assistant") {
+        list[i] = { ...list[i], content: stripThoughtBlock(list[i].content) };
+        break;
+      }
+    }
+    localStorage.setItem(INFLIGHT_STORE_KEY, JSON.stringify(list));
+  } catch { /* noop */ }
 }
