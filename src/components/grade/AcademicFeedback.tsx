@@ -646,12 +646,53 @@ export function AcademicFeedback() {
       }
     }
 
+    // ---- Warm, quantitative openers ----
+    // Each opener names the exact numbers that drove the observation, then
+    // reframes them in an encouraging, human tone. The clinical bracket
+    // copy that follows keeps the analytical detail intact.
+    const signed = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}`;
+    const warmB1 = `You're currently averaging ${r.avg.toFixed(1)}% (grade ${r.letter}) in ${r.course.name} — that number is the result of real, measurable effort worth recognising.`;
+    let warmB2: string;
+    if (trend.delta == null) {
+      warmB2 = `There aren't enough graded tasks yet to plot a trend line, but every submission from here writes the story of your progress.`;
+    } else if (trend.mode === "prev-term") {
+      const dir = trend.delta > 0.05 ? "genuine upward momentum you built yourself" : trend.delta < -0.05 ? "a dip that is a signal, not a setback — you have the room and time to turn it around" : "rock-solid consistency between terms";
+      warmB2 = `You moved from ${r.prevAvg.toFixed(1)}% last term to ${r.avg.toFixed(1)}% this term — a ${signed(trend.delta)}pp shift that reflects ${dir}.`;
+    } else {
+      const dir = trend.delta > 0.05 ? "you are trending in the right direction — keep going" : trend.delta < -0.05 ? "a small course-correction now is enough to flip the arrow back up" : "a steady, dependable rhythm you can build on";
+      warmB2 = `Your later tasks in this window averaged ${signed(trend.delta)}pp against your earlier ones (${r.avg.toFixed(1)}% current) — ${dir}.`;
+    }
+    const compTone = r.completion === 100
+      ? "outstanding follow-through — nothing left on the table"
+      : r.completion >= 80
+        ? "your commitment is clearly showing"
+        : r.completion >= 60
+          ? "a solid base to build on, and every remaining task lifts this cleanly"
+          : "each task submitted from here will meaningfully move this number upward";
+    const warmB3 = `With ${r.completion}% of graded work completed this term, ${compTone}.`;
+    const varTone = pcts.length < 2
+      ? `A fresh start — from here, each task begins to shape your personal consistency profile.`
+      : sdSubject < 5
+        ? `Your ${sdSubject.toFixed(1)}% score variance across ${pcts.length} tasks shows admirable consistency — you deliver reliably at ${r.avg.toFixed(1)}%.`
+        : sdSubject < 10
+          ? `A ${sdSubject.toFixed(1)}% variance across ${pcts.length} tasks sits inside a healthy range — your ${r.avg.toFixed(1)}% average is dependable, not lucky.`
+          : `A ${sdSubject.toFixed(1)}% variance across ${pcts.length} tasks is a real opportunity — you have already shown you can hit high marks, so stabilising is very reachable.`;
+    const warmB4 = varTone;
+    const gapToNext = (() => {
+      const next = NEXT_TIER_LADDER.find((b) => b.min > r.avg);
+      if (!next) return null;
+      return { label: next.tier ? `${next.tier} ${next.letter}` : next.letter, pp: next.min - r.avg };
+    })();
+    const warmB5 = gapToNext
+      ? `You are just ${gapToNext.pp.toFixed(1)}pp away from the ${gapToNext.label} band — a small, deliberate push compounds quickly from your current ${r.avg.toFixed(1)}%.`
+      : `You are already inside the top band at ${r.avg.toFixed(1)}% — the goal now is to protect and extend that lead.`;
+
     return [
-      `${shiftedMain.bullets[0]} ${addons.b1}`,
-      `${b2 + sdClause} ${addons.b2}`,
-      `${b3 + respClause} ${addons.b3}`,
-      `${shiftedMain.bullets[3] + sdClause} ${addons.b4}`,
-      `${b5} ${addons.b5}${b5Diagnostic}`,
+      `${warmB1} ${shiftedMain.bullets[0]} ${addons.b1}`,
+      `${warmB2} ${b2 + sdClause} ${addons.b2}`,
+      `${warmB3} ${b3 + respClause} ${addons.b3}`,
+      `${warmB4} ${shiftedMain.bullets[3] + sdClause} ${addons.b4}`,
+      `${warmB5} ${b5} ${addons.b5}${b5Diagnostic}`,
       b6Dynamic,
       b7,
       stats8910.b8,
