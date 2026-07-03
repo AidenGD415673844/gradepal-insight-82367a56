@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { WorkspaceNav } from "@/components/grade/WorkspaceNav";
 import { PinVaultGate } from "@/components/grade/PinVaultGate";
+import { AppStatusIndicator } from "@/components/grade/AppStatusIndicator";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -114,11 +115,14 @@ function Home() {
             </div>
             <h1 className="text-2xl font-bold tracking-tight truncate">GradeCalc — Local School Dashboard</h1>
           </div>
-          <Button variant="outline" size="sm" asChild className="gap-2">
-            <Link to="/timetable">
-              <CalendarRange className="h-4 w-4" /> Calendar
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <AppStatusIndicator />
+            <Button variant="outline" size="sm" asChild className="gap-2">
+              <Link to="/timetable">
+                <CalendarRange className="h-4 w-4" /> Calendar
+              </Link>
+            </Button>
+          </div>
           </div>
           <WorkspaceNav />
         </header>
