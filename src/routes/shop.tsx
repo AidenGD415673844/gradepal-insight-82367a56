@@ -139,7 +139,7 @@ function buildTierChecklist(meta: TierMeta): string[] {
     meta.durationDays === 7 ? "weekly" : meta.durationDays === 30 ? "monthly" : "annual";
   if (isPro) {
     return [
-      "135 daily AI credits refreshed at midnight HKT",
+      "+10 extra daily AI credits on top of the free baseline, refreshed at midnight HKT",
       "30 local Time Machine Save-Data slots",
       "30 Saved Reports PDF transcript rows",
       "Chain-of-Thought AI Chat Companion unlocked",
@@ -149,7 +149,7 @@ function buildTierChecklist(meta: TierMeta): string[] {
     ];
   }
   return [
-    "135 daily AI credits refreshed at midnight",
+    "+20 extra daily AI credits on top of the free baseline, refreshed at midnight",
     "30 local Time Machine Save-Data slots",
     "30 Saved Reports PDF transcript rows",
     "Third-Moment Skewness Profile Curve unlocked",
