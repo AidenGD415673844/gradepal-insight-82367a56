@@ -108,9 +108,7 @@ export function AppStatusIndicator() {
     ? "offline"
     : !storageOk
       ? "critical"
-      : pingOk === false
-        ? "some"
-        : "ok";
+      : "ok";
 
   const features: FeatureState[] = [
     {
