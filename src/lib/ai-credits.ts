@@ -303,5 +303,5 @@ export function useAICredits() {
       clearInterval(id);
     };
   }, []);
-  return { balance: bal, tierLabel, isPro: isPro(), isStudent: isStudent(), cap: PAID_CAP };
+    return { balance: bal, tierLabel, isPro: isPro(), isStudent: isStudent(), cap: dailyTotalForActive() };
 }
