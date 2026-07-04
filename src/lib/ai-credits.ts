@@ -10,16 +10,27 @@ import { getActiveTier, isPro, isStudent, TIERS } from "./premium";
 const K_STATE = "gradecalc_ai_credits_v1";
 const EVT = "gradecalc-ai-credits-change";
 
-// Unified 135-token daily framework — every tier (free/pro/student) shares
-// the exact same 135.0 credit ceiling and midnight refresh. No monthly caps,
-// no rolling top-up pools, no bulk dumps: the pool resets cleanly to 135.0
-// at the start of every local calendar day.
-const DAILY_TOKENS = 135;
-const FREE_DAILY = DAILY_TOKENS;
-const FREE_CAP = DAILY_TOKENS;
-const PRO_DAILY = DAILY_TOKENS;
-const STUDENT_DAILY = DAILY_TOKENS;
-const PAID_CAP = DAILY_TOKENS;
+// Tiered daily framework. Free tier receives the baseline pool; Pro adds a
+// flat +10 credits on top, Student adds a flat +20 credits on top. The pool
+// resets to the tier-appropriate daily total at the start of each local day.
+const FREE_DAILY = 15;
+const PRO_BONUS = 10;
+const STUDENT_BONUS = 20;
+const PRO_DAILY = FREE_DAILY + PRO_BONUS;      // 25
+const STUDENT_DAILY = FREE_DAILY + STUDENT_BONUS; // 35
+const FREE_CAP = FREE_DAILY;
+const PAID_CAP = STUDENT_DAILY; // ceiling for either paid tier
+
+/** Total daily credits the currently-active tier should refill to. */
+function dailyTotalForActive(): number {
+  if (isStudent()) return STUDENT_DAILY;
+  if (isPro()) return PRO_DAILY;
+  return FREE_DAILY;
+}
+
+/** Public: how many extra daily credits (over free baseline) a tier grants. */
+export const DAILY_BONUS = { free: 0, pro: PRO_BONUS, student: STUDENT_BONUS };
+export const DAILY_TOTALS = { free: FREE_DAILY, pro: PRO_DAILY, student: STUDENT_DAILY };
 
 export const AI_COST: Record<string, number> = {
   ai_grader: 6.5,
@@ -125,7 +136,7 @@ function reconcile(): CreditState {
   // ---- Daily midnight refresh — hard reset to exactly DAILY_TOKENS ----
   const today = todayKey();
   if (s.lastDailyRefill !== today) {
-    s.balance = DAILY_TOKENS;
+    s.balance = dailyTotalForActive();
     const active = getActiveTier();
     if (active) {
       s.lastTopupTier = active.tier;
@@ -134,9 +145,10 @@ function reconcile(): CreditState {
     s.lastDailyRefill = today;
     changed = true;
   }
-  // Never let the balance drift above the shared cap for any reason.
-  if (s.balance > PAID_CAP) {
-    s.balance = PAID_CAP;
+  // Never let the balance drift above the tier's own daily ceiling.
+  const cap = dailyTotalForActive();
+  if (s.balance > cap) {
+    s.balance = cap;
     changed = true;
   }
 
@@ -147,6 +159,12 @@ function reconcile(): CreditState {
     const key = `${active.tier}|${active.expiresAt}`;
     const cur = `${s.lastTopupTier}|${s.lastTopupExpiresAt}`;
     if (key !== cur) {
+      // Fresh activation: immediately grant the tier's bonus on top of the
+      // remaining free-tier balance, capped at the tier's daily ceiling.
+      const bonus = isStudent() ? STUDENT_BONUS : isPro() ? PRO_BONUS : 0;
+      if (bonus > 0) {
+        s.balance = Math.min(dailyTotalForActive(), Math.round((s.balance + bonus) * 100) / 100);
+      }
       s.lastTopupTier = active.tier;
       s.lastTopupExpiresAt = active.expiresAt;
       changed = true;
