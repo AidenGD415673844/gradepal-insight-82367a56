@@ -21,7 +21,7 @@ const QUOTES = [
 export function PageEntryLoader() {
   const status = useRouterState({ select: (s) => s.status });
   const [visible, setVisible] = useState(false);
-  const [i, setI] = useState(() => Math.floor(Math.random() * QUOTES.length));
+  const [i, setI] = useState(0);
   const shownAt = useRef<number>(0);
   const hideTimer = useRef<number | null>(null);
 
