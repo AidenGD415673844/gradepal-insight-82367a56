@@ -13,6 +13,7 @@ import { Route as UtilitiesRouteImport } from './routes/utilities'
 import { Route as TimetableRouteImport } from './routes/timetable'
 import { Route as TeacherRouteImport } from './routes/teacher'
 import { Route as SyndicateRouteImport } from './routes/syndicate'
+import { Route as StudyRoomRouteImport } from './routes/study-room'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -50,6 +51,11 @@ const TeacherRoute = TeacherRouteImport.update({
 const SyndicateRoute = SyndicateRouteImport.update({
   id: '/syndicate',
   path: '/syndicate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudyRoomRoute = StudyRoomRouteImport.update({
+  id: '/study-room',
+  path: '/study-room',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/study-room': typeof StudyRoomRoute
   '/syndicate': typeof SyndicateRoute
   '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/study-room': typeof StudyRoomRoute
   '/syndicate': typeof SyndicateRoute
   '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/study-room': typeof StudyRoomRoute
   '/syndicate': typeof SyndicateRoute
   '/teacher': typeof TeacherRoute
   '/timetable': typeof TimetableRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop'
     | '/sitemap.xml'
+    | '/study-room'
     | '/syndicate'
     | '/teacher'
     | '/timetable'
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop'
     | '/sitemap.xml'
+    | '/study-room'
     | '/syndicate'
     | '/teacher'
     | '/timetable'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop'
     | '/sitemap.xml'
+    | '/study-room'
     | '/syndicate'
     | '/teacher'
     | '/timetable'
@@ -307,6 +319,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StudyRoomRoute: typeof StudyRoomRoute
   SyndicateRoute: typeof SyndicateRoute
   TeacherRoute: typeof TeacherRoute
   TimetableRoute: typeof TimetableRoute
@@ -341,6 +354,13 @@ declare module '@tanstack/react-router' {
       path: '/syndicate'
       fullPath: '/syndicate'
       preLoaderRoute: typeof SyndicateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study-room': {
+      id: '/study-room'
+      path: '/study-room'
+      fullPath: '/study-room'
+      preLoaderRoute: typeof StudyRoomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -502,6 +522,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StudyRoomRoute: StudyRoomRoute,
   SyndicateRoute: SyndicateRoute,
   TeacherRoute: TeacherRoute,
   TimetableRoute: TimetableRoute,
