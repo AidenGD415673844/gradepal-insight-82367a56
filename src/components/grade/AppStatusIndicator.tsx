@@ -65,12 +65,14 @@ function checkStorage(): boolean {
  */
 export function AppStatusIndicator() {
   const online = useOnline();
+  const [mounted, setMounted] = useState(false);
   const [storageOk, setStorageOk] = useState<boolean>(true);
   const [pingOk, setPingOk] = useState<boolean | null>(null);
   const [fixing, setFixing] = useState<boolean>(false);
 
   // Storage probe on mount.
   useEffect(() => {
+    setMounted(true);
     setStorageOk(checkStorage());
   }, []);
 
@@ -104,11 +106,18 @@ export function AppStatusIndicator() {
     };
   }, [online, pingOk]);
 
-  const status: Status = !online
-    ? "offline"
-    : !storageOk
-      ? "critical"
-      : "ok";
+  // Until the client has mounted we render the SSR-safe "ok" state so that the
+  // first client paint matches the server output — prevents hydration
+  // mismatches when navigator.onLine differs between server and client.
+  const status: Status = !mounted
+    ? "ok"
+    : !online
+      ? "offline"
+      : !storageOk
+        ? "critical"
+        : pingOk === false
+          ? "some"
+          : "ok";
 
   const features: FeatureState[] = [
     {
