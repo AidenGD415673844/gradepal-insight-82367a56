@@ -27,6 +27,7 @@ import {
   Mail,
 } from "lucide-react";
 import { toast } from "sonner";
+import { RefocusShard } from "@/components/grade/RefocusShard";
 
 export const Route = createFileRoute("/inbox")({
   head: () => ({
@@ -62,6 +63,7 @@ function InboxPage() {
 
   return (
     <AppShell title="Local Inbox">
+      <RefocusShard tasks={tasks} />
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <Button
           size="sm"

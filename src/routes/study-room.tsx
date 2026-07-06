@@ -21,6 +21,7 @@ import { calcAverage } from "@/lib/grade-utils";
 import { usePeerNetwork } from "@/lib/peer-network";
 import { Radio, Send, Copy, LogOut, Users, ShieldCheck, UserPlus, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { SyndicateSkillTree } from "@/components/grade/SyndicateSkillTree";
 
 export const Route = createFileRoute("/study-room")({
   head: () => ({
@@ -54,7 +55,10 @@ function StudyRoomPage() {
         <LobbyPanel meProfile={meProfile} />
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-4">
-          <RosterPanel />
+          <div className="space-y-4">
+            <RosterPanel />
+            <SyndicateSkillTree />
+          </div>
           <ChatPanel messages={messages} myId={session.myId} />
         </div>
       )}
