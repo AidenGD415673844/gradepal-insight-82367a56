@@ -96,27 +96,31 @@ function ForecastingHub() {
       </Card>
 
       {course && (
-        <>
-          <ConeOfUncertainty course={course} />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="space-y-5">
+          <div className="animate-rise gpu-crisp" style={{ animationDelay: "40ms" }}><ConeOfUncertainty course={course} /></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-rise gpu-crisp" style={{ animationDelay: "120ms" }}>
             <MonteCarloMatrix />
             <BurnoutThermometer />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-rise gpu-crisp" style={{ animationDelay: "200ms" }}>
             <GPAVelocityGauge />
             <HalfLifeDecay />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-rise gpu-crisp" style={{ animationDelay: "280ms" }}>
             <ElasticityWidget course={course} />
             <EffortEfficiency />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-rise gpu-crisp" style={{ animationDelay: "360ms" }}>
             <CeilingDeficit />
             <DeficitInsurance course={course} />
           </div>
-          <CorrelationHeatmap />
-          {prefs.advancedStatsMode && <LorenzGiniChart scores={allTermScores} />}
-        </>
+          <div className="animate-rise gpu-crisp" style={{ animationDelay: "440ms" }}><CorrelationHeatmap /></div>
+          {prefs.advancedStatsMode && (
+            <div className="animate-rise gpu-crisp" style={{ animationDelay: "520ms" }}>
+              <LorenzGiniChart scores={allTermScores} />
+            </div>
+          )}
+        </div>
       )}
     </AppShell>
   );
