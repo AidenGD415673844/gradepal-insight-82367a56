@@ -73,12 +73,18 @@ function SyndicatePage() {
         </div>
 
         <div className="space-y-5">
-          <div className="xl:hidden">
+          <div className="xl:hidden animate-rise gpu-crisp">
             <CohortPicker selectedId={selectedId} onSelect={setSelectedId} />
           </div>
-          <CohortHeader cohort={cohort} user={userProfile} />
-          <FrontierMap cohort={cohort} user={userProfile} />
-          <BoxplotOverlay cohort={cohort} user={userProfile} />
+          <div className="animate-rise gpu-crisp" style={{ animationDelay: "80ms" }}>
+            <CohortHeader cohort={cohort} user={userProfile} />
+          </div>
+          <div className="animate-rise gpu-crisp" style={{ animationDelay: "160ms" }}>
+            <FrontierMap cohort={cohort} user={userProfile} />
+          </div>
+          <div className="animate-rise gpu-crisp" style={{ animationDelay: "240ms" }}>
+            <BoxplotOverlay cohort={cohort} user={userProfile} />
+          </div>
         </div>
       </div>
     </AppShell>

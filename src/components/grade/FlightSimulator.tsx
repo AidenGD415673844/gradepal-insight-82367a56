@@ -251,7 +251,7 @@ export function FlightSimulator() {
         <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
           Mission Objective
         </label>
-        <div className="mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {MISSIONS.map((m) => {
             const active = m.id === missionId;
             return (
@@ -261,14 +261,14 @@ export function FlightSimulator() {
                   setMissionId(m.id);
                   reset();
                 }}
-                className={`text-left rounded-xl border px-3 py-2 transition ${
+                className={`text-left rounded-xl border px-3 py-3 min-h-[64px] transition break-words gpu-crisp ${
                   active
                     ? "border-primary bg-primary/10 ring-1 ring-primary"
                     : "border-border hover:bg-muted/40"
                 }`}
               >
-                <div className="text-xs font-bold">{m.label}</div>
-                <div className="text-[10px] text-muted-foreground">{m.desc}</div>
+                <div className="text-xs font-bold break-words">{m.label}</div>
+                <div className="text-[10px] text-muted-foreground break-words leading-snug">{m.desc}</div>
               </button>
             );
           })}
@@ -276,7 +276,7 @@ export function FlightSimulator() {
       </div>
 
       {/* Status strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <StatCell label="Baseline" value={`${baseAvg.toFixed(1)}%`} />
         <StatCell label="Current" value={`${current.toFixed(1)}%`} highlight={onMission ? "good" : "bad"} />
         <StatCell label="Letter" value={letter} />
@@ -498,11 +498,11 @@ function StatCell({
         ? "text-rose-500"
         : "text-foreground";
   return (
-    <div className="rounded-xl border p-3 bg-muted/30">
+    <div className="rounded-xl border p-3 bg-muted/30 min-h-[68px] break-words gpu-crisp">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
         {label}
       </div>
-      <div className={`mt-1 text-lg font-bold tabular-nums ${tone}`}>{value}</div>
+      <div className={`mt-1 text-lg font-bold tabular-nums break-words ${tone}`}>{value}</div>
     </div>
   );
 }
