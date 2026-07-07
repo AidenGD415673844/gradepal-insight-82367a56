@@ -151,8 +151,7 @@ export function AppStatusIndicator() {
     {
       name: "AI Features (Analyser, Grader, Helper)",
       available: true,
-      note: "Available — AI endpoints are reachable and ready to serve requests."
-      : "Paused - AI has hit the rate limit of 150 messages, or is experiencing issues.",
+      note: "Available — AI endpoints are reachable and ready to serve requests.",
     },
     {
       name: "Peer Sync (WebRTC)",
