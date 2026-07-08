@@ -429,10 +429,73 @@ function MissionDebriefingOverlay({
     onMission: boolean;
     missionLabel: string;
     threshold: number;
+    telemetry: TelemetryEntry[];
   };
   onClose: () => void;
 }) {
   const success = debrief.onMission;
+  const [analysis, setAnalysis] = useState<string>("");
+  const [analysing, setAnalysing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [synced, setSynced] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      setAnalysing(true);
+      setAnalysisError(null);
+      try {
+        const log = debrief.telemetry
+          .map(
+            (t, i) =>
+              `${i + 1}. [${t.scenarioId}] "${t.title}" — input ${t.input}%, delta ${t.delta.toFixed(2)}pp, ${
+                t.blocked ? "BLOCKED" : "BREACH"
+              } (avg ${t.avgBefore.toFixed(1)}→${t.avgAfter.toFixed(1)})`,
+          )
+          .join("\n");
+        const prompt = `You are a warm, supportive academic flight instructor. A student just completed a GPA stress-test mission.\n\nMission: ${debrief.missionLabel} (floor ${debrief.threshold}%)\nOutcome: ${success ? "SUCCESS" : "COMPROMISED"} — final avg ${debrief.finalAvg.toFixed(1)}%\nDisruptions blocked: ${debrief.blocked}/${debrief.total}\n\nTelemetry log:\n${log}\n\nReturn a concise (max 140 words) "Pilot Error & Recovery Analysis" in plain prose (no headings, no markdown). Evaluate their defensive assignment priority decisions, name exactly where point bleeds happened (reference scenario titles), and give 2–3 clear step-by-step corrections to protect their grade altitude cushion. Warm, supportive, analytical tone.`;
+        const text = await callOpenRouter({
+          feature: "analyser",
+          messages: [
+            { role: "system", content: "You are a supportive academic flight instructor." },
+            { role: "user", content: prompt },
+          ],
+          maxTokens: 320,
+          temperature: 0.6,
+        });
+        if (!cancelled) setAnalysis(text.trim());
+      } catch (e) {
+        if (cancelled) return;
+        const msg =
+          e instanceof OpenRouterError
+            ? e.busy
+              ? "AI analyst is busy — try again in a moment."
+              : e.message
+            : "Analysis unavailable offline.";
+        setAnalysisError(msg);
+      } finally {
+        if (!cancelled) setAnalysing(false);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [debrief, success]);
+
+  function syncToKanban() {
+    const blocked = debrief.telemetry.filter((t) => t.blocked);
+    const source = blocked.length ? blocked : debrief.telemetry;
+    const items = source.slice(0, 6).map((t) => ({
+      label: `Guard against: ${t.title}`,
+      detail: `Sim ${t.scenarioId} · lock-in ${t.input}% defence`,
+      target: Math.max(debrief.threshold, Math.round(t.avgAfter)),
+    }));
+    if (!items.length) return;
+    const n = addBenchmarks(items);
+    setSynced(n);
+  }
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in p-4"
@@ -440,7 +503,7 @@ function MissionDebriefingOverlay({
       aria-modal="true"
     >
       <Card
-        className={`relative max-w-2xl w-full p-8 border-2 shadow-2xl animate-in zoom-in-95 duration-300 ${
+        className={`relative max-w-2xl w-full p-8 border-2 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[92vh] overflow-y-auto ${
           success
             ? "border-emerald-500/60 bg-gradient-to-br from-emerald-500/15 via-card to-card"
             : "border-rose-500/60 bg-gradient-to-br from-rose-500/15 via-card to-card"
@@ -485,6 +548,47 @@ function MissionDebriefingOverlay({
             ? `You defended the ${debrief.missionLabel.toLowerCase()} across ${debrief.total - 1} randomised macro-disruption${debrief.total - 1 === 1 ? "" : "s"}. The protected sandbox average closed at ${debrief.finalAvg.toFixed(1)}% — clear of the ${debrief.threshold}% mission floor.`
             : `The protected sandbox average closed at ${debrief.finalAvg.toFixed(1)}% — below the ${debrief.threshold}% mission floor. Replay with tighter defensive inputs to restore the runway.`}
         </div>
+
+        {/* Pilot Error & Recovery Analysis card */}
+        <div className="rounded-xl border border-primary/40 bg-primary/5 p-4 mb-5">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-bold">Pilot Error & Recovery Analysis</h4>
+            {analysing && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground ml-auto" />}
+          </div>
+          {analysing && !analysis && (
+            <p className="text-xs text-muted-foreground">
+              Reviewing telemetry log ({debrief.telemetry.length} disruption events)…
+            </p>
+          )}
+          {analysisError && (
+            <p className="text-xs text-rose-500">{analysisError}</p>
+          )}
+          {analysis && (
+            <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">{analysis}</p>
+          )}
+        </div>
+
+        {/* Autopilot Engage — sync benchmark targets to Kanban */}
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-4 mb-5 flex items-center gap-3 flex-wrap">
+          <Target className="h-5 w-5 text-emerald-500 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold">Autopilot Engage</div>
+            <div className="text-[11px] text-muted-foreground">
+              Export successful target percentages as motivational benchmarks in your live Kanban To-Do column.
+            </div>
+          </div>
+          {synced > 0 ? (
+            <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Synced {synced} benchmark{synced === 1 ? "" : "s"}
+            </span>
+          ) : (
+            <Button size="sm" onClick={syncToKanban} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Target className="h-4 w-4" /> Sync Target Benchmarks to Kanban
+            </Button>
+          )}
+        </div>
+
         <div className="flex flex-wrap gap-2 justify-end">
           <Button variant="outline" onClick={onClose} className="gap-2">
             <RotateCcw className="h-4 w-4" /> Close Debriefing
