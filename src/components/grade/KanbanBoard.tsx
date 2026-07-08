@@ -13,6 +13,13 @@ import {
   type SubjectScanInput,
 } from "@/lib/auto-remediation";
 import { Shield, Check, X } from "lucide-react";
+import { Target } from "lucide-react";
+import {
+  readBenchmarks,
+  removeBenchmark,
+  subscribeBenchmarks,
+  type KanbanBenchmark,
+} from "@/lib/kanban-benchmarks";
 
 const KANBAN_KEY = "gradecalc-kanban-status-v1";
 const COLS = ["To-Do", "In Progress", "Submitted", "Graded"] as const;
@@ -26,6 +33,11 @@ export function KanbanBoard() {
   const { tasks, courses, updateTask, scale, settings } = useGrades();
   const [statuses, setStatuses] = useState<Record<string, Col>>({});
   const remediation = useRemediationQueue().filter((c) => !c.done);
+  const [benchmarks, setBenchmarks] = useState<KanbanBenchmark[]>([]);
+  useEffect(() => {
+    setBenchmarks(readBenchmarks());
+    return subscribeBenchmarks(() => setBenchmarks(readBenchmarks()));
+  }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
     try { setStatuses(JSON.parse(localStorage.getItem(KANBAN_KEY) ?? "{}")); } catch {}
@@ -143,6 +155,31 @@ export function KanbanBoard() {
           >
             <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">{col} · {grouped[col].length}</div>
             <div className="space-y-2">
+              {col === "To-Do" && benchmarks.map((b) => (
+                <div
+                  key={b.id}
+                  className="rounded-md border-2 border-emerald-500/50 bg-emerald-500/5 p-2 text-xs shadow-sm"
+                >
+                  <div className="flex items-start gap-1.5">
+                    <Target className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold truncate text-emerald-700 dark:text-emerald-300">
+                        {b.label}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        Target ≥ {b.target.toFixed(0)}% · {b.detail}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeBenchmark(b.id)}
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      aria-label="Dismiss benchmark"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
               {grouped[col].map((t) => {
                 const course = courses.find((c) => c.id === t.courseId);
                 return (
