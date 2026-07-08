@@ -6,6 +6,8 @@ import { useGrades } from "@/lib/grade-store";
 import { calcAverage, getLetter } from "@/lib/grade-utils";
 import { applyAStarOverride } from "./a-star-override";
 import { Link } from "@tanstack/react-router";
+import { callOpenRouter, OpenRouterError } from "@/lib/openrouter";
+import { addBenchmarks } from "@/lib/kanban-benchmarks";
 import {
   Plane,
   AlertTriangle,
@@ -15,6 +17,7 @@ import {
   Shield,
   Zap,
 } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle2 } from "lucide-react";
 
 type Scenario = {
   id: string;
@@ -126,6 +129,17 @@ function pickRandomScenario(seed: number): Scenario {
   return SCENARIOS[Math.floor(seed * SCENARIOS.length) % SCENARIOS.length];
 }
 
+type TelemetryEntry = {
+  scenarioId: string;
+  title: string;
+  input: number;
+  delta: number;
+  blocked: boolean;
+  avgBefore: number;
+  avgAfter: number;
+  ts: number;
+};
+
 export function FlightSimulator() {
   const { courses, tasks, scale, settings } = useGrades();
   void courses;
@@ -167,7 +181,9 @@ export function FlightSimulator() {
     onMission: boolean;
     missionLabel: string;
     threshold: number;
+    telemetry: TelemetryEntry[];
   }>(null);
+  const [telemetry, setTelemetry] = useState<TelemetryEntry[]>([]);
 
   // Reset when the live ledger baseline changes meaningfully.
   useEffect(() => {
@@ -183,6 +199,7 @@ export function FlightSimulator() {
     setRunning(true);
     setSeries([baseAvg]);
     setLog([]);
+    setTelemetry([]);
     nextScenario();
   }
 
@@ -191,6 +208,7 @@ export function FlightSimulator() {
     setSeries([baseAvg]);
     setLog([]);
     setScenario(null);
+    setTelemetry([]);
   }
 
   function nextScenario() {
@@ -214,6 +232,18 @@ export function FlightSimulator() {
     const next = Math.max(0, Math.min(100, current + delta + noise));
     setSeries((s) => [...s, next]);
     setLog((l) => [{ title: scenario.title, note, delta: delta + noise }, ...l].slice(0, 8));
+    const entry: TelemetryEntry = {
+      scenarioId: scenario.id,
+      title: scenario.title,
+      input,
+      delta: delta + noise,
+      blocked: next >= mission.threshold,
+      avgBefore: current,
+      avgAfter: next,
+      ts: Date.now(),
+    };
+    const nextTelemetry = [...telemetry, entry];
+    setTelemetry(nextTelemetry);
     if (series.length >= 9) {
       setScenario(null);
       setRunning(false);
@@ -229,6 +259,7 @@ export function FlightSimulator() {
         onMission: next >= mission.threshold,
         missionLabel: mission.label,
         threshold: mission.threshold,
+        telemetry: nextTelemetry,
       });
       return;
     }
