@@ -16,7 +16,7 @@ const EVT = "gradecalc-ai-credits-change";
 const FREE_DAILY = 15;
 const PRO_BONUS = 10;
 const STUDENT_BONUS = 20;
-const PRO_DAILY = FREE_DAILY + PRO_BONUS;      // 25
+const PRO_DAILY = FREE_DAILY + PRO_BONUS; // 25
 const STUDENT_DAILY = FREE_DAILY + STUDENT_BONUS; // 35
 const FREE_CAP = FREE_DAILY;
 const PAID_CAP = STUDENT_DAILY; // ceiling for either paid tier
@@ -58,9 +58,9 @@ export function estimateCost(
   // credit window, scaling with the volume of work for the model.
   const base: Record<string, number> = {
     ai_grader: 2.5,
-    ai_deep_generate: 1.8,
-    homework_helper: 4.5,   // Pro feature — premium cost
-    analyser: 3.5,          // Pro analyser baseline (3 – 7.5 window)
+    ai_deep_generate: 1,
+    homework_helper: 4.5, // Pro feature — premium cost
+    analyser: 3.5, // Pro analyser baseline (3 – 7.5 window)
     feedback_bullets: 2.0,
     ai_chat: 1.8,
     default: 1.5,
@@ -303,5 +303,5 @@ export function useAICredits() {
       clearInterval(id);
     };
   }, []);
-    return { balance: bal, tierLabel, isPro: isPro(), isStudent: isStudent(), cap: dailyTotalForActive() };
+  return { balance: bal, tierLabel, isPro: isPro(), isStudent: isStudent(), cap: dailyTotalForActive() };
 }
