@@ -347,13 +347,8 @@ function ShopPage() {
                 <Sparkles className="h-4 w-4 text-indigo-500" />
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Card processing is restricted. To purchase via a digital gift card voucher
-                code, please contact the developer via WhatsApp/SMS at{" "}
-                <a
-                  href="https://wa.me/85266190340"
-                  className="font-mono font-semibold text-indigo-600 hover:underline"
-                >
-                  +852 6619 0340
+                To purchase via a digital gift card voucher code, please email the developer at 130586886@hkstudent.ycis.com or send a DM on Discord to @aidendagod67 to receive your premium access key pass (sorry for the 67 number, i didn't know!).                <a
+                  
                 </a>{" "}
                 with an attached note to receive your premium access key pass.
               </p>
