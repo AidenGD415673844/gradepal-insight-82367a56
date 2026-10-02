@@ -1,0 +1,32 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "AI_API_KEY",
+      "description": "OpenRouter API key for AI features (grader, analyser, helper). Optional — app boots without it; AI pages show a 'key missing' message. Get one at https://openrouter.ai/keys",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "AI_API_KEY_2",
+      "description": "Second OpenRouter API key for failover. Optional.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "AI_API_KEY_3",
+      "description": "Third OpenRouter API key for failover. Optional.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "SUPABASE_SERVICE_ROLE_KEY",
+      "description": "Supabase service role key for server-side admin operations (bypasses RLS). Optional — only needed for admin server functions. Find in Supabase dashboard → Settings → API.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "PREMIUM_CIPHER_SALT",
+      "description": "Salt for premium code cipher. Optional — only needed for premium/admin server functions.",
+      "requiredAtBoot": false
+    }
+  ]
+}
