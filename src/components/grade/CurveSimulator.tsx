@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sparkles, X } from "lucide-react";
-import { applyCurve, type CurveKind } from "@/lib/curve";
+import { applyCurve, imaginarySqrtPart, type CurveKind } from "@/lib/curve";
 import { applyAStarOverride } from "./a-star-override";
 import { getLetter } from "@/lib/grade-utils";
 import type { GradeScaleRow } from "@/lib/grade-store";
@@ -54,7 +54,11 @@ export function CurveSimulator({
   }
 
   const origLetter = applyAStarOverride(score, getLetter(score, scale)?.letter ?? "—");
-  const curvedLetter = applyAStarOverride(curved, getLetter(curved, scale)?.letter ?? "—");
+  const curvedIsReal = Number.isFinite(curved);
+  const imag = kind === "sqrt" ? imaginarySqrtPart(score) : null;
+  const curvedLetter = curvedIsReal
+    ? applyAStarOverride(curved, getLetter(curved, scale)?.letter ?? "—")
+    : "—";
 
   return (
     <Card className="p-4 shadow-soft border-amber-300/60 bg-amber-50/40 dark:bg-amber-950/20">
@@ -166,8 +170,19 @@ export function CurveSimulator({
                 Curved
               </div>
               <div className="font-bold tabular-nums text-emerald-700">
-                {curved.toFixed(1)}% · {curvedLetter}
+                {curvedIsReal
+                  ? `${curved.toFixed(1)}% · ${curvedLetter}`
+                  : imag !== null
+                    ? `NaN (${imag.toFixed(1)}i)`
+                    : "NaN"}
               </div>
+              {!curvedIsReal && (
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {imag !== null
+                    ? "√ of a negative score is imaginary — no real curved grade."
+                    : "This curve has no real result for this score."}
+                </div>
+              )}
             </div>
           </div>
         </div>
