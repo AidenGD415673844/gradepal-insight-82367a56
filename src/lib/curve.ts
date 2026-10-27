@@ -11,11 +11,17 @@ export type CurveConfig =
   | { kind: "linear"; m: number; c: number }
   | { kind: "formula"; expr: string };
 
+/**
+ * Returns NaN when the curve has no real result (e.g. √ of a negative
+ * score). Callers should render that as "NaN" / an imaginary value
+ * instead of silently showing 0%.
+ */
 export function applyCurve(score: number, cfg: CurveConfig): number {
   let out = score;
   switch (cfg.kind) {
     case "sqrt":
-      out = Math.sqrt(Math.max(0, score)) * 10;
+      if (score < 0) return NaN;
+      out = Math.sqrt(score) * 10;
       break;
     case "bump":
       out = score + cfg.points;
@@ -27,8 +33,13 @@ export function applyCurve(score: number, cfg: CurveConfig): number {
       out = safeEval(cfg.expr, score);
       break;
   }
-  if (!Number.isFinite(out)) return score;
-  return Math.max(0, Math.min(100, out));
+  if (!Number.isFinite(out)) return NaN;
+  return Math.min(100, out);
+}
+
+/** Imaginary magnitude of √score·10 for negative scores (e.g. -10 → 31.6). */
+export function imaginarySqrtPart(score: number): number | null {
+  return score < 0 ? Math.sqrt(-score) * 10 : null;
 }
 
 /**

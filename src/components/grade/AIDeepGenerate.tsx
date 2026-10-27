@@ -7,6 +7,8 @@ import { useGrades } from "@/lib/grade-store";
 import { calcAverage, filterByTerm } from "@/lib/grade-utils";
 import { BRACKETS, TREND_BRACKETS, COMPLETION_BRACKETS, lookupBracket } from "./feedback-data";
 import { spendCredits, estimateCost } from "@/lib/ai-credits";
+import { callOpenRouter } from "@/lib/openrouter";
+import { sanitizeAIOutputLite } from "./ai-report-sanitize";
 
 /* ---------- Redundant-key obfuscated storage ------------------------ */
 
@@ -147,30 +149,56 @@ function hashInputs(subj: string, teacher: string, avg: number, prevAvg: number,
   return h.toString(16);
 }
 
-function composeReport(args: {
-  subject: string;
-  teacher: string;
-  avg: number;
-  prevAvg: number;
-  hasPrev: boolean;
-  completion: number;
-}): string {
-  const { subject, teacher, avg, prevAvg, hasPrev, completion } = args;
-  const main = lookupBracket(BRACKETS, avg);
-  const b2 = hasPrev
-    ? lookupBracket(TREND_BRACKETS, avg - prevAvg).bullets[1]
-    : main.bullets[1];
-  const b3 = lookupBracket(COMPLETION_BRACKETS, completion).bullets[2];
-  const intro = `In ${subject}${teacher ? ` (taught by ${teacher})` : ""}, the student is currently averaging ${avg.toFixed(1)}%.`;
+type ClassTask = { name: string; category: string; score: number; maxScore: number; weight: number; date: string };
+
+function pct(t: ClassTask) { return t.maxScore > 0 ? (t.score / t.maxScore) * 100 : 0; }
+
+function buildClassDigest(args: { subject: string; teacher: string; avg: number; prevAvg: number; hasPrev: boolean; completion: number; tasks: ClassTask[] }) {
+  const { subject, teacher, avg, prevAvg, hasPrev, completion, tasks } = args;
+  const sorted = [...tasks].sort((a, b) => a.date.localeCompare(b.date));
+  const cats = new Map<string, { sum: number; n: number }>();
+  for (const t of sorted) {
+    const c = cats.get(t.category) ?? { sum: 0, n: 0 };
+    c.sum += pct(t); c.n++; cats.set(t.category, c);
+  }
+  const catLines = [...cats.entries()].map(([k, v]) => `${k}: ${(v.sum / v.n).toFixed(1)}% over ${v.n} task(s)`);
+  const taskLines = sorted.map((t) => `${t.date} | ${t.name} | ${t.category} | ${t.score}/${t.maxScore} (${pct(t).toFixed(1)}%) | weight ${t.weight}`);
   return [
-    intro,
-    `Strengths: ${main.bullets[0]}`,
-    `Trends: ${b2}`,
-    `Responsibility: ${b3}`,
-    `Commendations: ${main.bullets[2]}`,
-    `Action Items: ${main.bullets[4]}`,
+    `Subject: ${subject}${teacher ? ` (teacher: ${teacher})` : ""}`,
+    `Current term average: ${avg.toFixed(1)}%`,
+    hasPrev ? `Previous term average: ${prevAvg.toFixed(1)}% (change ${(avg - prevAvg >= 0 ? "+" : "")}${(avg - prevAvg).toFixed(1)} pts)` : "Previous term: no data",
+    `Completion: ${completion}%`,
+    `Category averages:\n${catLines.join("\n")}`,
+    `All graded tasks (date | name | category | score | weight):\n${taskLines.join("\n")}`,
   ].join("\n\n");
 }
+
+/** Offline fallback built only from this class's real tasks — no canned text. */
+function composeLocalReport(args: { subject: string; avg: number; prevAvg: number; hasPrev: boolean; completion: number; tasks: ClassTask[] }): string {
+  const { subject, avg, prevAvg, hasPrev, completion, tasks } = args;
+  const byPct = [...tasks].sort((a, b) => pct(b) - pct(a));
+  const best = byPct.slice(0, 2), worst = byPct.slice(-2).reverse();
+  const recent = [...tasks].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+  const cats = new Map<string, number[]>();
+  for (const t of tasks) cats.set(t.category, [...(cats.get(t.category) ?? []), pct(t)]);
+  const catAvg = [...cats.entries()].map(([k, v]) => ({ k, a: v.reduce((x, y) => x + y, 0) / v.length })).sort((a, b) => b.a - a.a);
+  const f = (t: ClassTask) => `"${t.name}" (${pct(t).toFixed(1)}%)`;
+  const out = [
+    `In ${subject}, the student is averaging ${avg.toFixed(1)}% across ${tasks.length} graded task(s).`,
+    `Strengths: The strongest results were ${best.map(f).join(" and ")}${catAvg[0] ? `, and ${catAvg[0].k} is the best category at ${catAvg[0].a.toFixed(1)}%` : ""}.`,
+    `Trends: ${hasPrev ? `Compared with last term's ${prevAvg.toFixed(1)}%, the average has ${avg >= prevAvg ? "risen" : "fallen"} by ${Math.abs(avg - prevAvg).toFixed(1)} points.` : "No previous term to compare yet."} Most recent work: ${recent.map(f).join(", ")}.`,
+    `Responsibility: ${completion}% of this term's tasks are graded and complete.`,
+  ];
+  if (catAvg.length > 1) {
+    const low = catAvg[catAvg.length - 1];
+    out.push(`Action Items: Focus on ${low.k} (${low.a.toFixed(1)}%) and revisit ${worst.map(f).join(" and ")} — lifting these is the quickest route to a higher grade.`);
+  } else {
+    out.push(`Action Items: Revisit ${worst.map(f).join(" and ")} to lift the overall average.`);
+  }
+  return out.join("\n\n");
+}
+
+const REPORT_SYSTEM = `You are an experienced, warm teacher writing a report-card comment. Use ONLY the class data given. Reference specific task names, categories, scores and the trend. Be truthful about weaknesses but encouraging. Write plain text (no markdown headings, no <thought_process>), with these labelled paragraphs: Overview, Strengths, Trends, Responsibility, Commendations, Action Items. 150-250 words. Never invent tasks or numbers.`;
 
 /* ---------- Component ----------------------------------------------- */
 
@@ -225,7 +253,9 @@ export function AIDeepGenerate({
     setViolationMsg(reason);
   }
 
-  function handleGenerate() {
+  const [busy, setBusy] = useState(false);
+
+  async function handleGenerate() {
     setError("");
     if (banned) return;
     // Clock-tamper guard: device time behind last recorded execution.
@@ -274,14 +304,30 @@ export function AIDeepGenerate({
       setError(`Not enough AI credits — need ${spend.need.toFixed(1)}, have ${spend.have.toFixed(1)}. Top up in the Pro Shop.`);
       return;
     }
-    const text = composeReport({
-      subject: course.name,
-      teacher,
-      avg,
-      prevAvg,
-      hasPrev: prev.length > 0,
-      completion,
-    });
+    const classTasks: ClassTask[] = cur.map((t) => ({ name: t.name, category: t.category, score: t.score, maxScore: t.maxScore, weight: t.weight, date: t.date }));
+    const base = { subject: course.name, avg, prevAvg, hasPrev: prev.length > 0, completion, tasks: classTasks };
+    let text = "";
+    setBusy(true);
+    try {
+      const raw = await callOpenRouter({
+        feature: "analyser",
+        maxTokens: 900,
+        temperature: 0.6,
+        messages: [
+          { role: "system", content: REPORT_SYSTEM },
+          { role: "user", content: buildClassDigest({ ...base, teacher }) },
+        ],
+      });
+      text = sanitizeAIOutputLite(raw);
+    } catch {
+      text = "";
+    } finally {
+      setBusy(false);
+    }
+    if (!text) {
+      text = composeLocalReport(base);
+      setError("AI was unavailable — generated a report from your class data offline instead.");
+    }
     onApply(course.id, text);
     const newLog: LogPayload = {
       entries: [...log.entries.slice(-20), { t: now, hash }],
@@ -354,10 +400,10 @@ export function AIDeepGenerate({
         <Input placeholder="Teacher name (optional)" value={teacher} onChange={(e) => setTeacher(e.target.value)} />
         <Button
           onClick={handleGenerate}
-          disabled={limitReached}
+          disabled={limitReached || busy}
           className={limitReached ? "grayscale opacity-60" : ""}
         >
-          {limitReached ? "Locked" : "Generate"}
+          {limitReached ? "Locked" : busy ? "Writing…" : "Generate"}
         </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
