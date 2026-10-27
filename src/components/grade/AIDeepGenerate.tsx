@@ -400,10 +400,10 @@ export function AIDeepGenerate({
         <Input placeholder="Teacher name (optional)" value={teacher} onChange={(e) => setTeacher(e.target.value)} />
         <Button
           onClick={handleGenerate}
-          disabled={limitReached}
+          disabled={limitReached || busy}
           className={limitReached ? "grayscale opacity-60" : ""}
         >
-          {limitReached ? "Locked" : "Generate"}
+          {limitReached ? "Locked" : busy ? "Writing…" : "Generate"}
         </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
