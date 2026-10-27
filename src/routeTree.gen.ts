@@ -9,118 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UtilitiesRouteImport } from './routes/utilities'
-import { Route as TimetableRouteImport } from './routes/timetable'
-import { Route as TeacherRouteImport } from './routes/teacher'
-import { Route as SyndicateRouteImport } from './routes/syndicate'
-import { Route as StudyRoomRouteImport } from './routes/study-room'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ShopRouteImport } from './routes/shop'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as SavedReportsRouteImport } from './routes/saved-reports'
-import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as PeersRouteImport } from './routes/peers'
-import { Route as NotebookRouteImport } from './routes/notebook'
-import { Route as InboxRouteImport } from './routes/inbox'
-import { Route as GradesRouteImport } from './routes/grades'
-import { Route as ForecastingRouteImport } from './routes/forecasting'
-import { Route as CriteriaRouteImport } from './routes/criteria'
-import { Route as ChangelogRouteImport } from './routes/changelog'
-import { Route as AiRouteImport } from './routes/ai'
-import { Route as AdvancedRouteImport } from './routes/advanced'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AiHelperRouteImport } from './routes/ai.helper'
-import { Route as AiGraderRouteImport } from './routes/ai.grader'
+import { Route as AdvancedRouteImport } from './routes/advanced'
+import { Route as AiRouteImport } from './routes/ai'
+import { Route as ChangelogRouteImport } from './routes/changelog'
+import { Route as CriteriaRouteImport } from './routes/criteria'
+import { Route as ForecastingRouteImport } from './routes/forecasting'
+import { Route as GradesRouteImport } from './routes/grades'
+import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as NotebookRouteImport } from './routes/notebook'
+import { Route as PeersRouteImport } from './routes/peers'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SavedReportsRouteImport } from './routes/saved-reports'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ShopRouteImport } from './routes/shop'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StudyRoomRouteImport } from './routes/study-room'
+import { Route as SyndicateRouteImport } from './routes/syndicate'
+import { Route as TeacherRouteImport } from './routes/teacher'
+import { Route as TimetableRouteImport } from './routes/timetable'
+import { Route as UtilitiesRouteImport } from './routes/utilities'
 import { Route as AiAnalyserRouteImport } from './routes/ai.analyser'
+import { Route as AiGraderRouteImport } from './routes/ai.grader'
+import { Route as AiHelperRouteImport } from './routes/ai.helper'
 
-const UtilitiesRoute = UtilitiesRouteImport.update({
-  id: '/utilities',
-  path: '/utilities',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TimetableRoute = TimetableRouteImport.update({
-  id: '/timetable',
-  path: '/timetable',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TeacherRoute = TeacherRouteImport.update({
-  id: '/teacher',
-  path: '/teacher',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SyndicateRoute = SyndicateRouteImport.update({
-  id: '/syndicate',
-  path: '/syndicate',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StudyRoomRoute = StudyRoomRouteImport.update({
-  id: '/study-room',
-  path: '/study-room',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShopRoute = ShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SavedReportsRoute = SavedReportsRouteImport.update({
-  id: '/saved-reports',
-  path: '/saved-reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportsRoute = ReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PeersRoute = PeersRouteImport.update({
-  id: '/peers',
-  path: '/peers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotebookRoute = NotebookRouteImport.update({
-  id: '/notebook',
-  path: '/notebook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InboxRoute = InboxRouteImport.update({
-  id: '/inbox',
-  path: '/inbox',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GradesRoute = GradesRouteImport.update({
-  id: '/grades',
-  path: '/grades',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForecastingRoute = ForecastingRouteImport.update({
-  id: '/forecasting',
-  path: '/forecasting',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CriteriaRoute = CriteriaRouteImport.update({
-  id: '/criteria',
-  path: '/criteria',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChangelogRoute = ChangelogRouteImport.update({
-  id: '/changelog',
-  path: '/changelog',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AiRoute = AiRouteImport.update({
-  id: '/ai',
-  path: '/ai',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdvancedRoute = AdvancedRouteImport.update({
@@ -128,14 +43,99 @@ const AdvancedRoute = AdvancedRouteImport.update({
   path: '/advanced',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AiHelperRoute = AiHelperRouteImport.update({
-  id: '/helper',
-  path: '/helper',
+const ChangelogRoute = ChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriteriaRoute = CriteriaRouteImport.update({
+  id: '/criteria',
+  path: '/criteria',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForecastingRoute = ForecastingRouteImport.update({
+  id: '/forecasting',
+  path: '/forecasting',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GradesRoute = GradesRouteImport.update({
+  id: '/grades',
+  path: '/grades',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InboxRoute = InboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotebookRoute = NotebookRouteImport.update({
+  id: '/notebook',
+  path: '/notebook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PeersRoute = PeersRouteImport.update({
+  id: '/peers',
+  path: '/peers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavedReportsRoute = SavedReportsRouteImport.update({
+  id: '/saved-reports',
+  path: '/saved-reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudyRoomRoute = StudyRoomRouteImport.update({
+  id: '/study-room',
+  path: '/study-room',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SyndicateRoute = SyndicateRouteImport.update({
+  id: '/syndicate',
+  path: '/syndicate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeacherRoute = TeacherRouteImport.update({
+  id: '/teacher',
+  path: '/teacher',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TimetableRoute = TimetableRouteImport.update({
+  id: '/timetable',
+  path: '/timetable',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UtilitiesRoute = UtilitiesRouteImport.update({
+  id: '/utilities',
+  path: '/utilities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiAnalyserRoute = AiAnalyserRouteImport.update({
+  id: '/analyser',
+  path: '/analyser',
   getParentRoute: () => AiRoute,
 } as any)
 const AiGraderRoute = AiGraderRouteImport.update({
@@ -143,9 +143,9 @@ const AiGraderRoute = AiGraderRouteImport.update({
   path: '/grader',
   getParentRoute: () => AiRoute,
 } as any)
-const AiAnalyserRoute = AiAnalyserRouteImport.update({
-  id: '/analyser',
-  path: '/analyser',
+const AiHelperRoute = AiHelperRouteImport.update({
+  id: '/helper',
+  path: '/helper',
   getParentRoute: () => AiRoute,
 } as any)
 
@@ -328,130 +328,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/utilities': {
-      id: '/utilities'
-      path: '/utilities'
-      fullPath: '/utilities'
-      preLoaderRoute: typeof UtilitiesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/timetable': {
-      id: '/timetable'
-      path: '/timetable'
-      fullPath: '/timetable'
-      preLoaderRoute: typeof TimetableRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/teacher': {
-      id: '/teacher'
-      path: '/teacher'
-      fullPath: '/teacher'
-      preLoaderRoute: typeof TeacherRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/syndicate': {
-      id: '/syndicate'
-      path: '/syndicate'
-      fullPath: '/syndicate'
-      preLoaderRoute: typeof SyndicateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/study-room': {
-      id: '/study-room'
-      path: '/study-room'
-      fullPath: '/study-room'
-      preLoaderRoute: typeof StudyRoomRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/shop': {
-      id: '/shop'
-      path: '/shop'
-      fullPath: '/shop'
-      preLoaderRoute: typeof ShopRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/saved-reports': {
-      id: '/saved-reports'
-      path: '/saved-reports'
-      fullPath: '/saved-reports'
-      preLoaderRoute: typeof SavedReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reports': {
-      id: '/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/peers': {
-      id: '/peers'
-      path: '/peers'
-      fullPath: '/peers'
-      preLoaderRoute: typeof PeersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notebook': {
-      id: '/notebook'
-      path: '/notebook'
-      fullPath: '/notebook'
-      preLoaderRoute: typeof NotebookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inbox': {
-      id: '/inbox'
-      path: '/inbox'
-      fullPath: '/inbox'
-      preLoaderRoute: typeof InboxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/grades': {
-      id: '/grades'
-      path: '/grades'
-      fullPath: '/grades'
-      preLoaderRoute: typeof GradesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forecasting': {
-      id: '/forecasting'
-      path: '/forecasting'
-      fullPath: '/forecasting'
-      preLoaderRoute: typeof ForecastingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/criteria': {
-      id: '/criteria'
-      path: '/criteria'
-      fullPath: '/criteria'
-      preLoaderRoute: typeof CriteriaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/changelog': {
-      id: '/changelog'
-      path: '/changelog'
-      fullPath: '/changelog'
-      preLoaderRoute: typeof ChangelogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ai': {
-      id: '/ai'
-      path: '/ai'
-      fullPath: '/ai'
-      preLoaderRoute: typeof AiRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/advanced': {
@@ -461,18 +342,137 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdvancedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ai/helper': {
-      id: '/ai/helper'
-      path: '/helper'
-      fullPath: '/ai/helper'
-      preLoaderRoute: typeof AiHelperRouteImport
+    '/changelog': {
+      id: '/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof ChangelogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criteria': {
+      id: '/criteria'
+      path: '/criteria'
+      fullPath: '/criteria'
+      preLoaderRoute: typeof CriteriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forecasting': {
+      id: '/forecasting'
+      path: '/forecasting'
+      fullPath: '/forecasting'
+      preLoaderRoute: typeof ForecastingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/grades': {
+      id: '/grades'
+      path: '/grades'
+      fullPath: '/grades'
+      preLoaderRoute: typeof GradesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inbox': {
+      id: '/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof InboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notebook': {
+      id: '/notebook'
+      path: '/notebook'
+      fullPath: '/notebook'
+      preLoaderRoute: typeof NotebookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/peers': {
+      id: '/peers'
+      path: '/peers'
+      fullPath: '/peers'
+      preLoaderRoute: typeof PeersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved-reports': {
+      id: '/saved-reports'
+      path: '/saved-reports'
+      fullPath: '/saved-reports'
+      preLoaderRoute: typeof SavedReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study-room': {
+      id: '/study-room'
+      path: '/study-room'
+      fullPath: '/study-room'
+      preLoaderRoute: typeof StudyRoomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/syndicate': {
+      id: '/syndicate'
+      path: '/syndicate'
+      fullPath: '/syndicate'
+      preLoaderRoute: typeof SyndicateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teacher': {
+      id: '/teacher'
+      path: '/teacher'
+      fullPath: '/teacher'
+      preLoaderRoute: typeof TeacherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/timetable': {
+      id: '/timetable'
+      path: '/timetable'
+      fullPath: '/timetable'
+      preLoaderRoute: typeof TimetableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/utilities': {
+      id: '/utilities'
+      path: '/utilities'
+      fullPath: '/utilities'
+      preLoaderRoute: typeof UtilitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai/analyser': {
+      id: '/ai/analyser'
+      path: '/analyser'
+      fullPath: '/ai/analyser'
+      preLoaderRoute: typeof AiAnalyserRouteImport
       parentRoute: typeof AiRoute
     }
     '/ai/grader': {
@@ -482,11 +482,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiGraderRouteImport
       parentRoute: typeof AiRoute
     }
-    '/ai/analyser': {
-      id: '/ai/analyser'
-      path: '/analyser'
-      fullPath: '/ai/analyser'
-      preLoaderRoute: typeof AiAnalyserRouteImport
+    '/ai/helper': {
+      id: '/ai/helper'
+      path: '/helper'
+      fullPath: '/ai/helper'
+      preLoaderRoute: typeof AiHelperRouteImport
       parentRoute: typeof AiRoute
     }
   }
