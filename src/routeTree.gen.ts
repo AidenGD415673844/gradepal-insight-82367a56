@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdvancedRouteImport } from './routes/advanced'
 import { Route as AiRouteImport } from './routes/ai'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as CriteriaRouteImport } from './routes/criteria'
 import { Route as ForecastingRouteImport } from './routes/forecasting'
@@ -20,6 +22,7 @@ import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as NotebookRouteImport } from './routes/notebook'
 import { Route as PeersRouteImport } from './routes/peers'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SavedReportsRouteImport } from './routes/saved-reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShopRouteImport } from './routes/shop'
@@ -38,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdvancedRoute = AdvancedRouteImport.update({
   id: '/advanced',
   path: '/advanced',
@@ -46,6 +54,11 @@ const AdvancedRoute = AdvancedRouteImport.update({
 const AiRoute = AiRouteImport.update({
   id: '/ai',
   path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChangelogRoute = ChangelogRouteImport.update({
@@ -86,6 +99,11 @@ const PeersRoute = PeersRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SavedReportsRoute = SavedReportsRouteImport.update({
@@ -151,8 +169,10 @@ const AiHelperRoute = AiHelperRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/advanced': typeof AdvancedRoute
   '/ai': typeof AiRouteWithChildren
+  '/auth': typeof AuthRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -161,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/notebook': typeof NotebookRoute
   '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
@@ -176,8 +197,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/advanced': typeof AdvancedRoute
   '/ai': typeof AiRouteWithChildren
+  '/auth': typeof AuthRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -186,6 +209,7 @@ export interface FileRoutesByTo {
   '/notebook': typeof NotebookRoute
   '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
@@ -202,8 +226,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/advanced': typeof AdvancedRoute
   '/ai': typeof AiRouteWithChildren
+  '/auth': typeof AuthRoute
   '/changelog': typeof ChangelogRoute
   '/criteria': typeof CriteriaRoute
   '/forecasting': typeof ForecastingRoute
@@ -212,6 +238,7 @@ export interface FileRoutesById {
   '/notebook': typeof NotebookRoute
   '/peers': typeof PeersRoute
   '/reports': typeof ReportsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved-reports': typeof SavedReportsRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
@@ -229,8 +256,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/advanced'
     | '/ai'
+    | '/auth'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -239,6 +268,7 @@ export interface FileRouteTypes {
     | '/notebook'
     | '/peers'
     | '/reports'
+    | '/reset-password'
     | '/saved-reports'
     | '/settings'
     | '/shop'
@@ -254,8 +284,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/advanced'
     | '/ai'
+    | '/auth'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -264,6 +296,7 @@ export interface FileRouteTypes {
     | '/notebook'
     | '/peers'
     | '/reports'
+    | '/reset-password'
     | '/saved-reports'
     | '/settings'
     | '/shop'
@@ -279,8 +312,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/advanced'
     | '/ai'
+    | '/auth'
     | '/changelog'
     | '/criteria'
     | '/forecasting'
@@ -289,6 +324,7 @@ export interface FileRouteTypes {
     | '/notebook'
     | '/peers'
     | '/reports'
+    | '/reset-password'
     | '/saved-reports'
     | '/settings'
     | '/shop'
@@ -305,8 +341,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AdvancedRoute: typeof AdvancedRoute
   AiRoute: typeof AiRouteWithChildren
+  AuthRoute: typeof AuthRoute
   ChangelogRoute: typeof ChangelogRoute
   CriteriaRoute: typeof CriteriaRoute
   ForecastingRoute: typeof ForecastingRoute
@@ -315,6 +353,7 @@ export interface RootRouteChildren {
   NotebookRoute: typeof NotebookRoute
   PeersRoute: typeof PeersRoute
   ReportsRoute: typeof ReportsRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SavedReportsRoute: typeof SavedReportsRoute
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
@@ -335,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/advanced': {
       id: '/advanced'
       path: '/advanced'
@@ -347,6 +393,13 @@ declare module '@tanstack/react-router' {
       path: '/ai'
       fullPath: '/ai'
       preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/changelog': {
@@ -403,6 +456,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/saved-reports': {
@@ -508,8 +568,10 @@ const AiRouteWithChildren = AiRoute._addFileChildren(AiRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AdvancedRoute: AdvancedRoute,
   AiRoute: AiRouteWithChildren,
+  AuthRoute: AuthRoute,
   ChangelogRoute: ChangelogRoute,
   CriteriaRoute: CriteriaRoute,
   ForecastingRoute: ForecastingRoute,
@@ -518,6 +580,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotebookRoute: NotebookRoute,
   PeersRoute: PeersRoute,
   ReportsRoute: ReportsRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SavedReportsRoute: SavedReportsRoute,
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
